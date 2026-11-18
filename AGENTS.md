@@ -10,7 +10,9 @@ available at `/home/chadneff/git/hub/wow-ui-source`; inspect `origin/forever` wi
 `Interface/AddOns/Blizzard_APIDocumentationGenerated/` for API shapes.
 
 MediaLab covers icons, textures, atlases, sounds, control templates and
-fonts. Keep it data driven: a media type
+fonts. It is an **independent project**: other projects (such as
+`../wow-addon-studio`) may use its scripts and `catalog/` output, but never add
+code here that depends on or exists only for them. Plan in `sprint-hub/`. Keep it data driven: a media type
 is a row in `ML.Kinds` (`kinds.lua`), a provider in `sources.lua` and a snippet
 builder in `snippets.lua`. Prefer the client's own enumeration APIs; the
 generated `data/` files are the fallback. Regenerate them with

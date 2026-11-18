@@ -6,6 +6,10 @@ and copy their names, IDs and ready-to-paste Lua.
 
 MediaLab targets **WoW Forever**, interface **16001**. Version **0.1.0**.
 
+MediaLab is an independent project. Its offline tools (catalog builder, CASC
+reader, icon metadata, JSON catalog) are useful on their own and may be used
+by other projects, but MediaLab never depends on them.
+
 ## Open the lab
 
 1. Copy the `MediaLab`, `MediaLab_Icons` and `MediaLab_Export` folders into
