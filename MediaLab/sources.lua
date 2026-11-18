@@ -33,7 +33,52 @@ local function safe(fn, ...)
     if ok then return result end
 end
 
+-- Optional icon metadata from the load-on-demand MediaLab_Icons addon, built
+-- offline by scripts/icon-metadata.py: [fileID] = "name\tcolors\tsubject\ttags\tdescription".
+-- Loaded once, when icons are indexed, and released from the global table.
+function Sources.IconMeta(step)
+    if Sources.iconMeta ~= nil then return Sources.iconMeta or nil, Sources.iconIds end
+    local load = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+    if load and type(MediaLabIconMeta) ~= "table" then pcall(load, "MediaLab_Icons") end
+    local meta = type(MediaLabIconMeta) == "table" and MediaLabIconMeta or false
+    MediaLabIconMeta = nil
+    Sources.iconMeta, Sources.iconIds = meta, {}
+    if meta then
+        for id, raw in pairs(meta) do
+            Sources.iconIds[raw:match("^[^\t]*")] = id
+            if step then step() end
+        end
+    end
+    return meta or nil, Sources.iconIds
+end
+
+local function capital(value) return (value:gsub("^%l", string.upper)) end
+
+-- Fills name, tags, description and Type/Subject/Color facets for a known file ID.
+local function describeIcon(data, meta, id)
+    local raw = meta and meta[id]
+    if not raw then return data end
+    local name, colors, subject, tags, description = raw:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+    if not name then return data end
+    data.value, data.id, data.name = id, id, name
+    data.path = "Interface\\Icons\\" .. name
+    data.tags = tags ~= "" and tags:gsub(",", ", ") or nil
+    data.subject = subject ~= "" and subject or nil
+    data.description = description ~= "" and description or nil
+    local facets = data.facets
+    facets[#facets + 1] = "Type: " .. (name:match("^([^_]+)_") or "other")
+    if data.subject then facets[#facets + 1] = "Subject: " .. capital(subject) end
+    for color in colors:gmatch("[^,]+") do facets[#facets + 1] = "Color: " .. capital(color) end
+    return data
+end
+
 Sources.icon = function(add, step)
+    local meta, ids = Sources.IconMeta(step)
+    local function addIcon(data)
+        local id = data.id
+        if not id and meta then id = ids[tostring(data.value):match("[^\\]+$"):lower()] end
+        add(describeIcon(data, meta, id))
+    end
     local lists = {
         {api = "GetMacroIcons", facet = "Spell icons"},
         {api = "GetMacroItemIcons", facet = "Item icons"},
@@ -46,10 +91,10 @@ Sources.icon = function(add, step)
             for _, value in ipairs(icons) do
                 local numeric = tonumber(value)
                 if numeric then
-                    add({value = numeric, id = numeric, name = "File " .. numeric, facets = {list.facet}, origin = list.api})
+                    addIcon({value = numeric, id = numeric, name = "File " .. numeric, facets = {list.facet}, origin = list.api})
                 elseif type(value) == "string" and value ~= "" then
                     local path = value:find("[\\/]") and Sources.Normalize(value) or "Interface\\Icons\\" .. value
-                    add({value = path, name = path:match("[^\\]+$"), facets = {list.facet}, origin = list.api})
+                    addIcon({value = path, name = path:match("[^\\]+$"), facets = {list.facet}, origin = list.api})
                 end
                 step()
             end
@@ -57,7 +102,7 @@ Sources.icon = function(add, step)
     end
     for _, path in ipairs(ML.TexturePaths or {}) do
         if isIconPath(path) then
-            add({value = path, name = path:match("[^\\]+$"), facets = {"UI source"}, origin = "Blizzard UI source"})
+            addIcon({value = path, name = path:match("[^\\]+$"), facets = {"UI source"}, origin = "Blizzard UI source"})
         end
     end
 end

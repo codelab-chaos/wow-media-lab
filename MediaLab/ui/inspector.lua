@@ -20,6 +20,7 @@ function Inspector.New(parent, handlers)
     self.subtitle = W.Label(frame, "Pick something from the list.", 10, T.muted)
     self.subtitle:SetPoint("TOPLEFT", 12, -32)
     self.subtitle:SetPoint("TOPRIGHT", -12, -32)
+    self.subtitle:SetWordWrap(false)
     self.favorite = W.Button(frame, "Favorite", 68, function()
         if self.entry then handlers.onFavorite(self.entry) end
     end, 20)
@@ -88,7 +89,8 @@ function Inspector:Show(entry)
         return
     end
     self.title:SetText(entry.name)
-    self.subtitle:SetText(kind.label .. "  /  " .. table.concat(entry.facets, ", ") .. "  /  " .. (entry.origin or ""))
+    self.subtitle:SetText(entry.description
+        or (kind.label .. "  /  " .. table.concat(entry.facets, ", ") .. "  /  " .. (entry.origin or "")))
     self.favorite:Enable()
     self:RefreshFavorite()
     local preview = self:Preview(kind.preview)

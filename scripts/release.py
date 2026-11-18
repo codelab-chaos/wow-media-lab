@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TOC = ROOT / "MediaLab" / "MediaLab.toc"
-TOCS = [TOC, ROOT / "MediaLab_Export" / "MediaLab_Export.toc"]
+TOCS = [TOC, ROOT / "MediaLab_Export" / "MediaLab_Export.toc", ROOT / "MediaLab_Icons" / "MediaLab_Icons.toc"]
 README = ROOT / "README.md"
 SOURCE = Path("/home/chadneff/git/hub/wow-ui-source")
 

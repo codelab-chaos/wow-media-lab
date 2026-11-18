@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 # Addon folders shipped in the release zip, each with its own .toc manifest.
-ADDONS = ["MediaLab", "MediaLab_Export"]
+ADDONS = ["MediaLab", "MediaLab_Export", "MediaLab_Icons"]
 
 
 def manifest_files(name):

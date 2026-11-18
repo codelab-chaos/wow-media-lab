@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: MediaLab Icons
+## Notes: Icon names, colors, tags and descriptions for MediaLab. Loaded only when the lab indexes icons.
+## Author: Wizwonk
+## Version: 0.1.0
+## X-License: MIT
+## AllowLoadGameType: forever
+## ExcludeLoadGameType: standard, classic
+## Category: Development Tools
+## LoadOnDemand: 1
+## Dependencies: MediaLab
+
+data.lua

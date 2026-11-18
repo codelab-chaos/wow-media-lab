@@ -21,6 +21,7 @@ local function textureFields(entry)
     end
     fields[#fields + 1] = {label = "Lua", text = "texture:SetTexture(" .. ref .. ")"}
     fields[#fields + 1] = {label = "Inline text", text = "CreateSimpleTextureMarkup(" .. ref .. ", 16, 16)"}
+    if entry.tags then fields[#fields + 1] = {label = "Tags", text = entry.tags} end
     return fields
 end
 

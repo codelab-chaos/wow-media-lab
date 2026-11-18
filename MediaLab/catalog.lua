@@ -16,7 +16,7 @@ end
 
 local function searchText(entry)
     local parts = {entry.name, tostring(entry.value), entry.id and tostring(entry.id) or "", entry.tag or "",
-        entry.inherits or "", table.concat(entry.facets, " ")}
+        entry.inherits or "", entry.tags or "", entry.subject or "", table.concat(entry.facets, " ")}
     return table.concat(parts, " "):lower()
 end
 
@@ -137,8 +137,13 @@ function Catalog:Facets(tabId)
             counts[facet] = counts[facet] + 1
         end
     end
+    -- Grouped facets ("Color: Green") follow the kind's facetGroups order, after plain ones.
+    local groups = {}
+    for index, group in ipairs((ML.KindById[tabId] or {}).facetGroups or {}) do groups[group] = index end
+    local function rank(facet) return groups[facet:match("^([^:]+): ") or ""] or 0 end
     table.sort(order, function(a, b)
         if (a == "Common") ~= (b == "Common") then return a == "Common" end
+        if rank(a) ~= rank(b) then return rank(a) < rank(b) end
         if counts[a] ~= counts[b] then return counts[a] > counts[b] end
         return a < b
     end)

@@ -290,6 +290,46 @@ test("grid thumbnails zoom and paging stays in range", function()
     equal((browser:Range()), 1)
 end)
 
+test("icon metadata names, tags, describes and groups icons, merging paths into file IDs", function()
+    local ML = open()
+    assert(Mock.loaded.MediaLab_Icons)
+    equal(MediaLabIconMeta, nil, "global released")
+    local mark = find(ML, "icon", 134400)
+    equal(mark.name, "inv_misc_questionmark")
+    equal(mark.tags, "question mark, unknown, help")
+    equal(mark.description, "A red question mark.")
+    assert(mark.facetSet["Color: Red"] and mark.facetSet["Subject: Symbol"] and mark.facetSet["Type: inv"])
+    local sword = find(ML, "icon", 135274)
+    assert(sword, "path entry became its file ID")
+    equal(find(ML, "icon", "Interface\\Icons\\INV_Sword_04"), nil)
+    assert(sword.facetSet["Item icons"])
+    equal(#ML.Catalog:Filter("icon", nil, "longsword"), 0, "descriptions are display only")
+    equal(ML.Catalog:Filter("icon", nil, "blade")[1], sword)
+    equal(ML.Catalog:Filter("icon", "Color: Gray", "")[2] ~= nil, true)
+    local facets = ML.Catalog:Facets("icon")
+    local seen, last = {}, 0
+    local order = {Type = 1, Subject = 2, Color = 3}
+    for _, facet in ipairs(facets) do
+        local rank = order[facet.name:match("^(%a+): ")] or 0
+        assert(rank >= last, "grouped facets follow facetGroups: " .. facet.name)
+        last = rank
+    end
+    ML.UI:SelectTab("icon")
+    ML.UI:Select(mark)
+    equal(ML.UI.inspector.subtitle:GetText(), "A red question mark.")
+    local labels = {}
+    for _, field in ipairs(ML.UI.inspector.fields) do if field:IsShown() then labels[#labels + 1] = field.caption:GetText() end end
+    equal(table.concat(labels, ","), "File ID,Lua,Inline text,Tags")
+end)
+
+test("icons still index without the metadata addon", function()
+    local ML = Mock.load()
+    Mock.iconMeta = nil
+    SlashCmdList.MEDIALAB("")
+    Mock.flush()
+    equal(find(ML, "icon", 134400).name, "File 134400")
+end)
+
 test("csv copies the current results with one shape per kind, capped and escaped", function()
     local ML = open()
     ML.UI:SelectTab("sound")

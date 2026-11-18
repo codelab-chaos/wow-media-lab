@@ -7,7 +7,8 @@ local _, ML = ...
 --   visual   entries render as images (thumbnails, zoomable preview)
 --   preview  which inspector preview renders the selection
 ML.Kinds = {
-    {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image"},
+    {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
+        facetGroups = {"Type", "Subject", "Color"}},
     {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true, preview = "image"},
     {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true, preview = "image"},
     {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound"},

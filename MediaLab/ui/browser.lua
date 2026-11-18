@@ -85,6 +85,8 @@ local function onCellEnter(cell)
     GameTooltip:SetText(entry.name, unpack(T.accent))
     if tostring(entry.value) ~= entry.name then GameTooltip:AddLine(tostring(entry.value), 0.85, 0.88, 0.93, true) end
     if entry.id and entry.id ~= entry.value then GameTooltip:AddLine("ID " .. entry.id, 0.85, 0.88, 0.93) end
+    if entry.description then GameTooltip:AddLine(entry.description, 1, 1, 1, true) end
+    if entry.tags then GameTooltip:AddLine(entry.tags, 0.62, 0.78, 0.91, true) end
     GameTooltip:AddLine(table.concat(entry.facets, ", "), unpack(T.muted))
     GameTooltip:AddLine("Click to inspect  /  Right-click to favorite", 0.6, 0.6, 0.6)
     GameTooltip:Show()

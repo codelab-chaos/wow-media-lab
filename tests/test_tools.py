@@ -18,6 +18,7 @@ catalog = load("catalog", "scripts/build-catalog.py")
 packaging = load("packaging", "scripts/package.py")
 release = load("release", "scripts/release.py")
 importer = load("importer", "scripts/import-export.py")
+icons = load("icons", "scripts/icon-metadata.py")
 
 
 class ExtractionTests(unittest.TestCase):
@@ -95,6 +96,11 @@ class PackagingTests(unittest.TestCase):
             for name, source in expected.items():
                 self.assertEqual(archive.read(name), source.read_bytes())
 
+    def test_icon_data_addon_loads_on_demand(self):
+        toc = (ROOT / "MediaLab_Icons/MediaLab_Icons.toc").read_text()
+        self.assertIn("## LoadOnDemand: 1", toc)
+        self.assertTrue((ROOT / "MediaLab_Icons/data.lua").read_text().startswith("-- Generated"))
+
     def test_export_addon_loads_on_demand_and_owns_the_export_variable(self):
         toc = (ROOT / "MediaLab_Export/MediaLab_Export.toc").read_text()
         self.assertIn("## LoadOnDemand: 1", toc)
@@ -108,7 +114,8 @@ class JsonCatalogTests(unittest.TestCase):
     def test_json_matches_the_addon_data_and_ships_as_its_own_zip(self):
         import json
         documents = {path.stem: json.loads(path.read_text()) for path in (ROOT / "catalog").glob("*.json")}
-        self.assertEqual(set(documents), self.KINDS)
+        self.assertEqual(set(documents) - {"icons-meta"}, self.KINDS)
+        documents.pop("icons-meta", None)
         for kind, document in documents.items():
             self.assertEqual(document["count"], len(document["items"]), kind)
             self.assertTrue(document["source"]["commit"], kind)
@@ -118,7 +125,21 @@ class JsonCatalogTests(unittest.TestCase):
             names = set(archive.namelist())
             self.assertLessEqual({f"MediaLab-catalog/{kind}.json" for kind in self.KINDS} | {"MediaLab-catalog/LICENSE"}, names)
             extra = names - {f"MediaLab-catalog/{kind}.json" for kind in self.KINDS} - {"MediaLab-catalog/LICENSE"}
-            self.assertTrue(all(name.startswith("MediaLab-catalog/client/") for name in extra), extra)
+            optional = {"MediaLab-catalog/icons-meta.json"}
+            self.assertTrue(all(name in optional or name.startswith("MediaLab-catalog/client/") for name in extra), extra)
+
+
+class IconMetadataTests(unittest.TestCase):
+    def test_tags_drop_filler_colors_and_duplicates(self):
+        self.assertEqual(icons.clean_tags(["Ring ", "icon", "Gold", "ring", "World of Warcraft", "healing."], "x"),
+                         ["ring", "healing"])
+
+    def test_category_is_the_first_name_word(self):
+        self.assertEqual(icons.category("inv_ringwod_7d"), "inv")
+        self.assertEqual(icons.category("questionmark"), "other")
+
+    def test_lua_strings_escape_quotes_and_backslashes(self):
+        self.assertEqual(icons.lua_string('a "b" \\ c\nd'), '"a \\"b\\" \\\\ c d"')
 
 
 class ImportExportTests(unittest.TestCase):
