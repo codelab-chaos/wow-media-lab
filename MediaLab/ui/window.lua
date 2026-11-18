@@ -293,6 +293,14 @@ function UI:CreateToolbar(body)
     end, 24)
     self.thumbButton:SetPoint("LEFT", clear, "RIGHT", 4, 0)
     W.Tip(self.thumbButton, "Thumbnail size", "Cycle the grid's thumbnail zoom.")
+    local csv = W.Button(body, "CSV", 48, function() self:CopyCsv() end, 24)
+    csv:SetPoint("LEFT", self.thumbButton, "RIGHT", 4, 0)
+    W.Tip(csv, "Copy as CSV", "The current results as CSV (first " .. ML.Export.CSV_LIMIT
+        .. "). /mlab export saves the whole catalog.")
+end
+
+function UI:CopyCsv()
+    return ML.CsvDialog.Show(self.frame, self.results)
 end
 
 function UI:CreateFacetColumn(body)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install this project's addon into a local WoW client; saved variables are untouched.
+# Install this project's addons into a local WoW client; saved variables are untouched.
 set -euo pipefail
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 addons_dir="${WOW_ADDONS_DIR:-}"
@@ -19,13 +19,14 @@ for argument in "$@"; do
         *) echo "Unknown argument: $argument" >&2; exit 1 ;;
     esac
 done
-target="$addons_dir/MediaLab"
-[[ ! -L "$target" ]] || { echo "Refusing to replace a symlink: $target" >&2; exit 1; }
-[[ ! -d "$target" || -f "$target/MediaLab.toc" ]] || {
-    echo "Refusing to replace a folder without MediaLab.toc: $target" >&2; exit 1
-}
-rsync "${flags[@]}" "$project_dir/MediaLab/" "$target/"
-if $dry_run; then echo "Dry run only; nothing was copied to $target."; exit 0; fi
-echo "MediaLab installed at $target."
-echo "Restart WoW if the addon is new; otherwise type /reload. Open it with /mlab."
-
+for addon in MediaLab MediaLab_Export; do
+    target="$addons_dir/$addon"
+    [[ ! -L "$target" ]] || { echo "Refusing to replace a symlink: $target" >&2; exit 1; }
+    [[ ! -d "$target" || -f "$target/$addon.toc" ]] || {
+        echo "Refusing to replace a folder without $addon.toc: $target" >&2; exit 1
+    }
+    rsync "${flags[@]}" "$project_dir/$addon/" "$target/"
+done
+if $dry_run; then echo "Dry run only; nothing was copied to $addons_dir."; exit 0; fi
+echo "MediaLab and MediaLab_Export installed in $addons_dir."
+echo "Restart WoW if an addon or file is new; otherwise type /reload. Open it with /mlab."

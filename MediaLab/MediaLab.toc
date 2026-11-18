@@ -20,9 +20,11 @@ data\templates.lua
 sources.lua
 catalog.lua
 snippets.lua
+export.lua
 ui\widgets.lua
 ui\art.lua
 ui\browser.lua
 ui\previews.lua
 ui\inspector.lua
+ui\csvdialog.lua
 ui\window.lua

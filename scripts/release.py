@@ -14,11 +14,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TOC = ROOT / "MediaLab" / "MediaLab.toc"
+TOCS = [TOC, ROOT / "MediaLab_Export" / "MediaLab_Export.toc"]
 README = ROOT / "README.md"
 SOURCE = Path("/home/chadneff/git/hub/wow-ui-source")
 
 CHECKS = [
-    "rg --files MediaLab tests -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p",
+    "rg --files MediaLab MediaLab_Export tests scripts -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p",
     "lua5.1 tests/run.lua",
     "python3 -m unittest discover -s tests -p 'test_*.py'",
 ]
@@ -86,7 +87,8 @@ def main():
         sys.exit("version must look like 1.2.3")
 
     old = current("Version")
-    TOC.write_text(bump_toc(TOC.read_text(), args.version, args.interface))
+    for toc in TOCS:
+        toc.write_text(bump_toc(toc.read_text(), args.version, args.interface))
     README.write_text(bump_readme(README.read_text(), old, args.version, args.interface))
     print(f"version {old} -> {args.version}, interface {current('Interface')}")
 

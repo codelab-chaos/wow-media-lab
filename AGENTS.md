@@ -16,11 +16,13 @@ builder in `snippets.lua`. Prefer the client's own enumeration APIs; the
 generated `data/` files are the fallback. Regenerate them with
 `python3 scripts/build-catalog.py`. No Blizzard artwork or audio is bundled.
 Keep indexing batched and create frames only when needed.
+`MediaLab_Export/` is load on demand and only owns the `MediaLabExport` saved
+variable; keep export data out of `MediaLabDB` so logins stay light.
 
 ## Checks
 
 ```sh
-rg --files MediaLab tests -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p
+rg --files MediaLab MediaLab_Export tests scripts -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p
 lua5.1 tests/run.lua
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 scripts/package.py

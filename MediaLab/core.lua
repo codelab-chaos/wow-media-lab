@@ -32,6 +32,17 @@ local commands = {
         ML.Print("/mlab opens the lab. /mlab search <words> searches the current tab.")
         ML.Print("/mlab tab <icons|textures|atlases|sounds|controls|fonts|favorites> jumps to a tab.")
         ML.Print("/mlab reset restores the window's size and position.")
+        ML.Print("/mlab csv copies the current results. /mlab export saves the whole catalog for scripts/import-export.py.")
+    end,
+    csv = function()
+        ML.UI:Show()
+        ML.UI:CopyCsv()
+    end,
+    export = function()
+        ML.UI:Show()
+        local ok, result = ML.Export.Save()
+        if not ok then return ML.Print(result) end
+        ML.Print(string.format("Exported %d entries. Type /reload to write them to disk, then run scripts/import-export.py.", result))
     end,
     reset = function()
         ML.db.window, ML.db.minimized = nil, nil

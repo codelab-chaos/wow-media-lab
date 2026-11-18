@@ -8,9 +8,10 @@ MediaLab targets **WoW Forever**, interface **16001**. Version **0.1.0**.
 
 ## Open the lab
 
-1. Copy the `MediaLab` folder into
+1. Copy the `MediaLab` and `MediaLab_Export` folders into
    `World of Warcraft/_forever_/Interface/AddOns/`, or extract
-   `dist/MediaLab-0.1.0.zip` there.
+   `dist/MediaLab-0.1.0.zip` there. `MediaLab_Export` is optional; it is
+   only loaded when you export.
 2. Restart the client after the first installation and enable **MediaLab**.
 3. Enter **`/mlab`** or **`/medialab`**. There is also an addon compartment entry.
 
@@ -37,6 +38,9 @@ it, and press **_** to minimize it to its title bar. Escape closes it.
   Slider, ...) or font family. **Common** is a hand-picked starter set. Scroll
   the column with the mouse wheel when it is long.
 - **Size** cycles the thumbnail zoom on grid tabs. The wheel scrolls results.
+- **CSV** (or `/mlab csv`) shows the current results as CSV to copy, up to
+  500 rows. Each tab has its own columns (atlases include size and texture
+  coordinates, controls their type and size, fonts their file and size).
 
 ## Inspect and copy
 
@@ -88,11 +92,22 @@ missing one shows **?**, or sometimes renders blank or solid green.
 The same catalog ships as JSON for use outside the game, in `catalog/` and as
 `dist/MediaLab-catalog-<version>.zip`: one file per kind (`icons`, `textures`,
 `atlases`, `sounds`, `templates`, `fonts`), each with its source version and
-commit. It covers what the UI source references. The live client lists
-(every spell and item icon file ID, atlas sizes) exist only in game.
+commit. It covers what the UI source references.
+
+The live client lists (every spell and item icon file ID, atlas sizes and
+coordinates, template sizes, font files) exist only in game. To export them:
+
+1. Enable **MediaLab Export** in the AddOns list. It loads only when you
+   export, so it adds nothing to normal logins.
+2. Open the lab, wait for **Ready**, then enter `/mlab export`.
+3. `/reload` (or log out). The game writes
+   `WTF/Account/<account>/SavedVariables/MediaLab_Export.lua`.
+4. Run `python3 scripts/import-export.py`. It writes `catalog/client/*.json`,
+   tagged with the client build, and the catalog zip includes them.
 
 No artwork, audio or external libraries are bundled. Only favorites, window
-placement, the open tab and preview settings are saved in `MediaLabDB`.
+placement, the open tab and preview settings are saved in `MediaLabDB`;
+exports go to `MediaLabExport`, owned by the export addon.
 
 The window and catalog are built when first opened. Indexing runs in small
 batches across frames (sounds and controls first, icons last), and only the
@@ -103,7 +118,7 @@ visible cells are created and reused.
 From this folder, with Lua 5.1 and Python 3.9+:
 
 ```sh
-rg --files MediaLab tests -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p
+rg --files MediaLab MediaLab_Export tests scripts -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p
 lua5.1 tests/run.lua
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 scripts/package.py
@@ -119,12 +134,15 @@ Code layout (one job per file):
 | `sources.lua` | One provider per kind: client APIs first, generated data as fallback |
 | `catalog.lua` | Entry store, batched indexing, search, filters, favorites |
 | `snippets.lua` | Copyable fields and Lua per kind |
+| `export.lua` | Rows per kind for `/mlab export` snapshots and CSV |
 | `ui/widgets.lua` | Flat widget primitives and the read-only copy field |
 | `ui/art.lua` | Painting image entries onto textures |
 | `ui/browser.lua` | Grid and list rendering with a reused cell pool |
 | `ui/previews.lua` | Image, sound, control and font previews |
 | `ui/inspector.lua` | Selection details, preview host, copy fields |
+| `ui/csvdialog.lua` | The Copy as CSV popup |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
+| `MediaLab_Export/` | Load-on-demand addon that only owns `MediaLabExport` |
 
 Adding a media type means adding a row to `ML.Kinds`, a provider in
 `sources.lua` and a snippet builder in `snippets.lua`, and pointing its

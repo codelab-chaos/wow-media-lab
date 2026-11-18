@@ -120,6 +120,8 @@ function methods:SetResizeBounds(...) self.bounds = {...} end
 function methods:SetHighlightTexture(value) self.highlight = object("Texture", nil, self); self.highlight:SetTexture(value) end
 function methods:GetHighlightTexture() return self.highlight end
 function methods:GetEffectiveScale() return 1 end
+function methods:SetFrameLevel(value) self.frameLevel = value end
+function methods:GetFrameLevel() return self.frameLevel or 1 end
 function methods:AddMessage(value) Mock.messages[#Mock.messages + 1] = value end
 
 for _, name in ipairs({
@@ -193,7 +195,18 @@ function Mock.install()
     GetLooseMacroIcons, GetLooseMacroItemIcons = nil, nil
     font("GameFontNormal", 12); font("GameFontHighlight", 12); font("SystemFont_Large", 16)
     GetFonts = function() return {"GameFontNormal", "SystemFont_Large", "NotLoadedFont"} end
-    MediaLabDB = nil
+    GetBuildInfo = function() return "1.60.1", "70888", "Nov 1 2026", 16001 end
+    time = os.time
+    Mock.loaded, Mock.exportMissing = {}, false
+    C_AddOns = {
+        LoadAddOn = function(name)
+            if Mock.exportMissing then return false, "MISSING" end
+            Mock.loaded[name] = true
+            return true
+        end,
+        GetAddOnMetadata = function(_, field) return field == "Version" and "0.1.0" or nil end,
+    }
+    MediaLabDB, MediaLabExport = nil, nil
 end
 
 function Mock.load(saved)
