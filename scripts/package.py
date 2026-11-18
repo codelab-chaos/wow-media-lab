@@ -31,6 +31,24 @@ def package():
     return output
 
 
+def package_catalog():
+    """The JSON catalog as its own download, for tools and authors outside the game."""
+    folder = ROOT / "catalog"
+    version = re.search(r"^## Version:\s*(\S+)", (ROOT / "MediaLab" / "MediaLab.toc").read_text(), re.M).group(1)
+    files = sorted(folder.glob("*.json"))
+    if not files:
+        raise FileNotFoundError("No catalog/*.json; run scripts/build-catalog.py first")
+    output = ROOT / "dist" / f"MediaLab-catalog-{version}.zip"
+    output.parent.mkdir(exist_ok=True)
+    with ZipFile(output, "w", ZIP_DEFLATED) as archive:
+        for path in files:
+            archive.write(path, Path("MediaLab-catalog") / path.name)
+        archive.write(ROOT / "LICENSE", "MediaLab-catalog/LICENSE")
+    print(output)
+    return output
+
+
 if __name__ == "__main__":
     package()
+    package_catalog()
 

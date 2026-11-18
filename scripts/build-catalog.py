@@ -16,6 +16,7 @@ import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "MediaLab" / "data"
+JSON_DIR = ROOT / "catalog"
 
 LUA_STRING = re.compile(r'''(["'])((?:\\.|(?!\1)[^\\\r\n])*?)\1''')
 LONG_STRING = re.compile(r"\[\[([^\]\r\n]+)\]\]")
@@ -94,7 +95,16 @@ def write(path, header, body):
     ]))
 
 
-def build(source, ref, output):
+def write_json(folder, source, kinds):
+    """One JSON file per kind, for tools outside the game."""
+    folder.mkdir(parents=True, exist_ok=True)
+    for kind, (fields, rows) in kinds.items():
+        items = [dict(zip(fields, row)) if isinstance(row, tuple) else {fields[0]: row} for row in rows]
+        document = {"kind": kind, "source": source, "count": len(items), "items": items}
+        (folder / f"{kind}.json").write_text(json.dumps(document, indent=1) + "\n")
+
+
+def build(source, ref, output, json_output=None):
     def git(*args):
         return subprocess.check_output(["git", "-C", str(source), *args])
 
@@ -143,6 +153,17 @@ def build(source, ref, output):
         *lua_list("Templates", sorted(controls)),
         *lua_list("FontTemplates", sorted(fonts)),
     ])
+    if json_output:
+        textures = [path for _, path in sorted(paths.items())]
+        is_icon = lambda path: path.lower().replace("/", "\\").startswith("interface\\icons\\")
+        write_json(json_output, {"repository": "wow-ui-source", "ref": ref, "version": version, "commit": commit}, {
+            "icons": (["path"], [path for path in textures if is_icon(path)]),
+            "textures": (["path"], [path for path in textures if not is_icon(path)]),
+            "atlases": (["name"], sorted(atlases)),
+            "sounds": (["name", "id"], sorted(kits)),
+            "templates": (["name", "type", "inherits", "source"], sorted(controls)),
+            "fonts": (["name", "type", "inherits", "source"], sorted(fonts)),
+        })
     print(f"{len(paths):,} textures, {len(atlases):,} atlases, {len(kits):,} sound kits, "
           f"{len(controls):,} templates, {len(fonts):,} fonts ({version}, {commit[:12]})")
 
@@ -152,5 +173,6 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=Path, default=Path("/home/chadneff/git/hub/wow-ui-source"))
     parser.add_argument("--ref", default="origin/forever")
     parser.add_argument("--output", type=Path, default=DATA)
+    parser.add_argument("--json", type=Path, default=JSON_DIR, help="folder for the JSON catalog")
     args = parser.parse_args()
-    build(args.source, args.ref, args.output)
+    build(args.source, args.ref, args.output, args.json)

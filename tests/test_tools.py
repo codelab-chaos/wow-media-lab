@@ -89,5 +89,22 @@ class PackagingTests(unittest.TestCase):
                 self.assertEqual(archive.read(name), source.read_bytes())
 
 
+class JsonCatalogTests(unittest.TestCase):
+    KINDS = {"icons", "textures", "atlases", "sounds", "templates", "fonts"}
+
+    def test_json_matches_the_addon_data_and_ships_as_its_own_zip(self):
+        import json
+        documents = {path.stem: json.loads(path.read_text()) for path in (ROOT / "catalog").glob("*.json")}
+        self.assertEqual(set(documents), self.KINDS)
+        for kind, document in documents.items():
+            self.assertEqual(document["count"], len(document["items"]), kind)
+            self.assertTrue(document["source"]["commit"], kind)
+        lua = (ROOT / "MediaLab/data/sounds.lua").read_text()
+        self.assertIn('{"%s", %d}' % (documents["sounds"]["items"][0]["name"], documents["sounds"]["items"][0]["id"]), lua)
+        with ZipFile(packaging.package_catalog()) as archive:
+            self.assertEqual(set(archive.namelist()),
+                             {f"MediaLab-catalog/{kind}.json" for kind in self.KINDS} | {"MediaLab-catalog/LICENSE"})
+
+
 if __name__ == "__main__":
     unittest.main()

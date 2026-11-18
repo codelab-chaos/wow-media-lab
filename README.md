@@ -4,8 +4,7 @@ A media lab for addon authors, inside the game. Browse the icons, textures,
 atlases, sounds, control templates and fonts your addon can use, preview them,
 and copy their names, IDs and ready-to-paste Lua.
 
-MediaLab targets **WoW Forever**, interface **16001**. Version **0.1.0**. It is
-the successor to ArtGallery, widened from artwork to every kind of UI media.
+MediaLab targets **WoW Forever**, interface **16001**. Version **0.1.0**.
 
 ## Open the lab
 
@@ -79,6 +78,19 @@ cannot enumerate and adds metadata:
 - 3,169 virtual templates with their tag, parent template and source file
 - 497 font objects, kept only when loaded in the client
 
+This is an exploration tool, not a complete listing of the game's files. Paths
+that Blizzard code builds at runtime, and art no UI file references, are
+missing. The UI source snapshot also covers other game families, so a listed
+texture is not a guarantee that Forever ships it. Atlases are checked with
+`C_Texture.GetAtlasInfo`; file textures are only tried by the renderer, and a
+missing one shows **?**, or sometimes renders blank or solid green.
+
+The same catalog ships as JSON for use outside the game, in `catalog/` and as
+`dist/MediaLab-catalog-<version>.zip`: one file per kind (`icons`, `textures`,
+`atlases`, `sounds`, `templates`, `fonts`), each with its source version and
+commit. It covers what the UI source references. The live client lists
+(every spell and item icon file ID, atlas sizes) exist only in game.
+
 No artwork, audio or external libraries are bundled. Only favorites, window
 placement, the open tab and preview settings are saved in `MediaLabDB`.
 
@@ -127,13 +139,17 @@ python3 scripts/build-catalog.py \
 
 For local installation, set `WOW_ADDONS_DIR` or put your AddOns path on the
 first line of the ignored `.deploy-target`, then run `scripts/deploy.sh`
-(`--dry-run` to preview). It changes only the installed `MediaLab` folder.
+(`--dry-run` to preview). It changes only the installed `MediaLab` folder and
+leaves saved variables alone. `/reload` is enough after editing existing Lua
+files; restart the client after adding files or changing the `.toc`.
 
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
 Visit every tab, search and filter, zoom and pan an atlas and a texture, play
 and stop a sound, change its channel, build `UIPanelButtonTemplate` from
 Controls > Common, type a font sample, copy a field with Ctrl+C, favorite
 something, minimize, resize, `/reload` and confirm favorites and placement.
+The tests cannot verify the game's renderer or that every listed image
+exists, so run this before each release.
 
 ## License
 

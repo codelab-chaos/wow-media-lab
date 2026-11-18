@@ -384,7 +384,12 @@ local Font = {}
 Font.__index = Font
 Previews.font = Font
 
-local DEFAULT_SAMPLE = "The quick brown fox jumps over the lazy dog. 0123456789"
+-- The user's sample (or the default headline), then the glyph and lorem blocks.
+function Font.Text(custom)
+    local parts = {custom or ML.FontSamples.headline}
+    for _, block in ipairs(ML.FontSamples.blocks) do parts[#parts + 1] = block end
+    return table.concat(parts, "\n\n")
+end
 
 function Font.New(parent)
     local self = setmetatable({}, Font)
@@ -403,7 +408,7 @@ function Font.New(parent)
         local text = box:GetText()
         self.input.placeholder:SetShown(text == "")
         view().sample = text ~= "" and text or nil
-        self.sample:SetText(view().sample or DEFAULT_SAMPLE)
+        self.sample:SetText(Font.Text(view().sample))
     end)
     self.info = W.Label(self.frame, "", 10, T.muted)
     self.info:SetPoint("BOTTOMLEFT", 1, 4)
@@ -427,7 +432,7 @@ function Font:Show(entry)
         self.info:SetText("This font object is not loaded in this client.")
     end
     if self.input.box:GetText() ~= (view().sample or "") then self.input.box:SetText(view().sample or "") end
-    self.sample:SetText(view().sample or DEFAULT_SAMPLE)
+    self.sample:SetText(Font.Text(view().sample))
     self.frame:Show()
 end
 

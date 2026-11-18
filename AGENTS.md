@@ -9,8 +9,8 @@ available at `/home/chadneff/git/hub/wow-ui-source`; inspect `origin/forever` wi
 `live` branch is a different API baseline. Start with
 `Interface/AddOns/Blizzard_APIDocumentationGenerated/` for API shapes.
 
-MediaLab succeeds `../art-gallery` (ArtGallery). It covers icons, textures,
-atlases, sounds, control templates and fonts. Keep it data driven: a media type
+MediaLab covers icons, textures, atlases, sounds, control templates and
+fonts. Keep it data driven: a media type
 is a row in `ML.Kinds` (`kinds.lua`), a provider in `sources.lua` and a snippet
 builder in `snippets.lua`. Prefer the client's own enumeration APIs; the
 generated `data/` files are the fallback. Regenerate them with

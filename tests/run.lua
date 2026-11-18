@@ -241,8 +241,11 @@ test("fonts render the saved sample text", function()
     local preview = ML.UI.inspector.previews.font
     equal(preview.sample.fontObject, _G.SystemFont_Large)
     assert(preview.info:GetText():find("16.0", 1, true))
+    assert(preview.sample:GetText():find("^The quick brown fox"))
+    assert(preview.sample:GetText():find("Lorem ipsum", 1, true))
     preview.input.box:Type("Hello")
-    equal(preview.sample:GetText(), "Hello")
+    assert(preview.sample:GetText():find("^Hello\n\nABC"))
+    assert(preview.sample:GetText():find("laborum.$"))
     equal(ML.db.view.sample, "Hello")
 end)
 

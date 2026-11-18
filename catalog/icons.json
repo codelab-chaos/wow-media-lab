@@ -1,0 +1,411 @@
+{
+ "kind": "icons",
+ "source": {
+  "repository": "wow-ui-source",
+  "ref": "origin/forever",
+  "version": "1.60.1.70888",
+  "commit": "4cd0ab752a77164f654ccbca9d0c1fe8dafceebe"
+ },
+ "count": 133,
+ "items": [
+  {
+   "path": "Interface\\Icons\\Ability_Defend"
+  },
+  {
+   "path": "Interface\\ICONS\\Ability_DragonRiding_Glyph01"
+  },
+  {
+   "path": "Interface\\ICONS\\Ability_DragonRiding_UpwardFlap01"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_DualWield"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_DualWieldSpecialization"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_GhoulFrenzy"
+  },
+  {
+   "path": "Interface\\Icons\\ability_hunter_focusedaim"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_Hunter_Pet_Assist"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_Hunter_Pet_Goto"
+  },
+  {
+   "path": "Interface\\ICONS\\ability_physical_taunt"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_Racial_BloodRage"
+  },
+  {
+   "path": "Interface\\ICONS\\Ability_Racial_JackofAllTrades"
+  },
+  {
+   "path": "Interface\\ICONS\\Ability_Racial_PackHobgoblin"
+  },
+  {
+   "path": "Interface\\Icons\\ability_rogue_feigndeath"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_Seal"
+  },
+  {
+   "path": "Interface\\Icons\\ability_siege_engineer_pattern_recognition"
+  },
+  {
+   "path": "Interface\\ICONS\\Ability_Stealth"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_ThunderClap"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_Tracking"
+  },
+  {
+   "path": "Interface\\Icons\\Ability_Warlock_DemonicPower"
+  },
+  {
+   "path": "Interface\\Icons\\ability_warrior_savageblow"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_arena_2v2_1"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_bg_killxenemies_generalsroom"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_bg_returnxflags_def_wsg"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_bg_wineos_underxminutes"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_bg_winwsg"
+  },
+  {
+   "path": "Interface\\Icons\\Achievement_General_StayClassy"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_guildperk_everybodysfriend"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_guildperk_havegroup willtravel"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_guildperk_honorablemention"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_guildperk_mobilebanking"
+  },
+  {
+   "path": "Interface\\ICONS\\ACHIEVEMENT_GUILDPERK_MOUNTUP"
+  },
+  {
+   "path": "Interface\\icons\\achievement_legionpvp2tier3"
+  },
+  {
+   "path": "Interface\\Icons\\Achievement_LegionPVPTier4"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_pvp_a_16"
+  },
+  {
+   "path": "Interface\\Icons\\Achievement_PVP_A_A"
+  },
+  {
+   "path": "Interface\\Icons\\Achievement_Quests_Completed_06"
+  },
+  {
+   "path": "Interface\\Icons\\Achievement_Quests_Completed_TwilightHighlands"
+  },
+  {
+   "path": "Interface\\Icons\\achievement_reputation_01"
+  },
+  {
+   "path": "Interface\\Icons\\ClassIcon_Hunter"
+  },
+  {
+   "path": "INTERFACE\\ICONS\\crest_"
+  },
+  {
+   "path": "Interface\\Icons\\Garrison_Build"
+  },
+  {
+   "path": "Interface\\Icons\\icon_petfamily_flying"
+  },
+  {
+   "path": "Interface\\Icons\\Icon_Scenarios"
+  },
+  {
+   "path": "Interface\\Icons\\icon_treasuremap"
+  },
+  {
+   "path": "Interface\\Icons\\INV_12PH_ArtisanalRooms"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_ArfusPet_Classic"
+  },
+  {
+   "path": "Interface\\Icons\\INV_AzeriteDebuff"
+  },
+  {
+   "path": "Interface\\Icons\\INV_BannerPVP_01"
+  },
+  {
+   "path": "Interface\\Icons\\INV_BannerPVP_02"
+  },
+  {
+   "path": "Interface\\Icons\\inv_chest_cloth_17"
+  },
+  {
+   "path": "Interface\\icons\\inv_drink_31_embalmingfluid"
+  },
+  {
+   "path": "Interface\\Icons\\inv_enchant_voidsphere"
+  },
+  {
+   "path": "Interface\\Icons\\inv_gizmo_03"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Helmet_08"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_Horse3Saddle008_Chestnut"
+  },
+  {
+   "path": "Interface\\Icons\\Inv_misc_bag_08"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_Misc_Bag_EnchantedRunecloth"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Misc_Bone_Skull_02"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_coin_01"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_coin_02"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Misc_Coin_17"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Misc_Coin_18"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Misc_Coin_19"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_enggizmos_19"
+  },
+  {
+   "path": "INTERFACE\\ICONS\\INV_Misc_Key_05"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_map02"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Misc_Note_02"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_notepicture1c"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Misc_PocketWatch_01"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_Misc_QuestionMark"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_scrollunrolled01"
+  },
+  {
+   "path": "Interface\\Icons\\inv_misc_spyglass_03"
+  },
+  {
+   "path": "Interface\\Icons\\Inv_Misc_Tournaments_banner_Orc"
+  },
+  {
+   "path": "Interface\\ICONS\\inv_misc_toy_10"
+  },
+  {
+   "path": "INTERFACE\\ICONS\\INV_MISC_WRENCH_01"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Obliterum_Ash"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Pet_BattlePetTraining"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Pet_ExitBattle"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Pet_PetTrap"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Pet_SwapPet"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_POTION_114"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_POTION_54"
+  },
+  {
+   "path": "Interface\\Icons\\INV_Scroll_04"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_Shield_1H_NzothRaid_D_01"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_Shirt_GuildTabard_01"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Bank_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Currency_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_GroupBrowsing_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_GroupFinder_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Honor_Alliance_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Honor_Horde_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Professions_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Reputation2_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_Stats_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_ToyBox_c60"
+  },
+  {
+   "path": "Interface\\ICONS\\INV_SideTab_WhoList_c60"
+  },
+  {
+   "path": "Interface\\Icons\\Item_Shop_GiftBox01"
+  },
+  {
+   "path": "Interface\\Icons\\Misc_arrowleft"
+  },
+  {
+   "path": "Interface\\Icons\\Misc_arrowright"
+  },
+  {
+   "path": "Interface\\ICONS\\MountJournalPortrait"
+  },
+  {
+   "path": "Interface\\Icons\\PetJournalPortrait"
+  },
+  {
+   "path": "Interface\\Icons\\PVPCurrency-Honor-Alliance"
+  },
+  {
+   "path": "Interface\\Icons\\PVPCurrency-Honor-Horde"
+  },
+  {
+   "path": "Interface\\Icons\\Sanctum_Features_Gardenweald"
+  },
+  {
+   "path": "Interface\\Icons\\spell_holy_guardianspirit"
+  },
+  {
+   "path": "Interface\\Icons\\Spell_Holy_SealOfSacrifice"
+  },
+  {
+   "path": "Interface\\Icons\\spell_holy_surgeoflight"
+  },
+  {
+   "path": "Interface\\ICONS\\Spell_Magic_PolymorphChicken"
+  },
+  {
+   "path": "Interface\\Icons\\spell_magic_polymorphrabbit"
+  },
+  {
+   "path": "Interface\\Icons\\Spell_Misc_HellifrePVPHonorHoldFavor"
+  },
+  {
+   "path": "Interface\\Icons\\Spell_Nature_TimeStop"
+  },
+  {
+   "path": "Interface\\Icons\\Spell_Shadow_Teleport"
+  },
+  {
+   "path": "Interface\\Icons\\Tracking_WildPet"
+  },
+  {
+   "path": "Interface\\Icons\\Trade_Archaeology_ChestofTinyGlassAnimals"
+  },
+  {
+   "path": "Interface\\ICONS\\TradingPostCurrency"
+  },
+  {
+   "path": "Interface\\Icons\\ui-hud-actionbar-bag"
+  },
+  {
+   "path": "Interface\\ICONS\\ui-hud-actionbar-keyring"
+  },
+  {
+   "path": "Interface\\ICONS\\UI_CampCollection"
+  },
+  {
+   "path": "Interface\\Icons\\UI_Chat"
+  },
+  {
+   "path": "Interface\\ICONS\\UI_Concentration"
+  },
+  {
+   "path": "Interface\\Icons\\UI_GreenFlag"
+  },
+  {
+   "path": "Interface\\Icons\\UI_ItemUpgrade"
+  },
+  {
+   "path": "Interface\\Icons\\UI_LemixGem_White"
+  },
+  {
+   "path": "Interface\\Icons\\UI_PlunderCoins"
+  },
+  {
+   "path": "Interface\\Icons\\UI_Shop"
+  },
+  {
+   "path": "Interface\\ICONS\\UI_Transmog_ShowEquippedGear"
+  },
+  {
+   "path": "Interface\\ICONS\\UI_Warbands"
+  },
+  {
+   "path": "Interface\\Icons\\UI_WarMode"
+  },
+  {
+   "path": "Interface\\ICONS\\Warlock_ Bloodstone"
+  },
+  {
+   "path": "Interface\\ICONS\\Warlock_ Healthstone"
+  },
+  {
+   "path": "Interface\\Icons\\WoW_Store"
+  },
+  {
+   "path": "Interface\\Icons\\XP_Icon"
+  }
+ ]
+}

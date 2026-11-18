@@ -41,6 +41,17 @@ ML.Canvases = {
 
 ML.SoundChannels = {"Master", "SFX", "Music", "Ambience", "Dialog"}
 
+-- Font preview text, top to bottom. The headline is replaced by the user's own
+-- sample when they type one; the rest always follows.
+ML.FontSamples = {
+    headline = "The quick brown fox jumps over the lazy dog.",
+    blocks = {
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789  . , : ; ! ? ' \" ( ) [ ] { } < > + - = * / & % $ # @",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    },
+}
+
 -- Frame types CreateFrame accepts for template previews. Region templates
 -- (textures, font strings, lines) are built with their own constructors.
 ML.RegionTypes = {Texture = "CreateTexture", FontString = "CreateFontString", Line = "CreateLine"}
