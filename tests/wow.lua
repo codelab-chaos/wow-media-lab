@@ -121,6 +121,7 @@ function methods:SetHighlightTexture(value) self.highlight = object("Texture", n
 function methods:GetHighlightTexture() return self.highlight end
 function methods:GetEffectiveScale() return 1 end
 function methods:SetFrameLevel(value) self.frameLevel = value end
+function methods:SetScale(value) self.scale = value end
 function methods:GetFrameLevel() return self.frameLevel or 1 end
 function methods:AddMessage(value) Mock.messages[#Mock.messages + 1] = value end
 

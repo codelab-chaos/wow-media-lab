@@ -70,66 +70,57 @@ local function paintCanvas(stage, id)
 end
 
 ---------------------------------------------------------------------------
--- Images: zoom with the wheel or buttons, drag to pan.
+-- Zoom and pan, shared by previews with a stage. The owner provides
+-- self.stage and Layout(); Layout sets self.fitZoom (and optionally
+-- self.defaultZoom) and draws at CurrentZoom() offset by panX, panY.
 ---------------------------------------------------------------------------
-local Image = {}
-Image.__index = Image
-Previews.image = Image
+local Zoomable = {}
 
-function Image.New(parent)
-    local self = setmetatable({}, Image)
-    self.frame = baseFrame(parent)
-    self.stage = stageFrame(self.frame, 54)
-    self.stage:EnableMouse(true)
-    self.stage:EnableMouseWheel(true)
-    self.art = self.stage:CreateTexture(nil, "ARTWORK")
-    self.message = W.Label(self.stage, "", 11, T.muted)
-    self.message:SetPoint("CENTER")
-    self.stage:SetScript("OnMouseWheel", function(_, delta)
+function Zoomable.Attach(self)
+    self.panX, self.panY = 0, 0
+    local stage = self.stage
+    stage:EnableMouse(true)
+    stage:EnableMouseWheel(true)
+    stage:SetScript("OnMouseWheel", function(_, delta)
         self:SetZoom(self:CurrentZoom() * (delta > 0 and ML.Zoom.step or 1 / ML.Zoom.step))
     end)
-    self.stage:SetScript("OnMouseDown", function()
+    stage:SetScript("OnMouseDown", function()
         local x, y = GetCursorPosition()
         self.drag = {x = x, y = y, panX = self.panX, panY = self.panY}
-        self.stage:SetScript("OnUpdate", function() self:Drag() end)
+        stage:SetScript("OnUpdate", function() self:Drag() end)
     end)
-    self.stage:SetScript("OnMouseUp", function()
+    stage:SetScript("OnMouseUp", function()
         self.drag = nil
-        self.stage:SetScript("OnUpdate", nil)
+        stage:SetScript("OnUpdate", nil)
     end)
-    self.stage:SetScript("OnSizeChanged", function() self:Layout() end)
-    local bar = CreateFrame("Frame", nil, self.frame)
-    bar:SetPoint("BOTTOMLEFT", 0, 28)
-    bar:SetPoint("BOTTOMRIGHT", 0, 28)
-    bar:SetHeight(22)
-    local function tool(text, width, onClick, anchor, tipTitle, tipBody)
+    stage:SetScript("OnSizeChanged", function() self:Layout() end)
+end
+
+-- -, +, 1:1 and Fit buttons on a bar; returns the last one for anchoring.
+function Zoomable.Buttons(self, bar, actualTip)
+    local previous
+    local function tool(text, width, onClick, tipTitle, tipBody)
         local button = W.Button(bar, text, width, onClick, 22)
-        if anchor then button:SetPoint("LEFT", anchor, "RIGHT", 4, 0) else button:SetPoint("LEFT") end
+        if previous then button:SetPoint("LEFT", previous, "RIGHT", 4, 0) else button:SetPoint("LEFT") end
         if tipTitle then W.Tip(button, tipTitle, tipBody) end
+        previous = button
         return button
     end
-    local out = tool("-", 24, function() self:SetZoom(self:CurrentZoom() / ML.Zoom.step) end, nil, "Zoom out")
-    local zoomIn = tool("+", 24, function() self:SetZoom(self:CurrentZoom() * ML.Zoom.step) end, out, "Zoom in")
-    local actual = tool("1:1", 34, function() self:SetZoom(1) end, zoomIn, "Actual size", "One texture pixel per UI unit (assumed size for file textures).")
-    local fit = tool("Fit", 34, function() self.zoom = nil; self.panX, self.panY = 0, 0; self:Layout() end, actual, "Fit to the stage")
-    self.canvasButton = tool("Dark", 62, function()
-        view().canvas = nextIn(ML.Canvases, view().canvas or "Dark", "id")
-        self:Layout()
-    end, fit, "Canvas", "Cycle the background to inspect transparency.")
+    tool("-", 24, function() self:SetZoom(self:CurrentZoom() / ML.Zoom.step) end, "Zoom out", "Or use the mouse wheel.")
+    tool("+", 24, function() self:SetZoom(self:CurrentZoom() * ML.Zoom.step) end, "Zoom in", "Or use the mouse wheel.")
+    tool("1:1", 34, function() self:SetZoom(1) end, "Actual size", actualTip)
+    tool("Fit", 34, function() self:Fit() end, "Fit to the stage", "Drag the stage to pan.")
     self.zoomLabel = W.Label(bar, "", 11, T.muted)
     self.zoomLabel:SetPoint("RIGHT", -2, 0)
-    self.note = W.Label(self.frame, "", 10, T.muted)
-    self.note:SetPoint("BOTTOMLEFT", 1, 10)
-    self.note:SetPoint("BOTTOMRIGHT", -1, 10)
-    self.panX, self.panY = 0, 0
-    return self
+    return previous
 end
 
-function Image:CurrentZoom()
-    return self.zoom or self.fitZoom or 1
+-- Explicit zoom, else Fit when asked, else the owner's default, else fit.
+function Zoomable:CurrentZoom()
+    return self.zoom or (self.fitting and self.fitZoom) or self.defaultZoom or self.fitZoom or 1
 end
 
-function Image:SetZoom(value)
+function Zoomable:SetZoom(value)
     local before = self:CurrentZoom()
     self.zoom = W.Clamp(value, ML.Zoom.min, ML.Zoom.max)
     -- Keep the point under the stage center fixed while zooming.
@@ -138,7 +129,16 @@ function Image:SetZoom(value)
     self:Layout()
 end
 
-function Image:Drag()
+function Zoomable:Fit()
+    self.zoom, self.fitting, self.panX, self.panY = nil, true, 0, 0
+    self:Layout()
+end
+
+function Zoomable:ResetView()
+    self.zoom, self.fitting, self.panX, self.panY = nil, false, 0, 0
+end
+
+function Zoomable:Drag()
     if not self.drag then return end
     local x, y = GetCursorPosition()
     local scale = self.stage:GetEffectiveScale()
@@ -147,10 +147,51 @@ function Image:Drag()
     self:Layout()
 end
 
-function Image:Show(entry)
-    if not self.entry or self.entry.key ~= entry.key then
-        self.zoom, self.panX, self.panY = nil, 0, 0
+function Zoomable:ZoomText()
+    return string.format("%d%%%s", math.floor(self:CurrentZoom() * 100 + 0.5), self.zoom and "" or "  fit")
+end
+
+local function mixin(target)
+    for name, fn in pairs(Zoomable) do
+        if name ~= "Attach" and name ~= "Buttons" then target[name] = fn end
     end
+end
+
+---------------------------------------------------------------------------
+-- Images: zoom with the wheel or buttons, drag to pan.
+---------------------------------------------------------------------------
+local Image = {}
+Image.__index = Image
+Previews.image = Image
+mixin(Image)
+
+function Image.New(parent)
+    local self = setmetatable({}, Image)
+    self.frame = baseFrame(parent)
+    self.stage = stageFrame(self.frame, 54)
+    self.art = self.stage:CreateTexture(nil, "ARTWORK")
+    self.message = W.Label(self.stage, "", 11, T.muted)
+    self.message:SetPoint("CENTER")
+    Zoomable.Attach(self)
+    local bar = CreateFrame("Frame", nil, self.frame)
+    bar:SetPoint("BOTTOMLEFT", 0, 28)
+    bar:SetPoint("BOTTOMRIGHT", 0, 28)
+    bar:SetHeight(22)
+    local fit = Zoomable.Buttons(self, bar, "One texture pixel per UI unit (assumed size for file textures).")
+    self.canvasButton = W.Button(bar, "Dark", 62, function()
+        view().canvas = nextIn(ML.Canvases, view().canvas or "Dark", "id")
+        self:Layout()
+    end, 22)
+    self.canvasButton:SetPoint("LEFT", fit, "RIGHT", 4, 0)
+    W.Tip(self.canvasButton, "Canvas", "Cycle the background to inspect transparency.")
+    self.note = W.Label(self.frame, "", 10, T.muted)
+    self.note:SetPoint("BOTTOMLEFT", 1, 10)
+    self.note:SetPoint("BOTTOMRIGHT", -1, 10)
+    return self
+end
+
+function Image:Show(entry)
+    if not self.entry or self.entry.key ~= entry.key then self:ResetView() end
     self.entry = entry
     self.frame:Show()
     self:Layout()
@@ -174,7 +215,7 @@ function Image:Layout()
     self.art:SetSize(math.max(1, width * zoom), math.max(1, height * zoom))
     self.art:ClearAllPoints()
     self.art:SetPoint("CENTER", self.stage, "CENTER", self.panX, self.panY)
-    self.zoomLabel:SetText(string.format("%d%%%s", math.floor(zoom * 100 + 0.5), self.zoom and "" or "  fit"))
+    self.zoomLabel:SetText(self:ZoomText())
     if exact then
         self.note:SetText(string.format("%d x %d native  /  file %s", width, height, tostring(info.file or info.filename or "?")))
     else
@@ -268,13 +309,22 @@ function Sound:Hide() self.frame:Hide() end
 local Control = {}
 Control.__index = Control
 Previews.control = Control
+mixin(Control)
 
 function Control.New(parent)
     local self = setmetatable({instances = {}}, Control)
     self.frame = baseFrame(parent)
-    self.stage = stageFrame(self.frame, 92)
+    self.stage = stageFrame(self.frame, 120)
+    -- Built instances live in the holder; zoom scales it, pan moves it.
     self.holder = CreateFrame("Frame", nil, self.stage)
-    self.holder:SetAllPoints()
+    self.holder:SetSize(1, 1)
+    self.holder:SetPoint("CENTER")
+    Zoomable.Attach(self)
+    local bar = CreateFrame("Frame", nil, self.frame)
+    bar:SetPoint("BOTTOMLEFT", 0, 92)
+    bar:SetPoint("BOTTOMRIGHT", 0, 92)
+    bar:SetHeight(22)
+    Zoomable.Buttons(self, bar, "The control at its own size.")
     self.message = W.Label(self.stage, "", 11, T.muted)
     self.message:SetPoint("CENTER")
     self.message:SetJustifyH("CENTER")
@@ -318,6 +368,8 @@ function Control:Show(entry)
     if source then lines[#lines + 1] = "Source: " .. source end
     if info and info.keyValues and #info.keyValues > 0 then lines[#lines + 1] = #info.keyValues .. " key values" end
     self.info:SetText(table.concat(lines, "\n"))
+    if not self.entry or self.shownKey ~= entry.key then self:ResetView() end
+    self.shownKey = entry.key
     local existing = self.instances[entry.key]
     local buildable = not ML.UnbuildableTypes[entry.tag or "Frame"]
     self.build:SetEnabled(buildable and not existing)
@@ -328,6 +380,29 @@ function Control:Show(entry)
         self.message:SetText(buildable and "Press Build preview to create a live instance." or "This template type has no visual preview.")
     end
     self.frame:Show()
+    self:Layout()
+end
+
+-- Scales and positions the holder around the shown instance. Opens at actual
+-- size, shrunk to fit when larger than the stage; Fit fills the stage.
+function Control:Layout()
+    local widget = self.entry and self.instances[self.entry.key]
+    if not widget then
+        self.holder:SetScale(1)
+        self.fitZoom, self.defaultZoom = nil, nil
+        self.zoomLabel:SetText("")
+        return
+    end
+    local width, height = math.max(1, widget:GetWidth() or 1), math.max(1, widget:GetHeight() or 1)
+    local stageWidth, stageHeight = math.max(1, self.stage:GetWidth() - 16), math.max(1, self.stage:GetHeight() - 16)
+    self.fitZoom = W.Clamp(math.min(stageWidth / width, stageHeight / height), ML.Zoom.min, ML.Zoom.max)
+    self.defaultZoom = math.min(1, self.fitZoom)
+    local zoom = self:CurrentZoom()
+    self.holder:SetScale(zoom)
+    -- Offsets on a scaled frame are in its own units.
+    self.holder:ClearAllPoints()
+    self.holder:SetPoint("CENTER", self.stage, "CENTER", self.panX / zoom, self.panY / zoom)
+    self.zoomLabel:SetText(self:ZoomText())
 end
 
 local samples = {
@@ -369,6 +444,7 @@ function Control:Build()
     self.instances[entry.key] = widget
     self.build:SetEnabled(false)
     self.message:SetText("")
+    self:Layout()
     return widget
 end
 

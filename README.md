@@ -60,6 +60,9 @@ Click an entry to inspect it. Right-click it, or press **Favorite**, to save it.
   sound obeys. **Auto-play** plays each sound as you select it. Rows also have
   their own Play button.
 - **Controls:** **Build preview** creates one live instance of the template.
+  It opens at actual size (shrunk to fit if larger than the stage); zoom with
+  the mouse wheel or **-**/**+**, **1:1** for actual size, **Fit** to fill the
+  stage, and drag the stage to pan.
   WoW cannot delete frames, so each template is built once per session and
   reused. Building runs the template's own scripts. Some templates expect a
   parent or data that a preview cannot supply and may report a Lua error.
