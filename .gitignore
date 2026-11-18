@@ -1,0 +1,6 @@
+.deploy-target
+dist/
+__pycache__/
+*.pyc
+*.swp
+

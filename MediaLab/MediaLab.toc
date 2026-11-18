@@ -1,0 +1,28 @@
+## Interface: 16001
+## Title: MediaLab
+## Notes: A catalog of the icons, textures, atlases, sounds, controls and fonts your addons can use.
+## Author: Wizwonk
+## Version: 0.1.0
+## X-License: MIT
+## AllowLoadGameType: forever
+## ExcludeLoadGameType: standard, classic
+## Category: Development Tools
+## IconTexture: Interface\Icons\inv_misc_spyglass_03
+## SavedVariables: MediaLabDB
+## AddonCompartmentFunc: MediaLab_OnAddonCompartmentClick
+
+core.lua
+kinds.lua
+data\featured.lua
+data\art.lua
+data\sounds.lua
+data\templates.lua
+sources.lua
+catalog.lua
+snippets.lua
+ui\widgets.lua
+ui\art.lua
+ui\browser.lua
+ui\previews.lua
+ui\inspector.lua
+ui\window.lua

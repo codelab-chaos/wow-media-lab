@@ -1,0 +1,93 @@
+import importlib.util
+from pathlib import Path
+import re
+import unittest
+from zipfile import ZipFile
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, ROOT / path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+catalog = load("catalog", "scripts/build-catalog.py")
+packaging = load("packaging", "scripts/package.py")
+
+
+class ExtractionTests(unittest.TestCase):
+    def test_art_from_lua_and_xml(self):
+        paths, atlases = catalog.extract_art(r'''
+            local path = "Interface\\Tooltips\\UI-Tooltip-Background"
+            local other = [[Interface\Buttons\WHITE8X8]]
+            texture:SetAtlas("test-atlas")
+        ''')
+        self.assertEqual(paths, {r"Interface\Tooltips\UI-Tooltip-Background", r"Interface\Buttons\WHITE8X8"})
+        self.assertEqual(atlases, {"test-atlas"})
+        _, atlases = catalog.extract_art('<Texture atlas="xml-atlas"/>', True)
+        self.assertEqual(atlases, {"xml-atlas"})
+
+    def test_rejects_dynamic_paths_and_code_files(self):
+        for value in ["Interface\\", r"Interface\Icons\%s", "Interface/Scripts/File.lua"]:
+            self.assertIsNone(catalog.texture_path(value), value)
+
+    def test_sound_kits(self):
+        rows = catalog.extract_sounds("SOUNDKIT = {\n\tIG_MAINMENU_OPEN = 850,\n\tlower_case = 1,\n\tUI_X = 7,\n}")
+        self.assertEqual(rows, [("IG_MAINMENU_OPEN", 850), ("UI_X", 7)])
+
+    def test_templates_need_virtual_and_a_plain_name(self):
+        rows = catalog.extract_templates('''
+            <Button name="GoodTemplate" inherits="UIPanelButtonTemplate" virtual="true"/>
+            <Frame name="$parentChild" virtual="true"/>
+            <Frame name="NotVirtual"/>
+            <Font name="GameFontTest" virtual="true"><Shadow/></Font>
+        ''')
+        self.assertEqual(rows, [("GoodTemplate", "Button", "UIPanelButtonTemplate"), ("GameFontTest", "Font", "")])
+
+    def test_mainline_definitions_beat_classic_overrides(self):
+        self.assertLess(catalog.source_rank("Blizzard_X/Mainline/A.xml"), catalog.source_rank("Blizzard_X/Classic/A.xml"))
+
+
+class GeneratedDataTests(unittest.TestCase):
+    """The curated Common lists must name things the generated catalog knows."""
+
+    def names(self, path, table):
+        text = (ROOT / path).read_text()
+        block = re.search(rf"ML\.{table} = \{{(.*?)\n\}}", text, re.S).group(1)
+        return set(re.findall(r'^\s*\{"([^"]+)"', block, re.M))
+
+    def common(self, kind):
+        text = (ROOT / "MediaLab/data/featured.lua").read_text()
+        block = re.search(rf"\b{kind} = \{{(.*?)\}}", text, re.S).group(1)
+        return set(re.findall(r'"([^"]+)"', block))
+
+    def test_common_names_exist(self):
+        checks = {
+            "control": self.names("MediaLab/data/templates.lua", "Templates"),
+            "sound": self.names("MediaLab/data/sounds.lua", "SoundKits"),
+            "font": self.names("MediaLab/data/templates.lua", "FontTemplates"),
+        }
+        for kind, known in checks.items():
+            self.assertTrue(known, kind)
+            self.assertEqual(self.common(kind) - known, set(), kind)
+
+
+class PackagingTests(unittest.TestCase):
+    def test_zip_has_manifest_and_exactly_its_declared_files(self):
+        output = packaging.package()
+        toc = (ROOT / "MediaLab/MediaLab.toc").read_text()
+        expected = {"MediaLab/MediaLab.toc", "MediaLab/LICENSE"}
+        expected.update("MediaLab/" + line.replace("\\", "/") for line in toc.splitlines() if line and not line.startswith("#"))
+        with ZipFile(output) as archive:
+            self.assertEqual(set(archive.namelist()), expected)
+            self.assertIsNone(archive.testzip())
+            for name in expected:
+                source = ROOT / "LICENSE" if name == "MediaLab/LICENSE" else ROOT / name
+                self.assertEqual(archive.read(name), source.read_bytes())
+
+
+if __name__ == "__main__":
+    unittest.main()

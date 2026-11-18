@@ -1,0 +1,245 @@
+local _, ML = ...
+
+-- The results area: renders a slice of entries as a thumbnail grid or a list,
+-- reusing a small pool of cells. It reports clicks; it does not own state.
+local W = ML.Widgets
+local T = W.theme
+local Browser = {}
+Browser.__index = Browser
+ML.Browser = Browser
+
+local GAP, ROW = 6, 22
+
+-- handlers: onSelect(entry), onFavorite(entry), onPlay(entry), onChanged()
+function Browser.New(parent, handlers)
+    local self = setmetatable({handlers = handlers, offset = 0, results = {}, cells = {}, rows = {}}, Browser)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetClipsChildren(true)
+    frame:EnableMouseWheel(true)
+    frame:SetScript("OnMouseWheel", function(_, delta) self:Scroll(-delta * self:Step()) end)
+    frame:SetScript("OnSizeChanged", function() self:Render() end)
+    self.frame = frame
+    self.empty = W.Label(frame, "", 12, T.muted)
+    self.empty:SetPoint("CENTER")
+    self.empty:SetJustifyH("CENTER")
+    self.empty:SetWordWrap(true)
+    self.empty:SetWidth(320)
+    return self
+end
+
+function Browser:SetData(results, layout, selectedKey)
+    self.results, self.layout, self.selectedKey = results, layout, selectedKey
+    self:Render()
+end
+
+function Browser:SetSelected(key)
+    self.selectedKey = key
+    self:Render()
+end
+
+function Browser:ResetScroll() self.offset = 0 end
+
+function Browser:Geometry()
+    local width, height = self.frame:GetWidth(), self.frame:GetHeight()
+    local layout = self.layout or {mode = "rows"}
+    if layout.mode == "grid" then
+        local cell = math.floor(layout.cell * (layout.scale or 1))
+        local cellHeight = cell + (layout.caption and 16 or 0)
+        local columns = math.max(1, math.floor((width + GAP) / (cell + GAP)))
+        local rows = math.max(1, math.floor((height + GAP) / (cellHeight + GAP)))
+        return columns, rows, cell, cellHeight
+    end
+    return 1, math.max(1, math.floor(height / ROW)), width, ROW
+end
+
+function Browser:PageSize()
+    local columns, rows = self:Geometry()
+    return columns * rows
+end
+
+function Browser:Step()
+    local columns = self:Geometry()
+    return self.layout and self.layout.mode == "grid" and columns or 3
+end
+
+function Browser:Scroll(amount)
+    local size, count = self:PageSize(), #self.results
+    local columns = self:Geometry()
+    local maxOffset = math.max(0, math.ceil((count - size) / columns) * columns)
+    self.offset = W.Clamp(self.offset + amount, 0, maxOffset)
+    self:Render()
+end
+
+function Browser:Page(direction) self:Scroll(direction * self:PageSize()) end
+
+local function onCellClick(cell, mouse)
+    local self, entry = cell.browser, cell.entry
+    if not entry then return end
+    if mouse == "RightButton" then self.handlers.onFavorite(entry) else self.handlers.onSelect(entry) end
+end
+
+local function onCellEnter(cell)
+    local entry = cell.entry
+    if not entry then return end
+    GameTooltip:SetOwner(cell, "ANCHOR_RIGHT")
+    GameTooltip:SetText(entry.name, unpack(T.accent))
+    if tostring(entry.value) ~= entry.name then GameTooltip:AddLine(tostring(entry.value), 0.85, 0.88, 0.93, true) end
+    if entry.id and entry.id ~= entry.value then GameTooltip:AddLine("ID " .. entry.id, 0.85, 0.88, 0.93) end
+    GameTooltip:AddLine(table.concat(entry.facets, ", "), unpack(T.muted))
+    GameTooltip:AddLine("Click to inspect  /  Right-click to favorite", 0.6, 0.6, 0.6)
+    GameTooltip:Show()
+end
+
+function Browser:Cell(index)
+    local cell = self.cells[index]
+    if cell then return cell end
+    cell = CreateFrame("Button", nil, self.frame, "BackdropTemplate")
+    cell.browser = self
+    cell:SetBackdrop({bgFile = W.WHITE, edgeFile = W.WHITE, edgeSize = 1})
+    cell:SetBackdropColor(unpack(T.field))
+    cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    cell:SetHighlightTexture(W.WHITE)
+    cell:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.06)
+    cell.art = cell:CreateTexture(nil, "ARTWORK")
+    cell.art:SetPoint("CENTER", cell, "TOP", 0, 0)
+    cell.caption = W.Label(cell, "", 10, T.muted)
+    cell.caption:SetPoint("BOTTOMLEFT", 4, 3)
+    cell.caption:SetPoint("BOTTOMRIGHT", -4, 3)
+    cell.star = W.Label(cell, "*", 14, T.accent)
+    cell.star:SetPoint("TOPRIGHT", -3, -1)
+    cell.missing = W.Label(cell, "?", 14, T.muted)
+    cell.missing:SetPoint("CENTER")
+    cell:SetScript("OnClick", onCellClick)
+    cell:SetScript("OnEnter", onCellEnter)
+    cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    self.cells[index] = cell
+    return cell
+end
+
+function Browser:Row(index)
+    local row = self.rows[index]
+    if row then return row end
+    row = CreateFrame("Button", nil, self.frame)
+    row.browser = self
+    row:SetHeight(ROW)
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row.base = W.Fill(row, {1, 1, 1, 0.025})
+    row:SetHighlightTexture(W.WHITE)
+    row:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
+    row.play = W.Button(row, "Play", 36, function() if row.entry then self.handlers.onPlay(row.entry) end end, 18)
+    row.play:SetPoint("LEFT", 2, 0)
+    row.art = row:CreateTexture(nil, "ARTWORK")
+    row.art:SetSize(18, 18)
+    row.name = W.Label(row, "", 11)
+    row.detail = W.Label(row, "", 10, T.muted)
+    row.detail:SetPoint("RIGHT", -18, 0)
+    row.detail:SetJustifyH("RIGHT")
+    row.detail:SetWidth(170)
+    row.name:SetPoint("RIGHT", row.detail, "LEFT", -8, 0)
+    row.star = W.Label(row, "*", 13, T.accent)
+    row.star:SetPoint("RIGHT", -5, 0)
+    row:SetScript("OnClick", onCellClick)
+    row:SetScript("OnEnter", onCellEnter)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    self.rows[index] = row
+    return row
+end
+
+local function detailText(entry, mixed)
+    if mixed then return ML.KindById[entry.kind].label end
+    if entry.kind == "sound" then return "ID " .. tostring(entry.id) end
+    if entry.kind == "control" then return entry.tag or "" end
+    return entry.facets[1] or ""
+end
+
+function Browser:RenderGrid(first, size)
+    local columns, _, cell, cellHeight = self:Geometry()
+    for index = 1, size do
+        local entry = self.results[first + index]
+        local frame = self:Cell(index)
+        frame.entry = entry
+        frame:SetShown(entry ~= nil)
+        if entry then
+            local column, line = (index - 1) % columns, math.floor((index - 1) / columns)
+            frame:ClearAllPoints()
+            frame:SetPoint("TOPLEFT", column * (cell + GAP), -line * (cellHeight + GAP))
+            frame:SetSize(cell, cellHeight)
+            frame:SetBackdropBorderColor(unpack(entry.key == self.selectedKey and T.selected or T.border))
+            frame.art:ClearAllPoints()
+            frame.art:SetPoint("CENTER", frame, "TOP", 0, -cell / 2)
+            local loaded = ML.Art.Fit(frame.art, entry, cell - 8, cell - 8, true)
+            frame.missing:SetShown(not loaded)
+            frame.caption:SetShown(self.layout.caption == true)
+            frame.caption:SetText(entry.name)
+            frame.star:SetShown(ML.Catalog:IsFavorite(entry))
+        end
+    end
+    for index = size + 1, #self.cells do self.cells[index]:Hide() end
+    for _, row in ipairs(self.rows) do row:Hide() end
+end
+
+function Browser:RenderRows(first, size)
+    local mixed = self.layout.mixed
+    for index = 1, size do
+        local entry = self.results[first + index]
+        local row = self:Row(index)
+        row.entry = entry
+        row:SetShown(entry ~= nil)
+        if entry then
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", 0, -(index - 1) * ROW)
+            row:SetPoint("TOPRIGHT", 0, -(index - 1) * ROW)
+            row.base:SetShown(index % 2 == 0)
+            local visual = ML.KindById[entry.kind].visual
+            local playable = entry.kind == "sound"
+            row.play:SetShown(playable)
+            row.art:ClearAllPoints()
+            row.art:SetPoint("LEFT", playable and 42 or 4, 0)
+            if visual then
+                row.art:SetShown(ML.Art.Fit(row.art, entry, 18, 18, true))
+            else
+                ML.Art.Reset(row.art)
+            end
+            row.name:ClearAllPoints()
+            row.name:SetPoint("LEFT", (playable and 42 or 6) + (visual and 24 or 0), 0)
+            row.name:SetPoint("RIGHT", row.detail, "LEFT", -8, 0)
+            row.name:SetText(entry.name)
+            row.name:SetTextColor(unpack(entry.key == self.selectedKey and T.accent or T.text))
+            row.detail:SetText(detailText(entry, mixed))
+            row.star:SetShown(ML.Catalog:IsFavorite(entry))
+        end
+    end
+    for index = size + 1, #self.rows do self.rows[index]:Hide() end
+    for _, cell in ipairs(self.cells) do cell:Hide() end
+end
+
+function Browser:Render()
+    if not self.layout or self.frame:GetWidth() < 10 then return end
+    local size, count = self:PageSize(), #self.results
+    local columns = self:Geometry()
+    self.offset = W.Clamp(self.offset, 0, math.max(0, math.ceil((count - size) / columns) * columns))
+    if self.layout.mode == "grid" then self:RenderGrid(self.offset, size) else self:RenderRows(self.offset, size) end
+    self.empty:SetShown(count == 0)
+    self.empty:SetText(self.layout.emptyText or "Nothing matches.")
+    if self.handlers.onChanged then self.handlers.onChanged() end
+end
+
+function Browser:Range()
+    local count = #self.results
+    if count == 0 then return 0, 0, 0 end
+    return self.offset + 1, math.min(count, self.offset + self:PageSize()), count
+end
+
+-- Moves the view so the given entry is visible (used after jumping to a result).
+function Browser:Reveal(entry)
+    for index, candidate in ipairs(self.results) do
+        if candidate == entry then
+            local size, columns = self:PageSize(), self:Geometry()
+            if index <= self.offset or index > self.offset + size then
+                self.offset = math.floor((index - 1) / columns) * columns
+            end
+            break
+        end
+    end
+    self:Render()
+end
