@@ -143,6 +143,12 @@ first line of the ignored `.deploy-target`, then run `scripts/deploy.sh`
 leaves saved variables alone. `/reload` is enough after editing existing Lua
 files; restart the client after adding files or changing the `.toc`.
 
+To cut a release, run `python3 scripts/release.py <version>`. Add
+`--interface <number>` when a patch changes it, and `--fetch` to update the UI
+source first. It bumps the `.toc` and README, regenerates the catalog (and the
+README's counts), runs every check and packages both zips. It never commits or
+deploys.
+
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
 Visit every tab, search and filter, zoom and pan an atlas and a texture, play
 and stop a sound, change its channel, build `UIPanelButtonTemplate` from

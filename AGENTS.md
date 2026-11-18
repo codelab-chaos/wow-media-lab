@@ -26,6 +26,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 scripts/package.py
 ```
 
+Releases: `python3 scripts/release.py <version> [--interface N] [--fetch]`.
+
 The Lua tests load the real TOC against a strict mock in `tests/wow.lua`; add
 any new widget method there when the addon starts using it.
 

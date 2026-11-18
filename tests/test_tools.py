@@ -16,6 +16,7 @@ def load(name, path):
 
 catalog = load("catalog", "scripts/build-catalog.py")
 packaging = load("packaging", "scripts/package.py")
+release = load("release", "scripts/release.py")
 
 
 class ExtractionTests(unittest.TestCase):
@@ -104,6 +105,23 @@ class JsonCatalogTests(unittest.TestCase):
         with ZipFile(packaging.package_catalog()) as archive:
             self.assertEqual(set(archive.namelist()),
                              {f"MediaLab-catalog/{kind}.json" for kind in self.KINDS} | {"MediaLab-catalog/LICENSE"})
+
+
+class ReleaseTests(unittest.TestCase):
+    def test_bumps_only_the_version_and_interface_lines(self):
+        toc = "## Interface: 16001\n## Title: MediaLab\n## Version: 0.1.0\ncore.lua\n"
+        self.assertEqual(release.bump_toc(toc, "0.2.0"), toc.replace("0.1.0", "0.2.0"))
+        bumped = release.bump_toc(toc, "0.2.0", "16002")
+        self.assertIn("## Interface: 16002", bumped)
+        readme = "interface **16001**. Version **0.1.0**.\n`dist/MediaLab-0.1.0.zip`"
+        self.assertEqual(release.bump_readme(readme, "0.1.0", "0.2.0", "16002"),
+                         "interface **16002**. Version **0.2.0**.\n`dist/MediaLab-0.2.0.zip`")
+
+    def test_readme_catalog_facts_match_the_json(self):
+        readme = (ROOT / "README.md").read_text()
+        self.assertEqual(release.sync_catalog_facts(readme, release.load_catalog()), readme)
+        stale = readme.replace("- 888 `SOUNDKIT`", "- 1 `SOUNDKIT`")
+        self.assertEqual(release.sync_catalog_facts(stale, release.load_catalog()), readme)
 
 
 if __name__ == "__main__":
