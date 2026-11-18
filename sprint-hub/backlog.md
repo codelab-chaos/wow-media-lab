@@ -22,6 +22,14 @@ but nothing here is built for or depends on them.
   through CASC so atlases can be cut without a client export. Useful for the
   HTML library. Complexity: unknown.
 
+- **zip4d-motion** (proposal, owner to decide): bring zip4d's container
+  conventions (`../../codelab/zip4d/docs/vision.md`) to the lab, as behavior
+  rather than code (zip4d is TypeScript): momentum scrolling with exponential
+  decay and a settle rule, pixel-smooth row offsets, scrollbar release
+  carrying velocity, Ctrl+wheel for continuous thumbnail zoom that scales
+  cells around their centers then settles, and preview zoom anchored on the
+  pointer. A **Motion** setting keeps an instant option. Complexity: medium.
+
 ### On hold (owner, 2026-11-18)
 
 - ArtGallery-era preview features: inspect your own reference, Stretch, Tile

@@ -9,6 +9,8 @@ Browser.__index = Browser
 ML.Browser = Browser
 
 local GAP, ROW = 6, 22
+-- The scrollbar's width plus its gap from the cells.
+local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
 -- handlers: onSelect(entry), onFavorite(entry), onPlay(entry), onChanged()
 function Browser.New(parent, handlers)
@@ -24,7 +26,81 @@ function Browser.New(parent, handlers)
     self.empty:SetJustifyH("CENTER")
     self.empty:SetWordWrap(true)
     self.empty:SetWidth(320)
+    self:CreateScrollbar()
     return self
+end
+
+-- A thin track on the right: the thumb shows where the page is and how much of
+-- the list it covers. Drag the thumb, or click the track to page.
+function Browser:CreateScrollbar()
+    local track = CreateFrame("Button", nil, self.frame)
+    track:SetPoint("TOPRIGHT", 0, 0)
+    track:SetPoint("BOTTOMRIGHT", 0, 0)
+    track:SetWidth(BAR)
+    track:RegisterForClicks("LeftButtonUp")
+    W.Fill(track, {1, 1, 1, 0.04})
+    track:SetScript("OnClick", function()
+        local _, y = GetCursorPosition()
+        local scale = track:GetEffectiveScale()
+        local thumbTop = self.thumb:GetTop() or 0
+        self:Page(y / scale > thumbTop and -1 or 1)
+    end)
+    local thumb = CreateFrame("Button", nil, track)
+    thumb:SetWidth(BAR)
+    thumb.fill = W.Fill(thumb, T.border)
+    thumb:SetScript("OnEnter", function() thumb.fill:SetColorTexture(unpack(T.accent)) end)
+    thumb:SetScript("OnLeave", function() if not self.dragging then thumb.fill:SetColorTexture(unpack(T.border)) end end)
+    thumb:SetScript("OnMouseDown", function()
+        local _, y = GetCursorPosition()
+        self.dragging = {y = y / thumb:GetEffectiveScale(), row = self:FirstRow()}
+        thumb:SetScript("OnUpdate", function() self:DragThumb() end)
+    end)
+    thumb:SetScript("OnMouseUp", function()
+        self.dragging = nil
+        thumb:SetScript("OnUpdate", nil)
+        thumb.fill:SetColorTexture(unpack(T.border))
+    end)
+    self.track, self.thumb = track, thumb
+end
+
+function Browser:FirstRow()
+    local columns = self:Geometry()
+    return math.floor(self.offset / columns)
+end
+
+-- Rows in the list, rows that fit, and the furthest first row.
+function Browser:RowSpan()
+    local columns, rows = self:Geometry()
+    local total = math.ceil(#self.results / columns)
+    return total, rows, math.max(0, total - rows)
+end
+
+function Browser:DragThumb()
+    if not self.dragging then return end
+    local _, y = GetCursorPosition()
+    local total, _, maxRow = self:RowSpan()
+    local travel = self.track:GetHeight() - self.thumb:GetHeight()
+    if travel <= 0 or maxRow == 0 then return end
+    local moved = self.dragging.y - y / self.thumb:GetEffectiveScale()
+    local row = W.Clamp(math.floor(self.dragging.row + moved / travel * maxRow + 0.5), 0, maxRow)
+    local columns = self:Geometry()
+    if row * columns ~= self.offset then
+        self.offset = row * columns
+        self:Render()
+    end
+end
+
+function Browser:UpdateScrollbar()
+    local total, rows, maxRow = self:RowSpan()
+    local show = total > rows
+    self.track:SetShown(show)
+    if not show then return end
+    local height = self.track:GetHeight()
+    local thumbHeight = math.max(MIN_THUMB, height * rows / total)
+    local y = maxRow > 0 and (height - thumbHeight) * self:FirstRow() / maxRow or 0
+    self.thumb:SetHeight(thumbHeight)
+    self.thumb:ClearAllPoints()
+    self.thumb:SetPoint("TOPLEFT", self.track, "TOPLEFT", 0, -y)
 end
 
 function Browser:SetData(results, layout, selectedKey)
@@ -40,7 +116,8 @@ end
 function Browser:ResetScroll() self.offset = 0 end
 
 function Browser:Geometry()
-    local width, height = self.frame:GetWidth(), self.frame:GetHeight()
+    -- The scrollbar's lane is always reserved so the layout never jumps.
+    local width, height = self.frame:GetWidth() - BAR - BAR_GAP, self.frame:GetHeight()
     local layout = self.layout or {mode = "rows"}
     if layout.mode == "grid" then
         local cell = math.floor(layout.cell * (layout.scale or 1))
@@ -190,7 +267,7 @@ function Browser:RenderRows(first, size)
         if entry then
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", 0, -(index - 1) * ROW)
-            row:SetPoint("TOPRIGHT", 0, -(index - 1) * ROW)
+            row:SetPoint("TOPRIGHT", -(BAR + BAR_GAP), -(index - 1) * ROW)
             row.base:SetShown(index % 2 == 0)
             local visual = ML.KindById[entry.kind].visual
             local playable = entry.kind == "sound"
@@ -221,6 +298,7 @@ function Browser:Render()
     local columns = self:Geometry()
     self.offset = W.Clamp(self.offset, 0, math.max(0, math.ceil((count - size) / columns) * columns))
     if self.layout.mode == "grid" then self:RenderGrid(self.offset, size) else self:RenderRows(self.offset, size) end
+    self:UpdateScrollbar()
     self.empty:SetShown(count == 0)
     self.empty:SetText(self.layout.emptyText or "Nothing matches.")
     if self.handlers.onChanged then self.handlers.onChanged() end

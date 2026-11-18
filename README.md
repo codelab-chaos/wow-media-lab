@@ -42,7 +42,9 @@ it, and press **_** to minimize it to its title bar. Escape closes it.
   atlas prefix, sound prefix (`IG`, `UI`, ...), widget type (Button, EditBox,
   Slider, ...) or font family. **Common** is a hand-picked starter set. Scroll
   the column with the mouse wheel when it is long.
-- **Size** cycles the thumbnail zoom on grid tabs. The wheel scrolls results.
+- **Size** cycles the thumbnail zoom on grid tabs. The wheel scrolls results,
+  and the scrollbar on the right shows where you are: drag its thumb, or click
+  the track to page.
 - **CSV** (or `/mlab csv`) shows the current results as CSV to copy, up to
   500 rows. Each tab has its own columns (atlases include size and texture
   coordinates, controls their type and size, fonts their file and size).

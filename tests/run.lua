@@ -246,6 +246,41 @@ test("built controls open at actual size, zoom, fit and pan, and reset per templ
     assert(preview:CurrentZoom() < 1, "large controls shrink to fit by default")
 end)
 
+test("the scrollbar shows position and size, drags and pages", function()
+    local ML = open()
+    ML.UI:SelectTab("sound")
+    local browser = ML.UI.browser
+    local entries = {}
+    for index = 1, 500 do
+        entries[index] = {key = "sound:fake" .. index, kind = "sound", name = "FAKE_" .. index, value = "FAKE_" .. index,
+            id = index, facets = {"Fake"}}
+    end
+    browser:SetData(entries, {mode = "rows"})
+    local total, rows, maxRow = browser:RowSpan()
+    equal(total, 500)
+    assert(browser.track:IsShown(), "long lists show the scrollbar")
+    local trackHeight = browser.track:GetHeight()
+    local thumbHeight = browser.thumb:GetHeight()
+    assert(thumbHeight >= 24 and thumbHeight < trackHeight, "thumb is proportional")
+    local _, _, _, _, y = browser.thumb:GetPoint()
+    equal(y, 0, "thumb starts at the top")
+    -- Drag the thumb to the bottom of the track.
+    Mock.cursorX, Mock.cursorY = 0, 500
+    browser.thumb.scripts.OnMouseDown(browser.thumb)
+    Mock.cursorY = 500 - trackHeight
+    browser:DragThumb()
+    browser.thumb.scripts.OnMouseUp(browser.thumb)
+    equal(browser:FirstRow(), maxRow, "dragging to the end reaches the last page")
+    _, _, _, _, y = browser.thumb:GetPoint()
+    assert(math.abs(-y - (trackHeight - thumbHeight)) < 0.01, "thumb sits at the bottom")
+    -- Click the track above the thumb: one page up.
+    Mock.cursorY = 100000
+    browser.track.scripts.OnClick(browser.track)
+    equal(browser:FirstRow(), maxRow - rows)
+    browser:SetData({entries[1], entries[2]}, {mode = "rows"})
+    assert(not browser.track:IsShown(), "short lists hide it")
+end)
+
 test("image preview zooms within limits, pans, and resets per image", function()
     local ML = open()
     ML.UI:SelectTab("atlas")
