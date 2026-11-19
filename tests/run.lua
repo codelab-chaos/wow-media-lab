@@ -372,7 +372,7 @@ test("icon metadata names, tags, describes and groups icons, merging paths into 
     equal(mark.name, "inv_misc_questionmark")
     equal(mark.tags, "question mark, unknown, help")
     equal(mark.description, "A red question mark.")
-    assert(mark.facetSet["Color: Red"] and mark.facetSet["Subject: Symbol"] and mark.facetSet["Type: inv"])
+    assert(mark.facetSet["Color: Red"] and mark.facetSet["Subject: Symbol"] and not mark.facetSet["Type: inv"])
     local sword = find(ML, "icon", 135274)
     assert(sword, "path entry became its file ID")
     equal(find(ML, "icon", "Interface\\Icons\\INV_Sword_04"), nil)
@@ -382,7 +382,7 @@ test("icon metadata names, tags, describes and groups icons, merging paths into 
     equal(ML.Catalog:Filter("icon", "Color: Gray", "")[2] ~= nil, true)
     local facets = ML.Catalog:Facets("icon")
     local seen, last = {}, 0
-    local order = {Type = 1, Subject = 2, Color = 3}
+    local order = {Subject = 1, Color = 2}
     for _, facet in ipairs(facets) do
         local rank = order[facet.name:match("^(%a+): ")] or 0
         assert(rank >= last, "grouped facets follow facetGroups: " .. facet.name)

@@ -54,7 +54,7 @@ end
 
 local function capital(value) return (value:gsub("^%l", string.upper)) end
 
--- Fills name, tags, description and Type/Subject/Color facets for a known file ID.
+-- Fills name, tags, description and Subject/Color facets for a known file ID.
 local function describeIcon(data, meta, id)
     local raw = meta and meta[id]
     if not raw then return data end
@@ -66,7 +66,6 @@ local function describeIcon(data, meta, id)
     data.subject = subject ~= "" and subject or nil
     data.description = description ~= "" and description or nil
     local facets = data.facets
-    facets[#facets + 1] = "Type: " .. (name:match("^([^_]+)_") or "other")
     if data.subject then facets[#facets + 1] = "Subject: " .. capital(subject) end
     for color in colors:gmatch("[^,]+") do facets[#facets + 1] = "Color: " .. capital(color) end
     return data
