@@ -9,6 +9,7 @@ these lists are the fallback and the source of extra metadata.
 import argparse
 import io
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -170,7 +171,8 @@ def build(source, ref, output, json_output=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=Path("/home/chadneff/git/hub/wow-ui-source"))
+    parser.add_argument("--source", type=Path, default=Path(os.environ.get("WOW_UI_SOURCE") or ROOT.parent.parent / "hub" / "wow-ui-source"),
+                        help="wow-ui-source checkout (default: WOW_UI_SOURCE, or ../../hub/wow-ui-source)")
     parser.add_argument("--ref", default="origin/forever")
     parser.add_argument("--output", type=Path, default=DATA)
     parser.add_argument("--json", type=Path, default=JSON_DIR, help="folder for the JSON catalog")

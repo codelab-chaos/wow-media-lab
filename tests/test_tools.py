@@ -168,8 +168,8 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(release.bump_readme(readme, "0.1.0", "0.2.0", "16002"),
                          "interface **16002**. Version **0.2.0**.\n`dist/MediaLab-0.2.0.zip`")
 
-    def test_readme_catalog_facts_match_the_json(self):
-        readme = (ROOT / "README.md").read_text()
+    def test_catalog_doc_facts_match_the_json(self):
+        readme = (ROOT / "docs" / "addon-dev.md").read_text()
         self.assertEqual(release.sync_catalog_facts(readme, release.load_catalog()), readme)
         stale = readme.replace("- 888 `SOUNDKIT`", "- 1 `SOUNDKIT`")
         self.assertEqual(release.sync_catalog_facts(stale, release.load_catalog()), readme)

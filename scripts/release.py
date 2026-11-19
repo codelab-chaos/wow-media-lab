@@ -7,6 +7,7 @@ It never commits, tags or deploys; it prints what to do next.
 """
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -16,7 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 TOC = ROOT / "MediaLab" / "MediaLab.toc"
 TOCS = [TOC, ROOT / "MediaLab_Export" / "MediaLab_Export.toc", ROOT / "MediaLab_Icons" / "MediaLab_Icons.toc"]
 README = ROOT / "README.md"
-SOURCE = Path("/home/chadneff/git/hub/wow-ui-source")
+CATALOG_DOC = ROOT / "docs" / "addon-dev.md"  # quotes the catalog counts
+# A wow-ui-source checkout: WOW_UI_SOURCE, or ../../hub/wow-ui-source.
+SOURCE = Path(os.environ.get("WOW_UI_SOURCE") or ROOT.parent.parent / "hub" / "wow-ui-source")
 
 CHECKS = [
     "rg --files MediaLab MediaLab_Export tests scripts -g '*.lua' -0 | xargs -0 -n1 luac5.1 -p",
@@ -40,7 +43,7 @@ def bump_readme(text, old, new, interface=None):
     return text
 
 
-# README lines that quote the generated catalog: (line prefix pattern, JSON kinds summed).
+# Lines in CATALOG_DOC that quote the generated catalog: (line prefix pattern, JSON kinds summed).
 CATALOG_FACTS = [
     (r"literal texture paths", ["icons", "textures"]),
     (r"atlas names", ["atlases"]),
@@ -51,7 +54,7 @@ CATALOG_FACTS = [
 
 
 def sync_catalog_facts(text, documents):
-    """Rewrites the README's source version, commit and counts from catalog/*.json."""
+    """Rewrites the catalog doc's source version, commit and counts from catalog/*.json."""
     source = documents["sounds"]["source"]
     text = re.sub(r"\(version `[^`]+`, commit `[0-9a-f]+`\)",
                   f"(version `{source['version']}`, commit `{source['commit'][:12]}`)", text)
@@ -96,7 +99,7 @@ def main():
         if args.fetch:
             run(f"git -C {SOURCE} fetch origin forever")
         run("python3 scripts/build-catalog.py")
-        README.write_text(sync_catalog_facts(README.read_text(), load_catalog()))
+        CATALOG_DOC.write_text(sync_catalog_facts(CATALOG_DOC.read_text(), load_catalog()))
     for command in CHECKS:
         run(command)
     run("python3 scripts/package.py")

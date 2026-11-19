@@ -4,7 +4,8 @@ Work in this project folder. Do not create worktrees or alternate copies. Use SS
 for any GitHub Git remotes.
 
 This addon targets **WoW Forever**, interface **16001**. Blizzard's UI source is
-available at `/home/chadneff/git/hub/wow-ui-source`; inspect `origin/forever` with
+available in a local wow-ui-source checkout (`WOW_UI_SOURCE`, or
+`../../hub/wow-ui-source` from this folder); inspect `origin/forever` with
 `git show` / `git grep` without switching or modifying that checkout. Retail's
 `live` branch is a different API baseline. Start with
 `Interface/AddOns/Blizzard_APIDocumentationGenerated/` for API shapes.
