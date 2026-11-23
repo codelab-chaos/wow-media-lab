@@ -80,11 +80,14 @@ Scroll the preview to zoom, drag it to pan, and press Canvas to check it on ligh
 Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.
 The handles snap to the usual sizes (16, 32, 64 up to 4096 pixels, on the
 longer side); click the size shown above them to go back to any size.
+The preview keeps your zoom as you go from one image to the next (icons,
+texture files and atlases each remember their own).
 
 ### Models
 
 Drag a model to turn it, scroll to zoom, and press the animation button to see it move.
 Stand, walk, run, attack, roar, dance: you get the ones that model has.
+The zoom stays as you move between models; **Reset** brings it back.
 Target any NPC and press Target to jump to its model; the lab remembers the name.
 After that you can search Models by the NPC's name, or filter to **Seen in
 game**.

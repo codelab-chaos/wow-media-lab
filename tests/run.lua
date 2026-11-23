@@ -211,7 +211,7 @@ test("saved variables of any shape load and the whole lab still works", function
     -- A hand-edited or foreign MediaLabDB: every setting gets each wrong type.
     local junk = {42, "junk", true, {1, 2, {x = 1}}, -1}
     local viewKeys = {"tab", "thumb", "thumbScales", "sizes", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
-        "inspectorWidth", "facetWidth", "facets", "views"}
+        "inspectorWidth", "facetWidth", "facets", "views", "zooms", "modelDistance"}
     for _, value in ipairs(junk) do
         local view = {facets = {icon = value, [5] = value}, views = {texture = value, [value] = "atlas"}}
         for _, key in ipairs(viewKeys) do if key ~= "facets" and key ~= "views" then view[key] = value end end
@@ -572,7 +572,7 @@ test("controls build once on request, never in combat, and survive failures", fu
     assert(not preview.build:IsEnabled(), "animation groups have no visual preview")
 end)
 
-test("built controls open at actual size, zoom, fit and pan, and reset per template", function()
+test("built controls open at actual size, zoom, fit and pan, and keep the zoom per template", function()
     local ML = open()
     ML.UI:SelectTab("control")
     local button = find(ML, "control", "UIPanelButtonTemplate")
@@ -604,8 +604,9 @@ test("built controls open at actual size, zoom, fit and pan, and reset per templ
     equal(preview:CurrentZoom(), ML.Zoom.max, "zoom is clamped")
     ML.UI:Select(find(ML, "control", "InputBoxTemplate"))
     ML.UI:Select(button)
-    equal(preview:CurrentZoom(), 1, "view resets when the template changes")
-    equal(preview.panX, 0)
+    equal(preview:CurrentZoom(), ML.Zoom.max, "the zoom carries over to the next template")
+    equal(preview.panX, 0, "the pan re-centers")
+    preview:ResetView() -- no remembered zoom: the default
     widget:SetSize(4000, 2000)
     preview:Layout()
     assert(preview:CurrentZoom() < 1, "large controls shrink to fit by default")
@@ -646,7 +647,7 @@ test("the scrollbar shows position and size, drags and pages", function()
     assert(not browser.track:IsShown(), "short lists hide it")
 end)
 
-test("image preview zooms within limits, pans, and resets per image", function()
+test("image preview zooms within limits, pans, and keeps its zoom per kind", function()
     local ML = open()
     ML.UI:SelectTab("atlas")
     ML.UI:Select(find(ML, "atlas", "test-background"))
@@ -665,7 +666,17 @@ test("image preview zooms within limits, pans, and resets per image", function()
     image.stage.scripts.OnMouseUp(image.stage)
     equal(image.panX, 30); equal(image.panY, -10)
     ML.UI:Select(find(ML, "atlas", "test-glow"))
-    assert(not image.zoom and image.panX == 0, "new image starts fitted")
+    equal(image:CurrentZoom(), 1, "the next atlas keeps the zoom")
+    equal(image.panX, 0, "and re-centers")
+    ML.UI:SelectTab("icon")
+    ML.UI:Select(find(ML, "icon", 134400))
+    assert(image.zoom == nil, "icons keep their own zoom (none set yet)")
+    image:Fit()
+    ML.UI:SelectTab("atlas")
+    ML.UI:Select(find(ML, "atlas", "test-background"))
+    equal(image:CurrentZoom(), 1, "back on atlases, their zoom is still 1:1")
+    equal(ML.db.view.zooms.atlas, 1)
+    equal(ML.db.view.zooms.icon, "fit")
     ML.UI:SelectTab("texture")
     local sized, unsized
     for _, entry in ipairs(ML.UI.results) do
@@ -882,8 +893,16 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     for _ = 1, 40 do preview.model.scripts.OnMouseWheel(preview.model, -1) end
     equal(preview.model.camDistance, ML.ModelCamera.max)
     ML.UI:Select(find(ML, "model", 1694))
-    equal(preview.model.facing, 0)
-    equal(preview.model.camDistance, 1)
+    equal(preview.model.facing, 0, "the next model faces forward")
+    equal(preview.model.camDistance, ML.ModelCamera.max, "and keeps the camera distance")
+    equal(ML.db.view.modelDistance, ML.ModelCamera.max)
+    local reset
+    for _, child in ipairs(Mock.frames) do
+        if child.text and child.text.GetText and child.text:GetText() == "Reset" and child.scripts.OnClick then reset = child end
+    end
+    reset.scripts.OnClick(reset)
+    equal(preview.model.camDistance, 1, "Reset goes back to the default distance")
+    equal(ML.db.view.modelDistance, nil)
     local lua = ML.Export.Lua({blue}, "Mobs")
     assert(lua:find("models = {\n        1693, -- murloc blue", 1, true), lua)
 end)

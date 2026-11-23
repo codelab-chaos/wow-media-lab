@@ -29,7 +29,7 @@ local function viewRules() return {
     channel = {type = "string", values = ids(ML.SoundChannels)},
     copyFormat = {type = "string", values = ids(ML.CopyFormats, "id")},
     facets = {type = "table", strings = true}, views = {type = "table", strings = true},
-    sizes = {type = "table"},
+    sizes = {type = "table"}, zooms = {type = "table"}, modelDistance = {type = "number"},
 } end
 local ANCHORS = ids({"TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT"})
 
@@ -46,6 +46,11 @@ local function cleanView(view)
         end
     end
     view.thumb = nil -- the old four-step size, replaced by thumbScales
+    for kind, zoom in pairs(view.zooms or {}) do -- per kind: a number, or "fit"
+        if type(kind) ~= "string" or not (zoom == "fit" or (type(zoom) == "number" and zoom > 0)) then
+            view.zooms[kind] = nil
+        end
+    end
     for tab, range in pairs(view.sizes or {}) do -- per tab {min, max}, in pixels
         if type(tab) ~= "string" or type(range) ~= "table" or type(range[1]) ~= "number"
             or type(range[2]) ~= "number" or range[1] > range[2] then view.sizes[tab] = nil end

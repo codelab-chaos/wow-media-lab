@@ -29,6 +29,7 @@ function Model.New(parent)
     self.model:SetScript("OnMouseWheel", function(_, delta)
         local step = delta > 0 and 1 / ML.ModelCamera.step or ML.ModelCamera.step
         self.distance = W.Clamp(self.distance * step, ML.ModelCamera.min, ML.ModelCamera.max)
+        view().modelDistance = self.distance ~= 1 and self.distance or nil
         self:Apply()
     end)
     self.model:SetScript("OnMouseDown", function()
@@ -67,7 +68,12 @@ function Model.New(parent)
     return self
 end
 
-function Model:ResetView() self.facing, self.distance = 0, 1 end
+-- Reset faces the model forward at the default distance, and forgets the
+-- remembered distance; a new model only turns to face forward.
+function Model:ResetView()
+    self.facing, self.distance = 0, 1
+    view().modelDistance = nil
+end
 
 function Model:Drag()
     if not self.drag then return end
@@ -111,7 +117,10 @@ function Model:Apply()
 end
 
 function Model:Show(entry)
-    if not self.entry or self.entry.key ~= entry.key then self:ResetView(); self.status = nil end
+    if not self.entry or self.entry.key ~= entry.key then
+        self.facing, self.status = 0, nil
+        self.distance = W.Clamp(tonumber(view().modelDistance) or 1, ML.ModelCamera.min, ML.ModelCamera.max)
+    end
     self.entry = entry
     self.frame:Show()
     self.model:SetDisplayInfo(entry.id)

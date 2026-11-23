@@ -123,9 +123,29 @@ function Zoomable:CurrentZoom()
     return self.zoom or (self.fitting and self.fitZoom) or self.defaultZoom or self.fitZoom or 1
 end
 
+-- The zoom is remembered per kind (icons, texture files, atlases, controls):
+-- a number, or "fit". A new entry keeps it; only the pan re-centers.
+function Zoomable:ZoomKey()
+    return self.entry and self.entry.kind or "image"
+end
+
+function Zoomable:SaveZoom()
+    view().zooms = view().zooms or {}
+    view().zooms[self:ZoomKey()] = self.zoom or (self.fitting and "fit") or nil
+end
+
+-- For a new entry: its kind's remembered zoom, centered.
+function Zoomable:Recall()
+    local saved = view().zooms and view().zooms[self:ZoomKey()]
+    self.zoom = type(saved) == "number" and W.Clamp(saved, ML.Zoom.min, ML.Zoom.max) or nil
+    self.fitting = saved == "fit"
+    self.panX, self.panY = 0, 0
+end
+
 function Zoomable:SetZoom(value)
     local before = self:CurrentZoom()
     self.zoom = W.Clamp(value, ML.Zoom.min, ML.Zoom.max)
+    self:SaveZoom()
     -- Keep the point under the stage center fixed while zooming.
     local ratio = self.zoom / before
     self.panX, self.panY = self.panX * ratio, self.panY * ratio
@@ -134,6 +154,7 @@ end
 
 function Zoomable:Fit()
     self.zoom, self.fitting, self.panX, self.panY = nil, true, 0, 0
+    self:SaveZoom()
     self:Layout()
 end
 
@@ -194,8 +215,9 @@ function Image.New(parent)
 end
 
 function Image:Show(entry)
-    if not self.entry or self.entry.key ~= entry.key then self:ResetView() end
+    local new = not self.entry or self.entry.key ~= entry.key
     self.entry = entry
+    if new then self:Recall() end
     self.frame:Show()
     self:Layout()
 end
@@ -373,7 +395,7 @@ function Control:Show(entry)
     if source then lines[#lines + 1] = "Source: " .. source end
     if info and info.keyValues and #info.keyValues > 0 then lines[#lines + 1] = #info.keyValues .. " key values" end
     self.info:SetText(table.concat(lines, "\n"))
-    if not self.entry or self.shownKey ~= entry.key then self:ResetView() end
+    if self.shownKey ~= entry.key then self:Recall() end
     self.shownKey = entry.key
     local existing = self.instances[entry.key]
     local buildable = not ML.UnbuildableTypes[entry.tag or "Frame"]
