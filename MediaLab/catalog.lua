@@ -65,16 +65,22 @@ end
 
 -- Builds every kind in ML.IndexOrder inside one coroutine, yielding every
 -- BATCH references. onKind(kind) fires as each kind finishes.
-function Catalog:Start(onKind)
+-- onProgress(kind) fires after every batch, for the loading card.
+function Catalog:Start(onKind, onProgress)
     if self.started then return end
     self.started = true
     local count = 0
     local function step()
         count = count + 1
-        if count % BATCH == 0 then coroutine.yield() end
+        if count % BATCH == 0 then
+            if onProgress then onProgress(self.current) end
+            coroutine.yield()
+        end
     end
     local thread = coroutine.create(function()
         for _, kind in ipairs(ML.IndexOrder) do
+            self.current = kind
+            if onProgress then onProgress(kind) end
             local source = ML.Sources[kind]
             if source then source(function(data) return self:Add(kind, data) end, step) end
             table.sort(self.byKind[kind] or {}, byName)
@@ -82,6 +88,7 @@ function Catalog:Start(onKind)
             if onKind then onKind(kind) end
             coroutine.yield()
         end
+        self.current = nil
         self.ready = true
     end)
     self.worker = CreateFrame("Frame")

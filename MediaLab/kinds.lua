@@ -13,19 +13,25 @@ local _, ML = ...
 --   sized    entries know their pixel size: Square / Wide / Tall filters and the
 --            size range under the filter column
 --   groupsFirst  grouped filters (SHAPE) come before the plain ones
+--   holds    what the loading card says it brings in
 ML.Kinds = {
     {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
+        holds = "names, colors and descriptions  /  MediaLab_Icons",
         facetGroups = {"Subject", "Color"}},
     {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true,
-        preview = "image", view = "Files", sized = true, facetGroups = {"Shape"}, groupsFirst = true},
+        preview = "image", view = "Files", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
+        holds = "texture files and their sizes  /  UI source"},
     {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true,
-        preview = "image", tab = "texture", view = "Atlases", sized = true, facetGroups = {"Shape"}, groupsFirst = true},
+        preview = "image", tab = "texture", view = "Atlases", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
+        holds = "interface art, cut and sized  /  the game's atlas list"},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
-        facetGroups = {"Family"}},
+        facetGroups = {"Family"}, holds = "creatures, NPCs and objects  /  MediaLab_Models"},
     {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id",
-        facetGroups = {"Folder", "Prefix"}},
-    {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control"},
-    {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font", developer = true},
+        facetGroups = {"Folder", "Prefix"}, holds = "creatures, spells, music, ambience  /  MediaLab_Sounds"},
+    {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control",
+        holds = "buttons, frames and sliders  /  UI source"},
+    {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font", developer = true,
+        holds = "the game's font objects  /  the client"},
 }
 
 ML.Tabs = {}
@@ -63,6 +69,18 @@ end
 ML.CopyFormats = {
     {id = "lua", label = "Lua", hint = "A Lua table of every entry, grouped by kind."},
     {id = "csv", label = "CSV", hint = "One row per entry."},
+}
+
+-- What the loading card says while each kind loads, a line every few seconds.
+ML.LoaderLines = {
+    sound = {"Tuning the instruments...", "Teaching murlocs to gurgle on cue...", "Untangling the music..."},
+    control = {"Stacking buttons and frames...", "Oiling the sliders..."},
+    font = {"Setting the type...", "Kerning, carefully..."},
+    atlas = {"Unrolling the interface art...", "Cutting the atlases to size..."},
+    texture = {"Measuring textures...", "Dusting the texture shelves..."},
+    model = {"Waking the bestiary...", "Counting murlocs...", "Asking the raptors to hold still..."},
+    icon = {"Polishing the icons...", "Sorting swords from potions...", "Matching icons to their colors..."},
+    default = {"Stocking the shelves..."},
 }
 
 -- Build order: small, fast lists first so their tabs are usable immediately.

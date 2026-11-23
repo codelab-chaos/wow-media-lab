@@ -81,6 +81,12 @@ function ML.Initialize(saved)
     ML.Dock.Sanitize(saved)
     saved.developer = saved.developer == true or nil -- code fields, Fonts and Copy
     saved.welcomed = saved.welcomed == true or nil   -- the welcome card was dismissed
+    -- How many of each kind the last session found: the loading card's totals.
+    local counts = {}
+    for kind, count in pairs(type(saved.counts) == "table" and saved.counts or {}) do
+        if type(kind) == "string" and type(count) == "number" and count >= 0 and count == count then counts[kind] = count end
+    end
+    saved.counts = counts
     ML.db = saved
     return saved
 end

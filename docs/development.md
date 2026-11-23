@@ -41,6 +41,7 @@ Code layout (one job per file):
 | `ui/helppanel.lua` | The welcome and tips card |
 | `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |
 | `ui/rangeslider.lua` | The two-handle size range that snaps to popular sizes |
+| `ui/loader.lua` | The loading card: a bar and count per library while the catalog fills |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
 | `MediaLab_Icons/` | Load-on-demand icon names, colors and descriptions (generated) |
 | `MediaLab_Models/` | Load-on-demand creature displays (generated) |
@@ -90,7 +91,9 @@ data from the codex first. It bumps the `.toc` and README, runs every check
 and packages the zip. It never commits or deploys.
 
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
-Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
+Watch the loading card count each library in (it fades when done; Browse
+now hides it early), then on a second open check the bars show "so far / last
+time". Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
 every tab, search and filter, switch Textures between **Files** and
 **Atlases**, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom),
 filter Textures by Wide and drag the size handles to 64 and 256, zoom and pan both, play and stop a sound, change its channel,

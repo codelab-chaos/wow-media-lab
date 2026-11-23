@@ -44,6 +44,10 @@ minimap. The first time, a welcome card says hello:
 > - Right-click anything to add it to your Favorites or one of your lists.
 > - Press ? in the title bar any time for tips about the tab you are on.
 
+The first time it opens each session, the lab counts its libraries in (the
+sounds, models and icons take a moment); press **Browse now** to start on the
+tabs that are already done.
+
 Drag the title bar to move the window and the corner to resize it. Want a
 bigger preview, or longer filter names? Drag the edge of the preview or the
 filter column (double-click an edge to reset it). Hover a filter to see its

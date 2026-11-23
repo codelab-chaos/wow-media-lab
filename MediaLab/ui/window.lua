@@ -396,7 +396,23 @@ function UI:Search(text)
     self:Refresh()
 end
 
+-- The loading card shows each kind's count, from the catalog, as it grows.
+function UI:RenderLoader()
+    if not ML.Loader.IsShown() then return end
+    local counts, done = {}, {}
+    for _, kind in ipairs(ML.IndexOrder) do
+        counts[kind] = C:Count(kind)
+        done[kind] = C.indexed[kind] == true
+    end
+    ML.Loader.Render(counts, C.current, done)
+end
+
 function UI:OnIndexed(kind)
+    if kind then
+        ML.db.counts[kind] = C:Count(kind) -- next session's totals for the loading card
+    end
+    self:RenderLoader()
+    if kind == nil then ML.Loader.Finish() end
     if kind then self.facetCache[kind] = nil end
     self.facetCache[ML.ListsTab] = nil
     if not self.frame then return end
@@ -882,6 +898,7 @@ function UI:Create()
     resize:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); self:SaveWindow() end)
 
     ML.HelpPanel.Create(body, function() self:HideHelp() end)
+    ML.Loader.Create(body, function() ML.Loader.Hide() end)
 
     frame:SetScript("OnHide", function()
         self.search.box:ClearFocus()
@@ -895,7 +912,8 @@ function UI:Create()
     self.tabId = self:Tab(saved) and self:Available(saved) and saved or ML.Tabs[1].id
     self.devButton:SetActive(ML.db.developer and true or false)
     self:UpdateMaximize()
-    C:Start(function(kind) self:OnIndexed(kind) end)
+    if not C.ready then ML.Loader.Show() end
+    C:Start(function(kind) self:OnIndexed(kind) end, function() self:RenderLoader() end)
     self:SelectTab(self.tabId)
     if not ML.db.welcomed then self:ShowHelp() end
 end

@@ -217,7 +217,7 @@ test("saved variables of any shape load and the whole lab still works", function
         for _, key in ipairs(viewKeys) do if key ~= "facets" and key ~= "views" then view[key] = value end end
         local saved = {
             view = view, favorites = value, nextListId = value, minimized = value, maximized = value,
-            developer = value, welcomed = value,
+            developer = value, welcomed = value, counts = {icon = value, [5] = value, sound = -3},
             lists = {value, {id = value, name = value, keys = value}, {id = 7, name = "Kept", keys = {[5] = true, ["icon:134400"] = value, ["sound:IG_MAINMENU_OPEN"] = true}}},
             npcs = {[value] = value, [12] = {name = value, display = value}},
             window = {point = value, relativePoint = value, x = value, width = value},
@@ -333,6 +333,39 @@ test("sounds list every sound kit the client can play, not just the SOUNDKIT nam
     ML.Lists:ToggleFavorite(murloc.key)
     equal(murloc.key, "sound:417")
     assert(ML.Catalog:IsFavorite(murloc), "kits by ID can be saved like anything else")
+end)
+
+test("the loading card counts every library in, then fades out", function()
+    local ML = Mock.load()
+    SlashCmdList.MEDIALAB("")
+    local card = ML.Loader.frame
+    assert(card.shown, "shows while the lab fills")
+    equal(#card.rows, #ML.IndexOrder)
+    equal(card.rows[1].name:GetText(), "Sounds")
+    assert(card.rows[1].source:GetText():find("MediaLab_Sounds", 1, true), "says where it comes from")
+    local worker = ML.Catalog.worker
+    for _ = 1, 3 do worker.scripts.OnUpdate(worker) end
+    card.scripts.OnUpdate(card, 0.1)
+    assert(card.line:GetText() ~= "", "says what it is doing")
+    assert(card.total:GetText():find("entries so far", 1, true))
+    Mock.flush()
+    assert(not card.shown, "fades out once everything is in")
+    assert(ML.db.counts.icon > 0 and ML.db.counts.sound > 0, "remembers how many of each for next time")
+    -- Next session: the bars know the totals.
+    ML = Mock.load(ML.db)
+    SlashCmdList.MEDIALAB("")
+    card = ML.Loader.frame
+    local worker2 = ML.Catalog.worker
+    for _ = 1, 3 do worker2.scripts.OnUpdate(worker2) end
+    ML.UI:RenderLoader()
+    local sounds = card.rows[1]
+    assert(sounds.count:GetText():find(" / " .. ML.Loader.Format(ML.db.counts.sound), 1, true) or sounds.fraction == 1,
+        "counts read 'so far / last time'")
+    card.browse.scripts.OnClick(card.browse)
+    assert(not card.shown, "Browse now hides it early")
+    Mock.flush()
+    assert(ML.Catalog.ready)
+    equal(ML.Loader.Format(1234567), "1,234,567")
 end)
 
 test("selection works like a file browser: click, Ctrl+click and Shift+click", function()
