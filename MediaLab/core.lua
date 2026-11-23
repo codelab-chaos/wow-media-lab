@@ -37,7 +37,7 @@ local commands = {
     [""] = function() ML.Toggle() end,
     help = function()
         ML.Print("/mlab opens the lab. /mlab search <words> searches the current tab.")
-        ML.Print("/mlab tab <icons|textures|atlases|sounds|controls|models|lists> jumps to a tab.")
+        ML.Print("/mlab tab <icons|textures|atlases|models|sounds|controls|lists> jumps to a tab.")
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
         ML.Print("/mlab reset restores the window's size and position.")
         ML.Print("/mlab dev turns developer mode on or off: code to copy, the Fonts tab, /mlab copy and /mlab csv.")

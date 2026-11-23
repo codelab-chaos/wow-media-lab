@@ -637,12 +637,12 @@ test("players see media first; developer mode adds code, Fonts and Copy, and per
         end
         return table.concat(labels, ",")
     end
-    equal(shownTabs(), "Icons,Textures,Sounds,Controls,Models,Lists")
+    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Lists")
     assert(not ML.UI:SelectTab("font"), "Fonts needs developer mode")
     assert(not ML.UI.copyButton.shown, "no Copy button for players")
     SlashCmdList.MEDIALAB("dev")
     assert(Mock.messages[#Mock.messages]:find("Developer mode on", 1, true))
-    equal(shownTabs(), "Icons,Textures,Sounds,Controls,Fonts,Models,Lists")
+    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Fonts,Lists")
     assert(ML.UI.copyButton.shown and ML.UI.devButton.active, "Copy and an active Dev button")
     assert(ML.UI:SelectTab("font"))
     local saved = ML.db

@@ -17,11 +17,11 @@ ML.Kinds = {
         preview = "image", view = "Files"},
     {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true,
         preview = "image", tab = "texture", view = "Atlases"},
+    {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
+        facetGroups = {"Family"}},
     {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id"},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control"},
     {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font", developer = true},
-    {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
-        facetGroups = {"Family"}},
 }
 
 ML.Tabs = {}

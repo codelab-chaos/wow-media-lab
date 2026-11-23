@@ -12,9 +12,9 @@ Made for **WoW Forever** (interface **16001**). Version **0.1.0**.
 
 - **Find any icon by what it looks like.** Over 30,000 icons, searchable by
   what they show and by color: `sword`, `wolf`, `potion green`.
-- **Play every sound.** Hundreds of interface sounds, one click each.
 - **Meet the whole bestiary.** Turn, zoom and animate over 14,000 creature
   models, and target any NPC to see which model it uses.
+- **Play every sound.** Hundreds of interface sounds, one click each.
 - **Browse the game's art.** Its textures and the pieces its windows are
   drawn from, zoomed and on any background.
 - **Keep what you like.** Favorite anything with a right-click, and make your
@@ -62,11 +62,6 @@ Files are the game's images; Atlases are the pieces its interface is drawn from.
 Switch between them with **Files** and **Atlases** above the results.
 Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.
 
-### Sounds
-
-Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.
-Pick the channel it plays on, so the game's volume sliders apply.
-
 ### Models
 
 Drag a model to turn it, scroll to zoom, and press the animation button to see it move.
@@ -74,6 +69,11 @@ Stand, walk, run, attack, roar, dance: you get the ones that model has.
 Target any NPC and press Target to jump to its model; the lab remembers the name.
 After that you can search Models by the NPC's name, or filter to **Seen in
 game**.
+
+### Sounds
+
+Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.
+Pick the channel it plays on, so the game's volume sliders apply.
 
 ### Controls (a bonus)
 
@@ -93,7 +93,7 @@ Something can be in as many lists as you like.
 | --- | --- |
 | `/mlab` | Opens and closes the lab |
 | `/mlab search <words>` | Searches the tab you are on |
-| `/mlab tab <name>` | Jumps to a tab: icons, textures, atlases, sounds, controls, models, lists |
+| `/mlab tab <name>` | Jumps to a tab: icons, textures, atlases, models, sounds, controls, lists |
 | `/mlab target` | Finds your target's model and remembers its name |
 | `/mlab reset` | Puts the window back in the middle at its normal size |
 | `/mlab dev` | Turns developer mode on or off |
