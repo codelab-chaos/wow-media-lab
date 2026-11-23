@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a ZIP that can be extracted directly into Interface/AddOns."""
+"""Build the release zip: extract it into Interface/AddOns and it works."""
 
 from pathlib import Path
 import re
@@ -7,9 +7,8 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 
-
 # Addon folders shipped in the release zip, each with its own .toc manifest.
-ADDONS = ["MediaLab", "MediaLab_Export", "MediaLab_Icons", "MediaLab_Models"]
+ADDONS = ["MediaLab", "MediaLab_Icons", "MediaLab_Models"]
 
 
 def manifest_files(name):
@@ -42,23 +41,5 @@ def package():
     return output
 
 
-def package_catalog():
-    """The JSON catalog as its own download, for tools and authors outside the game."""
-    folder = ROOT / "catalog"
-    files = sorted(folder.glob("**/*.json"))
-    if not files:
-        raise FileNotFoundError("No catalog/*.json; run scripts/build-catalog.py first")
-    output = ROOT / "dist" / f"MediaLab-catalog-{version()}.zip"
-    output.parent.mkdir(exist_ok=True)
-    with ZipFile(output, "w", ZIP_DEFLATED) as archive:
-        for path in files:
-            archive.write(path, Path("MediaLab-catalog") / path.relative_to(folder))
-        archive.write(ROOT / "LICENSE", "MediaLab-catalog/LICENSE")
-    print(output)
-    return output
-
-
 if __name__ == "__main__":
     package()
-    package_catalog()
-

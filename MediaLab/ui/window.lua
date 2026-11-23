@@ -345,7 +345,7 @@ function UI:CreateToolbar(body)
     local copy = W.Button(body, "Copy", 48, function() self:CopyResults() end, 24)
     copy:SetPoint("LEFT", self.thumbButton, "RIGHT", 4, 0)
     W.Tip(copy, "Copy results", "The current results (a list, on the Lists tab) as a Lua table or CSV, first "
-        .. ML.Export.CSV_LIMIT .. ". /mlab export saves the whole catalog.")
+        .. ML.Export.CSV_LIMIT .. ".")
 end
 
 -- What the results are called in the Copy dialog and its Lua table: the

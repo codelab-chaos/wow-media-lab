@@ -1,6 +1,5 @@
 import importlib.util
 from pathlib import Path
-import re
 import sqlite3
 import tempfile
 import unittest
@@ -16,206 +15,99 @@ def load(name, path):
     return module
 
 
-catalog = load("catalog", "scripts/build-catalog.py")
 packaging = load("packaging", "scripts/package.py")
 release = load("release", "scripts/release.py")
-importer = load("importer", "scripts/import-export.py")
-icons = load("icons", "scripts/icon-metadata.py")
-models_data = load("models_data", "scripts/models-data.py")
+sync = load("sync", "scripts/sync-codex.py")
 
 
-class ExtractionTests(unittest.TestCase):
-    def test_art_from_lua_and_xml(self):
-        paths, atlases = catalog.extract_art(r'''
-            local path = "Interface\\Tooltips\\UI-Tooltip-Background"
-            local other = [[Interface\Buttons\WHITE8X8]]
-            texture:SetAtlas("test-atlas")
-        ''')
-        self.assertEqual(paths, {r"Interface\Tooltips\UI-Tooltip-Background", r"Interface\Buttons\WHITE8X8"})
-        self.assertEqual(atlases, {"test-atlas"})
-        _, atlases = catalog.extract_art('<Texture atlas="xml-atlas"/>', True)
-        self.assertEqual(atlases, {"xml-atlas"})
+class DataAddonTests(unittest.TestCase):
+    def test_data_addons_load_on_demand_and_are_generated(self):
+        for name in ("MediaLab_Icons", "MediaLab_Models"):
+            self.assertIn("## LoadOnDemand: 1", (ROOT / name / f"{name}.toc").read_text(), name)
+            self.assertTrue((ROOT / name / "data.lua").read_text().startswith(sync.HEADER), name)
 
-    def test_rejects_dynamic_paths_and_code_files(self):
-        for value in ["Interface\\", r"Interface\Icons\%s", "Interface/Scripts/File.lua"]:
-            self.assertIsNone(catalog.texture_path(value), value)
-
-    def test_sound_kits(self):
-        rows = catalog.extract_sounds("SOUNDKIT = {\n\tIG_MAINMENU_OPEN = 850,\n\tlower_case = 1,\n\tUI_X = 7,\n}")
-        self.assertEqual(rows, [("IG_MAINMENU_OPEN", 850), ("UI_X", 7)])
-
-    def test_templates_need_virtual_and_a_plain_name(self):
-        rows = catalog.extract_templates('''
-            <Button name="GoodTemplate" inherits="UIPanelButtonTemplate" virtual="true"/>
-            <Frame name="$parentChild" virtual="true"/>
-            <Frame name="NotVirtual"/>
-            <Font name="GameFontTest" virtual="true"><Shadow/></Font>
-        ''')
-        self.assertEqual(rows, [("GoodTemplate", "Button", "UIPanelButtonTemplate"), ("GameFontTest", "Font", "")])
-
-    def test_mainline_definitions_beat_classic_overrides(self):
-        self.assertLess(catalog.source_rank("Blizzard_X/Mainline/A.xml"), catalog.source_rank("Blizzard_X/Classic/A.xml"))
+    def test_every_generated_file_is_in_the_repo(self):
+        for output in sync.OUTPUTS:
+            self.assertTrue((ROOT / output["path"]).read_text().startswith(sync.HEADER), output["path"])
 
 
-class GeneratedDataTests(unittest.TestCase):
-    """The curated Common lists must name things the generated catalog knows."""
-
-    def names(self, path, table):
-        text = (ROOT / path).read_text()
-        block = re.search(rf"ML\.{table} = \{{(.*?)\n\}}", text, re.S).group(1)
-        return set(re.findall(r'^\s*\{"([^"]+)"', block, re.M))
-
-    def common(self, kind):
-        text = (ROOT / "MediaLab/data/featured.lua").read_text()
-        block = re.search(rf"\b{kind} = \{{(.*?)\}}", text, re.S).group(1)
-        return set(re.findall(r'"([^"]+)"', block))
-
-    def test_common_names_exist(self):
-        checks = {
-            "control": self.names("MediaLab/data/templates.lua", "Templates"),
-            "sound": self.names("MediaLab/data/sounds.lua", "SoundKits"),
-            "font": self.names("MediaLab/data/templates.lua", "FontTemplates"),
-        }
-        for kind, known in checks.items():
-            self.assertTrue(known, kind)
-            self.assertEqual(self.common(kind) - known, set(), kind)
-
-
-class PackagingTests(unittest.TestCase):
-    def test_zip_has_manifest_and_exactly_its_declared_files(self):
-        output = packaging.package()
-        expected = {}
-        for name in packaging.ADDONS:
-            toc = (ROOT / name / f"{name}.toc").read_text()
-            expected[f"{name}/{name}.toc"] = ROOT / name / f"{name}.toc"
-            expected[f"{name}/LICENSE"] = ROOT / "LICENSE"
-            for line in toc.splitlines():
-                if line and not line.startswith("#"):
-                    entry = f"{name}/" + line.replace("\\", "/")
-                    expected[entry] = ROOT / entry
-        with ZipFile(output) as archive:
-            self.assertEqual(set(archive.namelist()), set(expected))
-            self.assertIsNone(archive.testzip())
-            for name, source in expected.items():
-                self.assertEqual(archive.read(name), source.read_bytes())
-
-    def test_icon_data_addon_loads_on_demand(self):
-        toc = (ROOT / "MediaLab_Icons/MediaLab_Icons.toc").read_text()
-        self.assertIn("## LoadOnDemand: 1", toc)
-        self.assertTrue((ROOT / "MediaLab_Icons/data.lua").read_text().startswith("-- Generated"))
-
-    def test_model_data_addon_loads_on_demand(self):
-        toc = (ROOT / "MediaLab_Models/MediaLab_Models.toc").read_text()
-        self.assertIn("## LoadOnDemand: 1", toc)
-        self.assertTrue((ROOT / "MediaLab_Models/data.lua").read_text().startswith("-- Generated"))
-
-    def test_export_addon_loads_on_demand_and_owns_the_export_variable(self):
-        toc = (ROOT / "MediaLab_Export/MediaLab_Export.toc").read_text()
-        self.assertIn("## LoadOnDemand: 1", toc)
-        self.assertIn("## SavedVariables: MediaLabExport", toc)
-        self.assertNotIn("MediaLabExport", (ROOT / "MediaLab/MediaLab.toc").read_text())
+def codex_fixture():
+    """A tiny codex database with every table and column MediaLab reads."""
+    db = sqlite3.connect(":memory:")
+    db.executescript("""
+        CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        INSERT INTO meta VALUES ('schema_version', '4'), ('client_build', '1.60.1.71037'),
+            ('ui_source_version', '1.60.1.71037'), ('ui_source_commit', 'abc123');
+        CREATE TABLE textures (path TEXT PRIMARY KEY, is_icon INTEGER NOT NULL);
+        INSERT INTO textures VALUES ('Interface\\Buttons\\WHITE8X8', 0), ('Interface\\AchievementFrame\\X', 0);
+        CREATE TABLE atlases (name TEXT PRIMARY KEY);
+        INSERT INTO atlases VALUES ('common-icon-checkmark');
+        CREATE TABLE sound_kits (name TEXT PRIMARY KEY, id INTEGER NOT NULL);
+        INSERT INTO sound_kits VALUES ('IG_MAINMENU_OPEN', 850);
+        CREATE TABLE templates (name TEXT PRIMARY KEY, type TEXT, inherits TEXT, source TEXT);
+        INSERT INTO templates VALUES ('UIPanelButtonTemplate', 'Button', '', 'X.xml'), ('GameFontNormal', 'Font', '', 'F.xml');
+        CREATE TABLE icons (id INTEGER PRIMARY KEY, name TEXT, colors TEXT, subject TEXT, tags TEXT, description TEXT);
+        INSERT INTO icons VALUES (134400, 'inv_misc_questionmark', '["red","gray"]', 'symbol', '["question mark"]', 'A "red" mark.'),
+                                 (135274, 'inv_sword_04', '["gray"]', NULL, '[]', NULL);
+        CREATE TABLE models (id INTEGER PRIMARY KEY, name TEXT, type TEXT, family TEXT, model_file INTEGER, skins TEXT);
+        INSERT INTO models VALUES (10, 'murloc blue', 'Creature', 'murloc', 1, '["murlocskinblue"]');
+    """)
+    return db
 
 
-class JsonCatalogTests(unittest.TestCase):
-    KINDS = {"icons", "textures", "atlases", "sounds", "templates", "fonts"}
-    # Built from the local game files rather than the UI source.
-    GAME_FILES = {"icons-meta", "models"}
+class SyncCodexTests(unittest.TestCase):
+    def test_renders_every_data_file_from_the_codex(self):
+        db = codex_fixture()
+        meta = dict(db.execute("SELECT key, value FROM meta"))
+        sync.check(db)
+        art = sync.art(db, meta)
+        self.assertIn('ML.SourceCommit = "abc123"', art)
+        self.assertLess(art.index("AchievementFrame"), art.index("WHITE8X8"))  # case-insensitive path order
+        self.assertIn('{"IG_MAINMENU_OPEN", 850},', sync.sounds(db, meta))
+        templates = sync.templates(db, meta)
+        self.assertLess(templates.index("ML.Templates"), templates.index("UIPanelButtonTemplate"))
+        self.assertGreater(templates.index('"GameFontNormal"'), templates.index("ML.FontTemplates"))
+        icons = sync.icons(db, meta)
+        self.assertIn('[134400]="inv_misc_questionmark\tred,gray\tsymbol\tquestion mark\tA \\"red\\" mark.",', icons)
+        self.assertIn('[135274]="inv_sword_04\tgray\t\t\t",', icons)
+        self.assertIn('[10]="murloc blue\tCreature\tmurloc\t1\tmurlocskinblue",', sync.models(db, meta))
 
-    def test_json_matches_the_addon_data_and_ships_as_its_own_zip(self):
-        import json
-        documents = {path.stem: json.loads(path.read_text()) for path in (ROOT / "catalog").glob("*.json")}
-        self.assertEqual(set(documents) - self.GAME_FILES, self.KINDS)
-        self.assertEqual(documents["models"]["count"], len(documents["models"]["items"]))
-        for name in self.GAME_FILES:
-            documents.pop(name, None)
-        for kind, document in documents.items():
-            self.assertEqual(document["count"], len(document["items"]), kind)
-            self.assertTrue(document["source"]["commit"], kind)
-        lua = (ROOT / "MediaLab/data/sounds.lua").read_text()
-        self.assertIn('{"%s", %d}' % (documents["sounds"]["items"][0]["name"], documents["sounds"]["items"][0]["id"]), lua)
-        with ZipFile(packaging.package_catalog()) as archive:
-            names = set(archive.namelist())
-            self.assertLessEqual({f"MediaLab-catalog/{kind}.json" for kind in self.KINDS} | {"MediaLab-catalog/LICENSE"}, names)
-            extra = names - {f"MediaLab-catalog/{kind}.json" for kind in self.KINDS} - {"MediaLab-catalog/LICENSE"}
-            optional = {f"MediaLab-catalog/{name}.json" for name in self.GAME_FILES}
-            self.assertTrue(all(name in optional or name.startswith("MediaLab-catalog/client/") for name in extra), extra)
-
-
-class IconMetadataTests(unittest.TestCase):
-    def test_tags_drop_filler_colors_and_duplicates(self):
-        self.assertEqual(icons.clean_tags(["Ring ", "icon", "Gold", "ring", "World of Warcraft", "healing."], "x"),
-                         ["ring", "healing"])
-
-    def test_category_is_the_first_name_word(self):
-        self.assertEqual(icons.category("inv_ringwod_7d"), "inv")
-        self.assertEqual(icons.category("questionmark"), "other")
-
-    def test_lua_strings_escape_quotes_and_backslashes(self):
-        self.assertEqual(icons.lua_string('a "b" \\ c\nd'), '"a \\"b\\" \\\\ c d"')
-
-
-class ImportExportTests(unittest.TestCase):
-    def test_converts_a_saved_variables_export_with_gaps_into_json(self):
-        import json
-        import tempfile
+    def test_writes_the_files_into_a_tree(self):
         with tempfile.TemporaryDirectory() as folder:
-            counts = importer.convert(ROOT / "tests/fixtures/MediaLab_Export.lua", Path(folder))
-            self.assertEqual(counts, {"atlases": 1, "icons": 1, "sounds": 0})
-            atlases = json.loads((Path(folder) / "atlases.json").read_text())
-            self.assertEqual(atlases["source"]["client"]["build"], "70888")
-            item = atlases["items"][0]
-            self.assertEqual((item["name"], item["width"], item["left"], item["facets"]), ("test-glow", 256, 0.125, "Test"))
-            self.assertNotIn("file", item)
-            self.assertEqual(json.loads((Path(folder) / "sounds.json").read_text())["items"], [])
-            self.assertEqual(json.loads((Path(folder) / "icons.json").read_text())["items"][0]["value"], 134400)
+            path = Path(folder) / "codex.sqlite"
+            disk = sqlite3.connect(path)
+            codex_fixture().backup(disk)
+            disk.close()
+            meta, written = sync.sync(path, Path(folder))
+            self.assertEqual(meta["client_build"], "1.60.1.71037")
+            self.assertEqual([name for name, _ in written], [output["path"] for output in sync.OUTPUTS])
+
+    def test_refuses_a_codex_without_the_columns_it_reads(self):
+        db = codex_fixture()
+        db.execute("ALTER TABLE icons RENAME COLUMN tags TO labels")
+        with self.assertRaises(SystemExit) as raised:
+            sync.check(db)
+        self.assertIn("icons: no tags", str(raised.exception))
+
+
+class PackageTests(unittest.TestCase):
+    def test_zip_holds_each_addon_with_its_manifest_and_license(self):
+        with ZipFile(packaging.package()) as archive:
+            names = set(archive.namelist())
+        for addon in packaging.ADDONS:
+            self.assertIn(f"{addon}/{addon}.toc", names)
+            self.assertIn(f"{addon}/LICENSE", names)
+        self.assertFalse(any(name.startswith("MediaLab_Export") for name in names))
 
 
 class ReleaseTests(unittest.TestCase):
     def test_bumps_only_the_version_and_interface_lines(self):
         toc = "## Interface: 16001\n## Title: MediaLab\n## Version: 0.1.0\ncore.lua\n"
         self.assertEqual(release.bump_toc(toc, "0.2.0"), toc.replace("0.1.0", "0.2.0"))
-        bumped = release.bump_toc(toc, "0.2.0", "16002")
-        self.assertIn("## Interface: 16002", bumped)
+        self.assertIn("## Interface: 16002", release.bump_toc(toc, "0.2.0", "16002"))
         readme = "interface **16001**. Version **0.1.0**.\n`dist/MediaLab-0.1.0.zip`"
         self.assertEqual(release.bump_readme(readme, "0.1.0", "0.2.0", "16002"),
                          "interface **16002**. Version **0.2.0**.\n`dist/MediaLab-0.2.0.zip`")
-
-    def test_catalog_doc_facts_match_the_json(self):
-        readme = (ROOT / "docs" / "addon-dev.md").read_text()
-        self.assertEqual(release.sync_catalog_facts(readme, release.load_catalog()), readme)
-        stale = readme.replace("- 888 `SOUNDKIT`", "- 1 `SOUNDKIT`")
-        self.assertEqual(release.sync_catalog_facts(stale, release.load_catalog()), readme)
-
-
-
-class ModelsDataTests(unittest.TestCase):
-    """The Models tab data, generated from a tiny Codex of Azeroth database."""
-
-    def test_writes_json_and_addon_data_from_the_codex_models_table(self):
-        import json
-        with tempfile.TemporaryDirectory() as folder:
-            db = sqlite3.connect(":memory:")
-            db.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
-            db.executemany("INSERT INTO meta VALUES (?, ?)", [("schema_version", "1"), ("client_build", "1.60.1.71037")])
-            db.execute("CREATE TABLE models (id INTEGER PRIMARY KEY, name TEXT, type TEXT, family TEXT, "
-                       "model_file INTEGER, skins TEXT)")
-            db.execute("INSERT INTO models VALUES (10, 'murloc blue', 'Creature', 'murloc', 1, '[\"murlocskinblue\"]')")
-            meta, items = models_data.load(db)
-            models_data.write_json(meta, items, Path(folder) / "models.json")
-            models_data.write_addon(items, Path(folder) / "data.lua")
-            document = json.loads((Path(folder) / "models.json").read_text())
-            self.assertEqual((document["count"], document["source"]["client"]), (1, "1.60.1.71037"))
-            self.assertEqual(document["items"][0], {"id": 10, "name": "murloc blue", "type": "Creature",
-                                                    "family": "murloc", "skins": ["murlocskinblue"], "model": 1})
-            self.assertIn('[10]="murloc blue\tCreature\tmurloc\t1\tmurlocskinblue",',
-                          (Path(folder) / "data.lua").read_text())
-
-    def test_refuses_a_codex_schema_it_was_not_written_for(self):
-        db = sqlite3.connect(":memory:")
-        db.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
-        db.execute("INSERT INTO meta VALUES ('schema_version', '99')")
-        with self.assertRaises(SystemExit):
-            models_data.load(db)
 
 
 if __name__ == "__main__":

@@ -1,2 +1,0 @@
--- Intentionally empty: this addon only owns the MediaLabExport saved variable,
--- which MediaLab fills on /mlab export. Load on demand keeps it out of logins.

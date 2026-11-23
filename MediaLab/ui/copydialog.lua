@@ -46,7 +46,7 @@ function Dialog.Render()
     frame.title:SetText("Copy " .. (request.name or "results"))
     frame.field:SetField(string.format("%d %s", shown, shown == 1 and "entry" or "entries"), text, 19)
     frame.note:SetText(shown < total
-        and string.format("First %d of %d. Narrow the search or use /mlab export for everything.", shown, total)
+        and string.format("First %d of %d. Narrow the search to copy the rest.", shown, total)
         or "Click the text or Copy, then press Ctrl+C.")
     for _, button in ipairs(frame.formats) do button:SetActive(button.format == request.format) end
 end

@@ -616,35 +616,4 @@ test("csv copies the current results with one shape per kind, capped and escaped
     equal(mixed, "kind,name,value,id\nsound,IG_MAINMENU_OPEN,IG_MAINMENU_OPEN,850\natlas,test-glow,test-glow,")
 end)
 
-test("export waits for indexing, loads the holder addon and snapshots every kind", function()
-    local ML = Mock.load()
-    SlashCmdList.MEDIALAB("export")
-    assert(Mock.messages[#Mock.messages]:find("still indexing", 1, true))
-    equal(MediaLabExport, nil)
-    Mock.flush()
-    SlashCmdList.MEDIALAB("export")
-    assert(Mock.loaded.MediaLab_Export)
-    assert(Mock.messages[#Mock.messages]:find("Exported %d+ entries"))
-    equal(MediaLabExport.client.interface, 16001)
-    equal(MediaLabExport.addonVersion, "0.1.0")
-    for _, kind in ipairs(ML.Kinds) do
-        equal(#MediaLabExport.kinds[kind.id].rows, ML.Catalog:Count(kind.id), kind.id)
-    end
-    local atlas = MediaLabExport.kinds.atlas
-    equal(atlas.fields[2], "width")
-    local glow = find(ML, "atlas", "test-glow")
-    for _, row in ipairs(atlas.rows) do
-        if row[1] == glow.name then equal(row[2], 256); equal(row[4], 12345) end
-    end
-    local control = MediaLabExport.kinds.control
-    for _, row in ipairs(control.rows) do
-        if row[1] == "UIPanelButtonTemplate" then equal(row[5], 120); equal(row[6], 22) end
-    end
-    MediaLabExport = nil
-    Mock.exportMissing = true
-    SlashCmdList.MEDIALAB("export")
-    assert(Mock.messages[#Mock.messages]:find("Enable the MediaLab_Export addon", 1, true))
-    equal(MediaLabExport, nil)
-end)
-
 print(string.format("%d integration tests passed (mocked WoW APIs; in-game rendering needs a client smoke test).", passed))

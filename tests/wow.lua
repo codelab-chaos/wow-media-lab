@@ -223,7 +223,7 @@ function Mock.install()
     GetFonts = function() return {"GameFontNormal", "SystemFont_Large", "NotLoadedFont"} end
     GetBuildInfo = function() return "1.60.1", "70888", "Nov 1 2026", 16001 end
     time = os.time
-    Mock.loaded, Mock.exportMissing = {}, false
+    Mock.loaded = {}
     Mock.iconMeta = {
         [134400] = "inv_misc_questionmark\tred,gray\tsymbol\tquestion mark,unknown,help\tA red question mark.",
         [135274] = "inv_sword_04\tgray\tweapon\tsword,blade,melee\tA steel longsword.",
@@ -235,7 +235,6 @@ function Mock.install()
     }
     C_AddOns = {
         LoadAddOn = function(name)
-            if Mock.exportMissing then return false, "MISSING" end
             Mock.loaded[name] = true
             if name == "MediaLab_Icons" then MediaLabIconMeta = Mock.iconMeta end
             if name == "MediaLab_Models" then MediaLabModels = Mock.models end
@@ -243,7 +242,7 @@ function Mock.install()
         end,
         GetAddOnMetadata = function(_, field) return field == "Version" and "0.1.0" or nil end,
     }
-    MediaLabDB, MediaLabExport = nil, nil
+    MediaLabDB = nil
 end
 
 function Mock.load(saved)

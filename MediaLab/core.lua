@@ -36,7 +36,7 @@ local commands = {
         ML.Print("/mlab tab <icons|textures|atlases|sounds|controls|fonts|models|lists> jumps to a tab.")
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
         ML.Print("/mlab reset restores the window's size and position.")
-        ML.Print("/mlab copy copies the current results as Lua, /mlab csv as CSV. /mlab export saves the whole catalog for scripts/import-export.py.")
+        ML.Print("/mlab copy copies the current results as Lua, /mlab csv as CSV.")
     end,
     copy = function()
         ML.UI:Show()
@@ -45,12 +45,6 @@ local commands = {
     csv = function()
         ML.UI:Show()
         ML.UI:CopyResults("csv")
-    end,
-    export = function()
-        ML.UI:Show()
-        local ok, result = ML.Export.Save()
-        if not ok then return ML.Print(result) end
-        ML.Print(string.format("Exported %d entries. Type /reload to write them to disk, then run scripts/import-export.py.", result))
     end,
     target = function()
         ML.UI:Show()

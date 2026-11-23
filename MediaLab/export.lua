@@ -1,12 +1,10 @@
 local _, ML = ...
 
--- Turns catalog entries into plain rows: a full snapshot for the load-on-demand
--- MediaLab_Export addon (written to disk on /reload) and small CSV listings for
--- copying. It reads the catalog and client APIs; it knows nothing about frames.
+-- Turns catalog entries into text to copy: a Lua table grouped by kind, or a
+-- CSV listing. It reads the catalog and client APIs; it knows nothing about frames.
 local Export = {}
 ML.Export = Export
 
-Export.ADDON = "MediaLab_Export"
 Export.CSV_LIMIT = 500
 
 local function facets(entry) return table.concat(entry.facets, ";") end
@@ -47,43 +45,6 @@ function Export.Rows(kind, entries)
     local rows = {}
     for index, entry in ipairs(entries) do rows[index] = shape.row(entry) end
     return {fields = shape.fields, rows = rows}
-end
-
--- Everything the catalog holds, with the client build it came from.
-function Export.Snapshot()
-    local version, build, date, interface = GetBuildInfo()
-    local snapshot = {
-        addonVersion = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(ML.name, "Version"),
-        client = {version = version, build = build, date = date, interface = interface},
-        exported = time and time() or nil,
-        kinds = {},
-    }
-    local total = 0
-    for _, kind in ipairs(ML.Kinds) do
-        local entries = ML.Catalog.byKind[kind.id] or {}
-        snapshot.kinds[kind.id] = Export.Rows(kind.id, entries)
-        total = total + #entries
-    end
-    return snapshot, total
-end
-
-local function loadHolder()
-    local load = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
-    if not load then return false, "no LoadAddOn" end
-    local loaded, reason = load(Export.ADDON)
-    return loaded, reason
-end
-
--- Fills MediaLabExport; the game writes it to SavedVariables on /reload or logout.
-function Export.Save()
-    if not ML.Catalog.ready then return false, "The catalog is still indexing. Try again when the lab says Ready." end
-    local loaded, reason = loadHolder()
-    if not loaded then
-        return false, "Enable the MediaLab_Export addon to export (" .. tostring(reason or "not loaded") .. ")."
-    end
-    local snapshot, total = Export.Snapshot()
-    MediaLabExport = snapshot
-    return true, total
 end
 
 local function csvCell(value)
