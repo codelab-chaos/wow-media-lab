@@ -20,9 +20,13 @@ ML.Help = {
             "Hold Ctrl and scroll over the grid to make the thumbnails bigger or smaller.",
         },
         texture = {
-            "Files are the game's images; Atlases are the pieces its interface is drawn from.",
+            "Texture files are whole images the game draws from: frames, backgrounds, borders.",
             "Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.",
             "Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.",
+        },
+        atlas = {
+            "Atlases are the pieces the game's interface is drawn from, each cut to an exact size.",
+            "Filter by shape or size the same way as textures, and zoom the preview to see the detail.",
         },
         sound = {
             "Rest the pointer on a sound to hear it, or press Play; Play through moves on to the next one when it ends.",

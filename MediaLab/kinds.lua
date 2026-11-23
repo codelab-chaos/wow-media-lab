@@ -20,10 +20,10 @@ ML.Kinds = {
         holds = "names, colors and descriptions  /  MediaLab_Icons",
         facetGroups = {"Subject", "Color"}},
     {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true,
-        preview = "image", view = "Files", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
+        preview = "image", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
         holds = "texture files and their sizes  /  UI source"},
     {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true,
-        preview = "image", tab = "texture", view = "Atlases", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
+        preview = "image", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
         holds = "interface art, cut and sized  /  the game's atlas list"},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
         facetGroups = {"Family"}, holds = "creatures, NPCs and objects  /  MediaLab_Models"},
@@ -86,6 +86,15 @@ ML.LoaderLines = {
 
 -- Build order: small, fast lists first so their tabs are usable immediately.
 ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
+
+-- Image preview repeats, to check that tiling art lines up: copies across
+-- and down. Cycled by the preview's Repeat button.
+ML.RepeatModes = {
+    {id = "off", label = "Off", across = 1, down = 1},
+    {id = "across", label = "Across", across = 3, down = 1},
+    {id = "down", label = "Down", across = 1, down = 3},
+    {id = "both", label = "Both", across = 3, down = 3},
+}
 
 -- Sounds: how long the pointer rests on a row before it plays (Hover play).
 ML.HoverPlayDelay = 0.3

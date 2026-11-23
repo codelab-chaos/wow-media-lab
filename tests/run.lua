@@ -210,7 +210,7 @@ end)
 test("saved variables of any shape load and the whole lab still works", function()
     -- A hand-edited or foreign MediaLabDB: every setting gets each wrong type.
     local junk = {42, "junk", true, {1, 2, {x = 1}}, -1}
-    local viewKeys = {"tab", "thumb", "thumbScales", "sizes", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
+    local viewKeys = {"tab", "thumb", "thumbScales", "sizes", "repeatMode", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
         "inspectorWidth", "facetWidth", "facets", "views", "zooms", "modelDistance"}
     for _, value in ipairs(junk) do
         local view = {facets = {icon = value, [5] = value}, views = {texture = value, [value] = "atlas"}}
@@ -745,6 +745,31 @@ test("image preview zooms within limits, pans, and keeps its zoom per kind", fun
     equal(ML.db.view.canvas, "Checker")
 end)
 
+test("the image preview repeats an image across, down or both, edge to edge", function()
+    local ML = open()
+    ML.UI:SelectTab("atlas")
+    ML.UI:Select(find(ML, "atlas", "test-glow"))
+    local image = ML.UI.inspector.previews.image
+    image:SetZoom(1)
+    equal(image.repeatButton.text:GetText(), "Repeat: Off")
+    image.repeatButton.scripts.OnClick(image.repeatButton)
+    equal(image.repeatButton.text:GetText(), "Repeat: Across")
+    equal(image.copyCount, 2, "two copies beside the original")
+    local _, _, _, leftX = image.copies[1]:GetPoint()
+    local _, _, _, artX = image.art:GetPoint()
+    equal(artX - leftX, 256, "copies sit edge to edge at the image's width")
+    image.repeatButton.scripts.OnClick(image.repeatButton)
+    image.repeatButton.scripts.OnClick(image.repeatButton)
+    equal(image.repeatButton.text:GetText(), "Repeat: Both")
+    equal(image.copyCount, 8, "a 3 x 3 tile")
+    image:Fit()
+    assert(image:CurrentZoom() * 256 * 3 <= image.stage:GetWidth(), "Fit takes in the whole tile")
+    image.repeatButton.scripts.OnClick(image.repeatButton)
+    equal(image.repeatButton.text:GetText(), "Repeat: Off")
+    equal(image.copyCount, 0)
+    equal(ML.db.view.repeatMode, nil)
+end)
+
 test("fonts render the saved sample text", function()
     local ML = open()
     ML.UI:SetDeveloper(true)
@@ -1023,12 +1048,12 @@ test("players see every tab; developer mode adds code and Copy, and persists", f
         end
         return table.concat(labels, ",")
     end
-    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Fonts,Lists", "Fonts is for everyone")
+    equal(shownTabs(), "Icons,Textures,Atlases,Models,Sounds,Controls,Fonts,Lists", "Fonts is for everyone")
     assert(ML.UI:SelectTab("font"))
     assert(not ML.UI.copyButton.shown, "no Copy button for players")
     SlashCmdList.MEDIALAB("dev")
     assert(Mock.messages[#Mock.messages]:find("Developer mode on", 1, true))
-    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Fonts,Lists", "the same tabs")
+    equal(shownTabs(), "Icons,Textures,Atlases,Models,Sounds,Controls,Fonts,Lists", "the same tabs")
     assert(ML.UI.copyButton.shown and ML.UI.devButton.active, "Copy and an active Dev button")
     local saved = ML.db
     ML = Mock.load(saved)
@@ -1041,26 +1066,33 @@ test("players see every tab; developer mode adds code and Copy, and persists", f
     assert(not ML.UI.copyButton.shown)
 end)
 
-test("atlases live in the Textures tab, behind a Files and Atlases switch", function()
+test("atlases have their own tab, and Find a filter narrows a long filter list", function()
     local ML = open()
-    local textures
-    for _, button in ipairs(ML.UI.tabButtons) do if button.tab.id == "texture" then textures = button end end
-    local C = ML.Catalog
-    assert(textures.text:GetText():find(tostring(C:TabCount("texture") + C:TabCount("atlas")), 1, true), "counts both")
-    ML.UI:SelectTab("icon")
-    for _, button in ipairs(ML.UI.viewButtons) do assert(not button.shown, "no switch outside Textures") end
-    textures.scripts.OnClick(textures)
-    equal(ML.UI.tabId, "texture")
-    local atlases = ML.UI.viewButtons[2]
-    equal(atlases.text:GetText(), "Atlases")
+    local atlases
+    for _, button in ipairs(ML.UI.tabButtons) do if button.tab.id == "atlas" then atlases = button end end
+    assert(atlases and atlases.shown, "an Atlases tab, like every other kind")
     atlases.scripts.OnClick(atlases)
     equal(ML.UI.tabId, "atlas")
-    assert(textures.active and atlases.active, "the Textures tab stays lit on its Atlases view")
-    ML.UI:SelectTab("sound")
-    textures.scripts.OnClick(textures)
-    equal(ML.UI.tabId, "atlas", "the tab remembers its view")
+    for _, button in ipairs(ML.UI.viewButtons) do assert(not button.shown, "no Files / Atlases switch") end
     SlashCmdList.MEDIALAB("tab atlases")
     equal(ML.UI.tabId, "atlas")
+    -- Find a filter, on the sound folders.
+    ML.UI:SelectTab("sound")
+    local function shown()
+        local rows = {}
+        for _, item in ipairs(ML.UI.facetButtons) do if item.shown then rows[#rows + 1] = item.name:GetText() end end
+        return table.concat(rows, ",")
+    end
+    local all = shown()
+    ML.UI.facetFind.box:Type("murl")
+    equal(shown(), "All,FOLDER,Murloc", "only matching filters, under their heading")
+    ML.UI:SelectTab("texture")
+    equal(ML.UI.facetFind.box:GetText(), "", "a new tab starts unfiltered")
+    -- The size range sits at the top, above the list.
+    assert(ML.UI.sizeRange.frame.points.TOPLEFT, "the size range is anchored to the top")
+    local _, _, _, _, listTop = ML.UI.facetList:GetPoint()
+    assert(listTop < -48, "the filter list starts below it")
+    assert(#all > 0)
 end)
 
 test("the welcome card shows once, and ? shows tips for the tab", function()
@@ -1078,8 +1110,8 @@ test("the welcome card shows once, and ? shows tips for the tab", function()
     ML.UI:SelectTab("atlas")
     ML.UI.helpButton.scripts.OnClick(ML.UI.helpButton)
     local blocks = ML.HelpPanel.frame.blocks
-    equal(blocks[2].heading:GetText(), "Textures")
-    assert(blocks[2].body:GetText():find(ML.Help.tabs.texture[1], 1, true), "tips of the whole tab")
+    equal(blocks[2].heading:GetText(), "Atlases")
+    assert(blocks[2].body:GetText():find(ML.Help.tabs.atlas[1], 1, true), "tips of the tab")
     ML.UI:SetDeveloper(true)
     assert(blocks[3].body:GetText():find(ML.Help.developer.lines[1], 1, true), "developer tips when on")
 end)

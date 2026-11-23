@@ -98,7 +98,9 @@ now hides it early), then on a second open check the bars show "so far / last
 time". Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
 every tab, search and filter, switch Textures between **Files** and
 **Atlases**, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom),
-filter Textures by Wide and drag the size handles to 64 and 256, zoom and pan both, play and stop a sound, change its channel,
+filter Textures by Wide and drag the size handles to 64 and 256 (the size
+range sits at the top of the column), type in Find a filter on Sounds, cycle
+Repeat on a "!" atlas, zoom and pan both, play and stop a sound, change its channel,
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Shift+click and Ctrl+click a few entries on two tabs, check the

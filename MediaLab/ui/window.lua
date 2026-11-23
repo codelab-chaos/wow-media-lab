@@ -110,6 +110,10 @@ end
 
 function UI:SelectTab(id)
     if not self:Tab(id) or not self:Available(id) then return false end
+    if self.tabId ~= id and self.facetFind then
+        self.facetQuery = ""
+        self.facetFind.box:SetText("")
+    end
     self.tabId = id
     view().tab = id
     local button = ML.TabButtonOf(id)
@@ -190,6 +194,7 @@ function UI:RenderFacets()
         items[#items + 1] = {name = facet.name, label = onLists and facet.label or C.FacetLabel(facet.name),
             count = facet.count}
     end
+    items = self:FindFacets(items)
     local visible = math.max(1, math.floor(self.facetList:GetHeight() / FACET_ROW))
     self.facetOffset = W.Clamp(self.facetOffset or 0, 0, math.max(0, #items - visible))
     for index = 1, visible do
@@ -756,9 +761,7 @@ function UI:RenderListActions(list)
     local editable = list and not ML.Lists.IsBuiltIn(list)
     bar.rename:SetEnabled(editable and true or false)
     bar.delete:SetEnabled(editable and true or false)
-    local tab = self:Tab(self.tabId)
-    local bottom = 22 + (shown and 24 or 0) + (tab and tab.sized and 50 or 0)
-    self.facetList:SetPoint("BOTTOMRIGHT", -2, bottom)
+    self:LayoutFacetColumn()
 end
 
 function UI:CreateFacetColumn(body)
@@ -768,8 +771,20 @@ function UI:CreateFacetColumn(body)
     self.facetColumn = column
     self.facetHeading = W.Label(column, "FILTER", 10, T.muted)
     self.facetHeading:SetPoint("TOPLEFT", 8, -8)
+    -- Find a filter: narrows a long list of filters by name.
+    self.facetFind = W.EditBox(column, 20, "Find a filter...")
+    self.facetFind:SetPoint("TOPLEFT", 4, -22)
+    self.facetFind:SetPoint("TOPRIGHT", -4, -22)
+    self.facetFind.box:SetScript("OnTextChanged", function(box)
+        local text = box:GetText()
+        self.facetFind.placeholder:SetShown(text == "")
+        if text == (self.facetQuery or "") then return end
+        self.facetQuery = text
+        self.facetOffset = 0
+        self:RenderFacets()
+    end)
     self.facetList = CreateFrame("Frame", nil, column)
-    self.facetList:SetPoint("TOPLEFT", 2, -24)
+    self.facetList:SetPoint("TOPLEFT", 2, -48)
     self.facetList:SetPoint("BOTTOMRIGHT", -2, 22)
     self.facetList:EnableMouseWheel(true)
     self.facetList:SetScript("OnMouseWheel", function(_, delta)
@@ -781,12 +796,39 @@ function UI:CreateFacetColumn(body)
     self.facetMore:SetPoint("BOTTOMLEFT", 8, 7)
     self.facetButtons = {}
     self:CreateListActions(column)
-    -- Textures and atlases: the size range, on the longer side.
+    -- Textures and atlases: the size range, on the longer side, at the top.
     self.sizeRange = ML.RangeSlider.New(column, "SIZE", ML.SizeStops, function(low, high) self:SetSizeFilter(low, high) end)
-    self.sizeRange.frame:SetPoint("BOTTOMLEFT", 4, 20)
-    self.sizeRange.frame:SetPoint("BOTTOMRIGHT", -4, 20)
+    self.sizeRange.frame:SetPoint("TOPLEFT", 4, -48)
+    self.sizeRange.frame:SetPoint("TOPRIGHT", -4, -48)
     self.sizeRange.frame:Hide()
     return column
+end
+
+-- Top to bottom: heading, Find a filter, the size range (sized kinds), the
+-- list, then the list actions (Lists tab) and the page line.
+function UI:LayoutFacetColumn()
+    local tab = self:Tab(self.tabId)
+    local sized = tab and tab.sized
+    self.facetList:ClearAllPoints()
+    self.facetList:SetPoint("TOPLEFT", 2, sized and -100 or -48)
+    self.facetList:SetPoint("BOTTOMRIGHT", -2, 22 + (self.tabId == ML.ListsTab and 24 or 0))
+end
+
+-- Facet items whose label holds the Find a filter text; a heading stays only
+-- when something under it does.
+function UI:FindFacets(items)
+    local query = (self.facetQuery or ""):lower()
+    if query == "" then return items end
+    local kept, heading = {}, nil
+    for index, item in ipairs(items) do
+        if item.heading then
+            heading = item
+        elseif index == 1 or (item.label or item.name):lower():find(query, 1, true) then
+            if heading then kept[#kept + 1] = heading; heading = nil end
+            kept[#kept + 1] = item
+        end
+    end
+    return kept
 end
 
 ---------------------------------------------------------------------------

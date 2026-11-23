@@ -208,6 +208,14 @@ function Image.New(parent)
     end, 22)
     self.canvasButton:SetPoint("LEFT", fit, "RIGHT", 4, 0)
     W.Tip(self.canvasButton, "Canvas", "Cycle the background to inspect transparency.")
+    self.repeatButton = W.Button(bar, "Repeat: Off", 96, function()
+        view().repeatMode = nextIn(ML.RepeatModes, view().repeatMode or "off", "id")
+        if view().repeatMode == "off" then view().repeatMode = nil end
+        self:Layout()
+    end, 22)
+    self.repeatButton:SetPoint("LEFT", self.canvasButton, "RIGHT", 4, 0)
+    W.Tip(self.repeatButton, "Repeat", "Show copies side by side, stacked, or tiled, to check that the edges line up.")
+    self.copies = {}
     self.note = W.Label(self.frame, "", 10, T.muted)
     self.note:SetPoint("BOTTOMLEFT", 1, 10)
     self.note:SetPoint("BOTTOMRIGHT", -1, 10)
@@ -234,12 +242,14 @@ function Image:Layout()
         self.note:SetText("")
         return
     end
+    local mode = self:RepeatMode()
+    self.repeatButton:SetLabel("Repeat: " .. mode.label)
+    self.repeatButton:SetActive(mode.id ~= "off")
     local stageWidth, stageHeight = math.max(1, self.stage:GetWidth() - 16), math.max(1, self.stage:GetHeight() - 16)
-    self.fitZoom = math.min(stageWidth / width, stageHeight / height)
+    -- Fit takes in the whole repeated area.
+    self.fitZoom = math.min(stageWidth / (width * mode.across), stageHeight / (height * mode.down))
     local zoom = self:CurrentZoom()
-    self.art:SetSize(math.max(1, width * zoom), math.max(1, height * zoom))
-    self.art:ClearAllPoints()
-    self.art:SetPoint("CENTER", self.stage, "CENTER", self.panX, self.panY)
+    self:PlaceCopies(mode, math.max(1, width * zoom), math.max(1, height * zoom))
     self.zoomLabel:SetText(self:ZoomText())
     if exact and info then
         self.note:SetText(string.format("%d x %d native  /  file %s", width, height, tostring(info.file or info.filename or "?")))
@@ -248,6 +258,37 @@ function Image:Layout()
     else
         self.note:SetText(string.format("Size unknown to addons; 1:1 assumes %d x %d. Wheel zooms, drag pans.", width, height))
     end
+end
+
+function Image:RepeatMode()
+    for _, mode in ipairs(ML.RepeatModes) do if mode.id == (view().repeatMode or "off") then return mode end end
+    return ML.RepeatModes[1]
+end
+
+-- The image, and its copies, edge to edge around the stage center: one in
+-- the middle of the grid is self.art, the rest come from a reused pool.
+function Image:PlaceCopies(mode, width, height)
+    local used = 0
+    local centerColumn, centerRow = math.ceil(mode.across / 2), math.ceil(mode.down / 2)
+    for row = 1, mode.down do
+        for column = 1, mode.across do
+            local texture
+            if column == centerColumn and row == centerRow then
+                texture = self.art
+            else
+                used = used + 1
+                texture = self.copies[used] or self.stage:CreateTexture(nil, "ARTWORK")
+                self.copies[used] = texture
+                ML.Art.Apply(texture, self.entry)
+            end
+            texture:SetSize(width, height)
+            texture:ClearAllPoints()
+            texture:SetPoint("CENTER", self.stage, "CENTER", self.panX + (column - centerColumn) * width,
+                self.panY - (row - centerRow) * height)
+        end
+    end
+    for index = used + 1, #self.copies do ML.Art.Reset(self.copies[index]) end
+    self.copyCount = used
 end
 
 function Image:Hide() self.frame:Hide() end

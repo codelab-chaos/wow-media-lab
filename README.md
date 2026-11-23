@@ -72,16 +72,21 @@ The **-**, **100%** and **+** buttons above the results do the same (click
 the percentage to reset it). Icons, texture files and atlases each remember
 their own zoom.
 
-### Textures
+### Textures and Atlases
 
-Files are the game's images; Atlases are the pieces its interface is drawn from.
-Switch between them with **Files** and **Atlases** above the results.
+Texture files are whole images the game draws from: frames, backgrounds, borders.
+Atlases are the pieces the game's interface is drawn from, each cut to an exact size.
+Each has its own tab.
 Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.
+**Repeat** shows copies side by side, stacked, or tiled 3 by 3, to check
+that a border or background lines up with itself.
 Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.
-The handles snap to the usual sizes (16, 32, 64 up to 4096 pixels, on the
+Type in **Find a filter...** at the top of the filter column to narrow a
+long list of filters. The handles snap to the usual sizes (16, 32, 64 up to 4096 pixels, on the
 longer side); click the size shown above them to go back to any size.
 The preview keeps your zoom as you go from one image to the next (icons,
 texture files and atlases each remember their own).
+Filter by shape or size the same way as textures, and zoom the preview to see the detail.
 
 ### Models
 

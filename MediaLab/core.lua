@@ -26,6 +26,7 @@ local function viewRules() return {
     autoplay = {type = "boolean"}, modelAnimation = {type = "number"},
     inspectorWidth = {type = "number"}, facetWidth = {type = "number"},
     canvas = {type = "string", values = ids(ML.Canvases, "id")},
+    repeatMode = {type = "string", values = ids(ML.RepeatModes, "id")},
     channel = {type = "string", values = ids(ML.SoundChannels)},
     copyFormat = {type = "string", values = ids(ML.CopyFormats, "id")},
     facets = {type = "table", strings = true}, views = {type = "table", strings = true},
