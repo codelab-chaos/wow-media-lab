@@ -1,13 +1,14 @@
 ## Interface: 16001
 ## Title: WoW Media Lab
-## Notes: Browse every icon, texture, sound and creature model in the game. Favorite them, make lists, and copy the code if you make addons. /mlab
+## Notes: Look through the game's icons, textures, sounds and creature models in one window. Favorite what you like, make lists, and copy the code if you make addons. /mlab
 ## Author: Wizwonk
 ## Version: 0.1.0
 ## X-License: MIT
+## X-Website: https://github.com/codelab-chaos/wow-media-lab
 ## AllowLoadGameType: forever
 ## ExcludeLoadGameType: standard, classic
 ## Category: Development Tools
-## IconTexture: Interface\Icons\inv_misc_spyglass_03
+## IconTexture: Interface\Icons\trade_alchemy
 ## SavedVariables: MediaLabDB
 ## AddonCompartmentFunc: MediaLab_OnAddonCompartmentClick
 

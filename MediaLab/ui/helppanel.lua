@@ -27,6 +27,7 @@ function Help.Sections(tabId, developer)
     if #tips > 0 then sections[#sections + 1] = {tab and tab.label or tabId, bullets(tips)} end
     sections[#sections + 1] = {help.developer.title .. (developer and " (on)" or ""),
         bullets(developer and help.developer.lines or {help.developer.hint})}
+    sections[#sections + 1] = {help.feedback.title, table.concat(help.feedback.lines, "\n")}
     return sections
 end
 

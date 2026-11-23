@@ -34,7 +34,7 @@ local function safe(fn, ...)
 end
 
 -- Optional icon metadata from the load-on-demand MediaLab_Icons addon, built
--- offline by scripts/icon-metadata.py: [fileID] = "name\tcolors\tsubject\ttags\tdescription".
+-- in the Codex of Azeroth and synced by scripts/sync-codex.py: [fileID] = "name\tcolors\tsubject\ttags\tdescription".
 -- Loaded once, when icons are indexed, and released from the global table.
 function Sources.IconMeta(step)
     if Sources.iconMeta ~= nil then return Sources.iconMeta or nil, Sources.iconIds end
@@ -203,7 +203,7 @@ Sources.font = function(add, step)
 end
 
 -- Creature displays from the load-on-demand MediaLab_Models addon, built
--- offline by scripts/creature-models.py from the client's DB2 tables:
+-- in the Codex of Azeroth and synced by scripts/sync-codex.py:
 -- [displayID] = "name\ttype\tfamily\tmodel file ID\tskins". Loaded once, when
 -- models are indexed, and released from the global table.
 function Sources.ModelData()

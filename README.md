@@ -1,6 +1,6 @@
-# WoW Media Lab
+# WoW Media Lab 🧪
 
-**Every icon, texture, sound and creature model in the game, in one window.**
+**Look through the game's icons, textures, sounds and creature models, all in one window.**
 
 Hunting for the perfect icon for a macro? Want to hear what that sound is
 called, or watch a murloc dance? WoW Media Lab lets you search, preview and
@@ -10,11 +10,11 @@ Made for **WoW Forever** (interface **16001**). Version **0.1.0**.
 
 ## What you can do
 
-- **Find any icon by what it looks like.** Over 30,000 icons, searchable by
+- **Find any icon by what it looks like.** Nearly 28,000 icons, searchable by
   what they show and by color: `sword`, `wolf`, `potion green`.
 - **Meet the whole bestiary.** Turn, zoom and animate over 14,000 creature
   models, and target any NPC to see which model it uses.
-- **Play every sound.** Hundreds of interface sounds, one click each.
+- **Hear the game's sounds.** Hundreds of interface sounds, one click each.
 - **Browse the game's art.** Its textures and the pieces its windows are
   drawn from, zoomed and on any background.
 - **Keep what you like.** Right-click anything to favorite it or put it in
@@ -38,7 +38,7 @@ minimap. The first time, a welcome card says hello:
 
 > **Welcome to WoW Media Lab**
 >
-> - Every icon, texture, sound and creature model in the game, in one window.
+> - Look through the game's icons, textures, sounds and creature models, all in one window.
 > - Type in the search box to find anything: a name, a color, a subject or an ID.
 > - Right-click anything to add it to your Favorites or one of your lists.
 > - Press ? in the title bar any time for tips about the tab you are on.
@@ -124,7 +124,7 @@ copy, building a list for your addon, and what to watch out for.
 
 ## Good to know
 
-- **Nothing from Blizzard is bundled.** Every picture and sound comes from
+- **Nothing from Blizzard is bundled.** The pictures and sounds come from
   your own game; the addon only knows their names and numbers.
 - **It stays out of the way.** Nothing loads until you open it, and the big
   icon and model lists load only when you visit those tabs.
@@ -133,6 +133,14 @@ copy, building a list for your addon, and what to watch out for.
 - **Some art may be missing.** The lab lists what the game's interface files
   mention, plus everything the game itself can list. A texture the game
   doesn't have shows as **?**, blank or green.
+
+## Feedback
+
+Ideas or bugs? Tell us on the project page: github.com/codelab-chaos/wow-media-lab/issues
+
+That's the [issue tracker](https://github.com/codelab-chaos/wow-media-lab/issues) on
+GitHub. Screenshots and the tab you were on help a lot. The same link is in
+the lab's **?** card and in `/mlab help`.
 
 ## Thanks
 

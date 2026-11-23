@@ -10,7 +10,7 @@ local Dock = {}
 ML.Dock = Dock
 
 Dock.SIZE = 38
-Dock.ICON = [[Interface\Icons\inv_misc_spyglass_03]]
+Dock.ICON = ML.ICON
 Dock.DEFAULT = {side = "right", at = 0.5}
 -- Each edge: the anchor point, and whether "at" runs along x or y.
 Dock.SIDES = {

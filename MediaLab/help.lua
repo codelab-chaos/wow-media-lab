@@ -7,7 +7,7 @@ ML.Help = {
     welcome = {
         title = "Welcome to WoW Media Lab",
         lines = {
-            "Every icon, texture, sound and creature model in the game, in one window.",
+            "Look through the game's icons, textures, sounds and creature models, all in one window.",
             "Type in the search box to find anything: a name, a color, a subject or an ID.",
             "Right-click anything to add it to your Favorites or one of your lists.",
             "Press ? in the title bar any time for tips about the tab you are on.",
@@ -41,6 +41,12 @@ ML.Help = {
             "Favorites and your own lists, with any kind of media in them.",
             "Ctrl+click or Shift+click to pick several things, then right-click to add them all at once.",
             "Press New to start a list, and Add to list in the right panel to fill it.",
+        },
+    },
+    feedback = {
+        title = "Ideas or bugs?",
+        lines = {
+            "Tell us on the project page: github.com/codelab-chaos/wow-media-lab/issues",
         },
     },
     developer = {

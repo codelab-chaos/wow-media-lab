@@ -2,6 +2,8 @@ local addonName, ML = ...
 ML.name = addonName
 
 ML.TITLE = "WoW Media Lab"
+ML.ICON = [[Interface\Icons\trade_alchemy]] -- the lab's beaker
+ML.SITE = "github.com/codelab-chaos/wow-media-lab"
 
 function ML.Print(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff9ec7e8Media Lab|r  " .. tostring(message))
@@ -90,6 +92,7 @@ local commands = {
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
         ML.Print("/mlab reset restores the window's size and position. /mlab dock <left|right|top|bottom> picks where it minimizes to.")
         ML.Print("/mlab dev turns developer mode on or off: code to copy, the Fonts tab, /mlab copy and /mlab csv.")
+        ML.Print("Ideas or bugs? " .. ML.SITE .. "/issues")
     end,
     dev = function()
         ML.UI:Show()
@@ -125,7 +128,14 @@ local commands = {
     end,
     tab = function(argument)
         ML.UI:Show()
-        if not ML.UI:SelectTabByName(argument) then ML.Print("Unknown tab: " .. argument) end
+        if ML.UI:SelectTabByName(argument) then return end
+        local wanted = argument:lower()
+        for _, button in ipairs(ML.TabBar) do
+            if button.developer and (button.id == wanted or button.label:lower() == wanted) then
+                return ML.Print(button.label .. " is part of developer mode: /mlab dev turns it on.")
+            end
+        end
+        ML.Print("Unknown tab: " .. argument)
     end,
 }
 
