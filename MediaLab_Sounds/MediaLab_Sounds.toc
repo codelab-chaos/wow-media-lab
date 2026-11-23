@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: WoW Media Lab: Sounds
+## Notes: Sound kit names and categories for WoW Media Lab. Loaded only when the lab shows sounds.
+## Author: Wizwonk
+## Version: 0.1.0
+## X-License: MIT
+## AllowLoadGameType: forever
+## ExcludeLoadGameType: standard, classic
+## Category: Development Tools
+## LoadOnDemand: 1
+## Dependencies: MediaLab
+
+data.lua

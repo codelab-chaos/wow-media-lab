@@ -25,7 +25,7 @@ here that depends on, or exists only for, another project.
 - **Data driven.** A media type is a row in `ML.Kinds` (`kinds.lua`), a
   provider in `sources.lua` and a snippet builder in `snippets.lua`. Prefer the
   client's own enumeration APIs; the generated `data/` files are the fallback.
-- **Light.** `MediaLab_Icons` and `MediaLab_Models` are load on demand; keep
+- **Light.** `MediaLab_Icons`, `MediaLab_Models` and `MediaLab_Sounds` are load on demand; keep
   indexing batched and create frames only when needed. `MediaLabDB` holds only
   the player's lists, captured NPC names and settings.
 - No Blizzard artwork or audio is bundled. Never write extracted artwork to

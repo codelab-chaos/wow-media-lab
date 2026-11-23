@@ -22,7 +22,7 @@ sync = load("sync", "scripts/sync-codex.py")
 
 class DataAddonTests(unittest.TestCase):
     def test_data_addons_load_on_demand_and_are_generated(self):
-        for name in ("MediaLab_Icons", "MediaLab_Models"):
+        for name in ("MediaLab_Icons", "MediaLab_Models", "MediaLab_Sounds"):
             self.assertIn("## LoadOnDemand: 1", (ROOT / name / f"{name}.toc").read_text(), name)
             self.assertTrue((ROOT / name / "data.lua").read_text().startswith(sync.HEADER), name)
 
@@ -51,6 +51,9 @@ def codex_fixture():
                                  (135274, 'inv_sword_04', '["gray"]', NULL, '[]', NULL);
         CREATE TABLE models (id INTEGER PRIMARY KEY, name TEXT, type TEXT, family TEXT, model_file INTEGER, skins TEXT);
         INSERT INTO models VALUES (10, 'murloc blue', 'Creature', 'murloc', 1, '["murlocskinblue"]');
+        CREATE TABLE sounds (id INTEGER PRIMARY KEY, name TEXT, category TEXT, folder TEXT, constant TEXT, files INTEGER, file INTEGER);
+        INSERT INTO sounds VALUES (850, 'uescapescreenopen', 'Interface', NULL, 'IG_MAINMENU_OPEN', 1, 5),
+                                  (417, 'mmurlocattack', 'Creature', 'murloc', NULL, 3, 6);
     """)
     return db
 
@@ -85,6 +88,9 @@ class SyncCodexTests(unittest.TestCase):
         self.assertIn('[134400]="inv_misc_questionmark\tred,gray\tsymbol\tquestion mark\tA \\"red\\" mark.",', icons)
         self.assertIn('[135274]="inv_sword_04\tgray\t\t\t",', icons)
         self.assertIn('[10]="murloc blue\tCreature\tmurloc\t1\tmurlocskinblue",', sync.models(db, meta))
+        sounds = sync.sounds_data(db, meta)
+        self.assertIn('[417]="mmurlocattack\tCreature\tmurloc\t\t3",', sounds)
+        self.assertIn('[850]="uescapescreenopen\tInterface\t\tIG_MAINMENU_OPEN\t1",', sounds)
 
     def test_writes_the_files_into_a_tree(self):
         with tempfile.TemporaryDirectory() as folder:

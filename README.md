@@ -14,7 +14,8 @@ Made for **WoW Forever** (interface **16001**). Version **0.1.0**.
   what they show and by color: `sword`, `wolf`, `potion green`.
 - **Meet the whole bestiary.** Turn, zoom and animate over 14,000 creature
   models, and target any NPC to see which model it uses.
-- **Hear the game's sounds.** Hundreds of interface sounds, one click each.
+- **Hear the game's sounds.** Over 23,000 of them: creatures, spells, music,
+  ambience and the interface, one click each.
 - **Browse the game's art.** Its textures and the pieces its windows are
   drawn from, zoomed and on any background.
 - **Keep what you like.** Right-click anything to favorite it or put it in
@@ -25,8 +26,8 @@ Made for **WoW Forever** (interface **16001**). Version **0.1.0**.
 Install **WoW Media Lab** from CurseForge, or download the zip from
 [Releases](https://github.com/codelab-chaos/wow-media-lab/releases) and
 extract it into `World of Warcraft/_forever_/Interface/AddOns/`. It brings
-three folders: `MediaLab`, and two data folders (`MediaLab_Icons`,
-`MediaLab_Models`) that load only when you open those tabs.
+four folders: `MediaLab`, and three data folders (`MediaLab_Icons`,
+`MediaLab_Models`, `MediaLab_Sounds`) that load only when you open those tabs.
 
 Restart the game after installing, and make sure **WoW Media Lab** is
 enabled in the AddOns list.
@@ -88,6 +89,9 @@ game**.
 
 Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.
 Pick the channel it plays on, so the game's volume sliders apply.
+Filter by Creature, Spell, Music or Ambience in the left column, or search for a creature by name.
+The game doesn't name most of its sounds, so each one is named after its
+sound files, like `mmurlocattack`.
 
 ### Controls (a bonus)
 

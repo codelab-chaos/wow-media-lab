@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TOC = ROOT / "MediaLab" / "MediaLab.toc"
-TOCS = [TOC, ROOT / "MediaLab_Icons" / "MediaLab_Icons.toc", ROOT / "MediaLab_Models" / "MediaLab_Models.toc"]
+TOCS = [TOC] + [ROOT / name / f"{name}.toc" for name in ("MediaLab_Icons", "MediaLab_Models", "MediaLab_Sounds")]
 README = ROOT / "README.md"
 
 CHECKS = [

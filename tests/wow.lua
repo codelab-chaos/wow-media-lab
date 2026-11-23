@@ -235,6 +235,12 @@ function Mock.install()
         [134400] = "inv_misc_questionmark\tred,gray\tsymbol\tquestion mark,unknown,help\tA red question mark.",
         [135274] = "inv_sword_04\tgray\tweapon\tsword,blade,melee\tA steel longsword.",
     }
+    Mock.soundKits = {
+        [850] = "uescapescreenopen\tInterface\t\tIG_MAINMENU_OPEN\t1",
+        [417] = "mmurlocattack\tCreature\tmurloc\t\t3",
+        [418] = "mmurlocwound\tCreature\tmurloc\t\t3",
+        [20000] = "elwynn day_forest\tMusic\telwynn\t\t4",
+    }
     Mock.models = {
         [1693] = "murloc blue\tCreature\tmurloc\t123456\tmurlocskinblue",
         [1694] = "murloc green\tCreature\tmurloc\t123456\tmurlocskingreen",
@@ -245,6 +251,7 @@ function Mock.install()
             Mock.loaded[name] = true
             if name == "MediaLab_Icons" then MediaLabIconMeta = Mock.iconMeta end
             if name == "MediaLab_Models" then MediaLabModels = Mock.models end
+            if name == "MediaLab_Sounds" then MediaLabSounds = Mock.soundKits end
             return true
         end,
         GetAddOnMetadata = function(_, field) return field == "Version" and "0.1.0" or nil end,

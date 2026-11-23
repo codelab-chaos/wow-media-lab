@@ -19,7 +19,7 @@ for argument in "$@"; do
         *) echo "Unknown argument: $argument" >&2; exit 1 ;;
     esac
 done
-for addon in MediaLab MediaLab_Icons MediaLab_Models; do
+for addon in MediaLab MediaLab_Icons MediaLab_Models MediaLab_Sounds; do
     target="$addons_dir/$addon"
     [[ ! -L "$target" ]] || { echo "Refusing to replace a symlink: $target" >&2; exit 1; }
     [[ ! -d "$target" || -f "$target/$addon.toc" ]] || {
@@ -28,5 +28,5 @@ for addon in MediaLab MediaLab_Icons MediaLab_Models; do
     rsync "${flags[@]}" "$project_dir/$addon/" "$target/"
 done
 if $dry_run; then echo "Dry run only; nothing was copied to $addons_dir."; exit 0; fi
-echo "MediaLab, MediaLab_Icons and MediaLab_Models installed in $addons_dir."
+echo "MediaLab, MediaLab_Icons, MediaLab_Models and MediaLab_Sounds installed in $addons_dir."
 echo "Restart WoW if an addon or file is new; otherwise type /reload. Open it with /mlab."

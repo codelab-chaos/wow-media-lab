@@ -22,7 +22,8 @@ ML.Kinds = {
         preview = "image", tab = "texture", view = "Atlases", sized = true, facetGroups = {"Shape"}, groupsFirst = true},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
         facetGroups = {"Family"}},
-    {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id"},
+    {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id",
+        facetGroups = {"Folder", "Prefix"}},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control"},
     {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font", developer = true},
 }

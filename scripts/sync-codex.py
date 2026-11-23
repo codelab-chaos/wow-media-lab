@@ -98,6 +98,13 @@ def models(db, _meta):
                                     for display, name, kind, family, model, skins in rows))
 
 
+def sounds_data(db, _meta):
+    # Fields: name, category, folder, SOUNDKIT constant, file count.
+    rows = db.execute("SELECT id, name, category, folder, constant, files FROM sounds ORDER BY id")
+    return keyed("MediaLabSounds", ((kit, [name, category, folder or "", constant or "", str(files)])
+                                    for kit, name, category, folder, constant, files in rows))
+
+
 OUTPUTS = [
     {"path": "MediaLab/data/art.lua", "render": art,
      "reads": {"textures": {"path", "is_icon", "width", "height"}, "atlases": {"name"}}},
@@ -106,6 +113,8 @@ OUTPUTS = [
      "reads": {"templates": {"name", "type", "inherits", "source"}}},
     {"path": "MediaLab_Icons/data.lua", "render": icons,
      "reads": {"icons": {"id", "name", "colors", "subject", "tags", "description"}}},
+    {"path": "MediaLab_Sounds/data.lua", "render": sounds_data,
+     "reads": {"sounds": {"id", "name", "category", "folder", "constant", "files"}}},
     {"path": "MediaLab_Models/data.lua", "render": models,
      "reads": {"models": {"id", "name", "type", "family", "model_file", "skins"}}},
 ]

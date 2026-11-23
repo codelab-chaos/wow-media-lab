@@ -8,7 +8,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 
 # Addon folders shipped in the release zip, each with its own .toc manifest.
-ADDONS = ["MediaLab", "MediaLab_Icons", "MediaLab_Models"]
+ADDONS = ["MediaLab", "MediaLab_Icons", "MediaLab_Models", "MediaLab_Sounds"]
 
 
 def manifest_files(name):

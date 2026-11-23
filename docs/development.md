@@ -44,6 +44,7 @@ Code layout (one job per file):
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
 | `MediaLab_Icons/` | Load-on-demand icon names, colors and descriptions (generated) |
 | `MediaLab_Models/` | Load-on-demand creature displays (generated) |
+| `MediaLab_Sounds/` | Load-on-demand sound kit names and categories (generated) |
 
 Adding a media type means adding a row to `ML.Kinds`, a provider in
 `sources.lua` and a snippet builder in `snippets.lua`, and pointing its
@@ -61,6 +62,7 @@ generated files, committed here, so the addon and this repo stand alone:
 | `MediaLab/data/templates.lua` | XML templates and font objects |
 | `MediaLab_Icons/data.lua` | Every icon's name, colors, subject, tags and description |
 | `MediaLab_Models/data.lua` | Every creature display's name, type, family and skins |
+| `MediaLab_Sounds/data.lua` | Every sound kit's name, category, folder and `SOUNDKIT` name |
 | `MediaLab/data/featured.lua` | Hand-picked Common lists (not generated) |
 
 They are generated from the [Codex of Azeroth](https://github.com/codelab-chaos/codex-of-azeroth),

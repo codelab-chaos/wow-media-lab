@@ -152,12 +152,35 @@ Sources.atlas = function(add, step)
     end
 end
 
+-- Every sound kit the client can play, from the load-on-demand MediaLab_Sounds
+-- addon (synced from the Codex of Azeroth): [kit ID] = "name\tcategory\tfolder\t
+-- SOUNDKIT constant\tfile count". Loaded once, when sounds are indexed.
+function Sources.SoundData()
+    if Sources.soundData ~= nil then return Sources.soundData or nil end
+    local load = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+    if load and type(MediaLabSounds) ~= "table" then pcall(load, "MediaLab_Sounds") end
+    Sources.soundData = type(MediaLabSounds) == "table" and MediaLabSounds or false
+    MediaLabSounds = nil
+    return Sources.soundData or nil
+end
+
+local function soundFields(raw)
+    if type(raw) ~= "string" then return end
+    return raw:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+end
+
+-- Named SOUNDKIT constants first (their name is what addons write), then every
+-- other kit the client can play, by ID. Filters: the category (Creature,
+-- Music, ...), then Folder and Prefix groups.
 Sources.sound = function(add, step)
-    local common, seen = commonSet("sound"), {}
+    local common, seen, seenIds = commonSet("sound"), {}, {}
+    local data = Sources.SoundData() or {}
     local function sound(name, id, origin)
         if type(name) ~= "string" or type(id) ~= "number" or seen[name] then return end
-        seen[name] = true
-        local facets = {token(name, "^([%u%d]+)_")}
+        seen[name], seenIds[id] = true, true
+        local _, category = soundFields(data[id])
+        local facets = {category ~= nil and category ~= "" and category or "Interface",
+            "Prefix: " .. token(name, "^([%u%d]+)_")}
         if common[name] then facets[#facets + 1] = "Common" end
         add({value = name, id = id, name = name, facets = facets, origin = origin})
         step()
@@ -166,6 +189,16 @@ Sources.sound = function(add, step)
         for name, id in pairs(SOUNDKIT) do sound(name, id, "Client SOUNDKIT") end
     end
     for _, row in ipairs(ML.SoundKits or {}) do sound(row[1], row[2], "UI source") end
+    for id, raw in pairs(data) do
+        local name, category, folder = soundFields(raw)
+        if name and not seenIds[id] then
+            seenIds[id] = true
+            local facets = {category}
+            if folder ~= "" then facets[#facets + 1] = "Folder: " .. capital(folder) end
+            add({value = id, id = id, name = name, facets = facets, origin = "Client sound kits"})
+        end
+        step()
+    end
 end
 
 Sources.control = function(add, step)

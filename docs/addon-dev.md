@@ -60,7 +60,7 @@ It is remembered, so it stays on until you turn it off.
 | --- | --- |
 | Icons, Textures (Files) | File ID or path, `texture:SetTexture(...)`, `CreateSimpleTextureMarkup(..., 16, 16)`, tags |
 | Textures (Atlases) | Atlas name, `texture:SetAtlas(..., true)`, `CreateAtlasMarkup(..., 16, 16)` |
-| Sounds | `SOUNDKIT` name, sound kit ID, `PlaySound(SOUNDKIT..., channel)` |
+| Sounds | `SOUNDKIT` name (when it has one), sound kit ID, `PlaySound(SOUNDKIT... or ID, channel)` |
 | Controls | Template name, a `CreateFrame` call using it, the template it inherits |
 | Fonts | Font object, `fontString:SetFontObject(...)`, `parent:CreateFontString(nil, "OVERLAY", ...)` |
 | Models | Display ID, a `PlayerModel` with `SetDisplayInfo(...)`, `actor:SetModelByCreatureDisplayID(...)`, the model file ID |
@@ -100,8 +100,11 @@ running: every icon and atlas the client can enumerate, the live `SOUNDKIT`
 table, the loaded font objects. Data shipped with the addon fills in what the
 client cannot list and adds the names and descriptions:
 
-- about 1,100 texture paths, 3,800 atlas names, 890 `SOUNDKIT` names and
-  3,600 templates and font objects that Blizzard's UI source references;
+- about 1,100 texture paths (with their sizes), 3,800 atlas names, 890
+  `SOUNDKIT` names and 3,600 templates and font objects that Blizzard's UI
+  source references;
+- about 23,000 sound kits, named from their sound files, with a category
+  (Creature, Spell, Music, Ambience, ...) and folder;
 - a name, colors, subject, tags and a one-line description for about 30,000
   icons;
 - a name, type, family and skins for about 14,000 creature displays.

@@ -27,6 +27,7 @@ ML.Help = {
         sound = {
             "Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.",
             "Pick the channel it plays on, so the game's volume sliders apply.",
+            "Filter by Creature, Spell, Music or Ambience in the left column, or search for a creature by name.",
         },
         control = {
             "These are the building blocks of the game's windows: buttons, frames, sliders.",
