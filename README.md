@@ -94,7 +94,13 @@ game**.
 
 ### Sounds
 
-Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.
+Rest the pointer on a sound to hear it, or press Play; Play through moves on to the next one when it ends.
+The waveform shows how loud a sound is over time, and a playhead follows it while it plays.
+The right panel shows it large, with **<** and **>** to step through the
+results, its length, how many variations it has (the game picks one at random),
+and what plays it: a creature's aggro, attack or death, or a zone's music.
+**Hover play**, **Auto-play** (play what you select) and **Play through** each
+switch on and off there.
 Pick the channel it plays on, so the game's volume sliders apply.
 Filter by Creature, Spell, Music or Ambience in the left column, or search for a creature by name.
 The game doesn't name most of its sounds, so each one is named after its

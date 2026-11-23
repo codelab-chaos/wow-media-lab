@@ -98,11 +98,34 @@ def models(db, _meta):
                                     for display, name, kind, family, model, skins in rows))
 
 
+USAGE_LIMIT = 160  # characters of "what plays it" per sound
+
+
+def usage_text(db):
+    """{sound: "Creature murloc: Aggro, Death; Music Elwynn Forest: Day"}."""
+    groups = {}
+    for sound, kind, name, role in db.execute("SELECT sound, kind, name, role FROM sound_usage ORDER BY sound, kind, name, role"):
+        key = (kind.capitalize() + " " + (name or "")).strip()
+        roles = groups.setdefault(sound, {}).setdefault(key, [])
+        if role not in roles:
+            roles.append(role)
+    text = {}
+    for sound, users in groups.items():
+        line = "; ".join(f"{who}: {', '.join(roles)}" for who, roles in users.items())
+        text[sound] = line if len(line) <= USAGE_LIMIT else line[:USAGE_LIMIT - 3].rsplit(";", 1)[0] + "; ..."
+    return text
+
+
 def sounds_data(db, _meta):
-    # Fields: name, category, folder, SOUNDKIT constant, file count.
-    rows = db.execute("SELECT id, name, category, folder, constant, files FROM sounds ORDER BY id")
-    return keyed("MediaLabSounds", ((kit, [name, category, folder or "", constant or "", str(files)])
-                                    for kit, name, category, folder, constant, files in rows))
+    # Fields: name, category, folder, SOUNDKIT constant, file count, length in ms,
+    # waveform, volume (0-100), what plays it.
+    usage = usage_text(db)
+    rows = db.execute("SELECT id, name, category, folder, constant, files, duration_ms, waveform, volume "
+                      "FROM sounds ORDER BY id")
+    return keyed("MediaLabSounds", (
+        (kit, [name, category, folder or "", constant or "", str(files), str(ms or ""), wave or "",
+               str(round(volume * 100)) if volume is not None else "", usage.get(kit, "")])
+        for kit, name, category, folder, constant, files, ms, wave, volume in rows))
 
 
 OUTPUTS = [
@@ -114,7 +137,8 @@ OUTPUTS = [
     {"path": "MediaLab_Icons/data.lua", "render": icons,
      "reads": {"icons": {"id", "name", "colors", "subject", "tags", "description"}}},
     {"path": "MediaLab_Sounds/data.lua", "render": sounds_data,
-     "reads": {"sounds": {"id", "name", "category", "folder", "constant", "files"}}},
+     "reads": {"sounds": {"id", "name", "category", "folder", "constant", "files", "duration_ms", "waveform", "volume"},
+               "sound_usage": {"sound", "kind", "name", "role"}}},
     {"path": "MediaLab_Models/data.lua", "render": models,
      "reads": {"models": {"id", "name", "type", "family", "model_file", "skins"}}},
 ]

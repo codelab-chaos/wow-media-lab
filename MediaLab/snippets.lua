@@ -45,8 +45,10 @@ end
 
 Snippets.sound = function(entry, options)
     local channel = options and options.channel or "Master"
+    -- A named kit's SOUNDKIT name is what addons write; any other kit has only its ID.
+    local named = type(entry.value) == "string"
     return {
-        {label = "Name", text = entry.value},
+        {label = named and "SOUNDKIT name" or "Name", text = named and entry.value or entry.name},
         {label = "Sound kit ID", text = tostring(entry.id)},
         {label = "Lua", developer = true, text = "PlaySound(" .. soundKitExpression(entry) .. ", " .. literal(channel) .. ")"},
     }

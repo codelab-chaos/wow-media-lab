@@ -111,6 +111,7 @@ function Inspector:Show(entry)
     if preview then
         preview.onOptions = function() self:RefreshFields() end
         preview.onTarget = self.handlers.onTarget
+        preview.onStep = self.handlers.onStep
         preview:Show(entry)
     end
     self:RefreshFields()

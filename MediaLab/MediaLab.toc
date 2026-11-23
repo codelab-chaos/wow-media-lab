@@ -23,10 +23,12 @@ sources.lua
 catalog.lua
 lists.lua
 selection.lua
+soundplayer.lua
 npcs.lua
 snippets.lua
 export.lua
 ui\widgets.lua
+ui\waveform.lua
 ui\art.lua
 ui\browser.lua
 ui\previews.lua

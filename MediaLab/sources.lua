@@ -164,9 +164,27 @@ function Sources.SoundData()
     return Sources.soundData or nil
 end
 
+-- name, category, folder, constant, files, ms, waveform, volume, usage.
 local function soundFields(raw)
     if type(raw) ~= "string" then return end
-    return raw:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+    local fields = {}
+    for field in (raw .. "\t"):gmatch("([^\t]*)\t") do fields[#fields + 1] = field end
+    if #fields < 5 then return end
+    return unpack(fields, 1, 9)
+end
+
+-- Adds what the codex measured to a sound entry: length, waveform, files,
+-- volume, and what plays it.
+local function measured(entry, raw)
+    local _, _, folder, _, files, ms, wave, volume, usage = soundFields(raw)
+    entry.files = tonumber(files)
+    entry.duration = tonumber(ms) and tonumber(ms) / 1000 or nil
+    entry.wave = wave ~= nil and wave ~= "" and wave or nil
+    entry.volume = tonumber(volume)
+    entry.usage = usage ~= nil and usage ~= "" and usage or nil
+    entry.folder = folder ~= nil and folder ~= "" and folder or nil
+    entry.description = entry.usage
+    return entry
 end
 
 -- Named SOUNDKIT constants first (their name is what addons write), then every
@@ -182,7 +200,7 @@ Sources.sound = function(add, step)
         local facets = {category ~= nil and category ~= "" and category or "Interface",
             "Prefix: " .. token(name, "^([%u%d]+)_")}
         if common[name] then facets[#facets + 1] = "Common" end
-        add({value = name, id = id, name = name, facets = facets, origin = origin})
+        add(measured({value = name, id = id, name = name, facets = facets, origin = origin}, data[id]))
         step()
     end
     if type(SOUNDKIT) == "table" then
@@ -195,7 +213,7 @@ Sources.sound = function(add, step)
             seenIds[id] = true
             local facets = {category}
             if folder ~= "" then facets[#facets + 1] = "Folder: " .. capital(folder) end
-            add({value = id, id = id, name = name, facets = facets, origin = "Client sound kits"})
+            add(measured({value = id, id = id, name = name, facets = facets, origin = "Client sound kits"}, raw))
         end
         step()
     end

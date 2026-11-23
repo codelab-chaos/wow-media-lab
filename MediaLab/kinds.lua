@@ -14,6 +14,7 @@ local _, ML = ...
 --            size range under the filter column
 --   groupsFirst  grouped filters (SHAPE) come before the plain ones
 --   holds    what the loading card says it brings in
+--   rowHeight  taller list rows (sounds show a waveform under the name)
 ML.Kinds = {
     {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
         holds = "names, colors and descriptions  /  MediaLab_Icons",
@@ -26,7 +27,7 @@ ML.Kinds = {
         holds = "interface art, cut and sized  /  the game's atlas list"},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
         facetGroups = {"Family"}, holds = "creatures, NPCs and objects  /  MediaLab_Models"},
-    {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id",
+    {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id", rowHeight = 40,
         facetGroups = {"Folder", "Prefix"}, holds = "creatures, spells, music, ambience  /  MediaLab_Sounds"},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control",
         holds = "buttons, frames and sliders  /  UI source"},
@@ -85,6 +86,9 @@ ML.LoaderLines = {
 
 -- Build order: small, fast lists first so their tabs are usable immediately.
 ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
+
+-- Sounds: how long the pointer rests on a row before it plays (Hover play).
+ML.HoverPlayDelay = 0.3
 
 -- Sizes: an image is Wide or Tall when one side is at least ratio times the
 -- other, else Square. The size range snaps to these stops (the longer side).

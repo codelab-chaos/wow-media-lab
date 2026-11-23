@@ -530,18 +530,71 @@ test("sounds play, stop, honor the channel and auto-play", function()
     preview.play.scripts.OnClick()
     equal(Mock.sounds[1].id, 850)
     equal(Mock.sounds[1].channel, "Master")
+    equal(preview.play.text:GetText(), "Stop", "Play becomes Stop while it plays")
+    preview.play.scripts.OnClick()
+    equal(Mock.stopped[1], 1, "and stops it")
     preview.channel.scripts.OnClick()
     equal(ML.db.view.channel, "SFX")
     assert(ML.UI.inspector.fields[3].box:GetText():find('"SFX"', 1, true), "snippet follows channel")
-    preview.play.scripts.OnClick()
-    equal(Mock.stopped[1], 1, "previous sound stopped first")
-    preview.auto.scripts.OnClick()
+    local auto
+    for _, button in ipairs(preview.switches) do if button.switch.key == "autoplay" then auto = button end end
+    auto.scripts.OnClick(auto)
     ML.UI:Select(find(ML, "sound", "IG_MAINMENU_CLOSE"))
     equal(Mock.sounds[#Mock.sounds].id, 851)
     local before = #Mock.sounds
     ML.UI.browser.handlers.onPlay(entry)
     equal(#Mock.sounds, before + 1, "row Play plays once even with auto-play on")
-    assert(not preview:Play({id = 404, name = "Silent"}))
+    assert(not preview:Play({id = 404, name = "Silent", key = "sound:404"}))
+    assert(preview.status:GetText():find("did not play", 1, true))
+end)
+
+test("sound rows show a waveform, play on hover, and step and play through the results", function()
+    local ML = open()
+    ML.UI:SelectTab("sound")
+    ML.UI:Search("murloc")
+    local rows = ML.UI.browser.rows
+    equal(rows[1]:GetHeight(), 40, "sound rows are two lines tall")
+    local murloc = rows[1].entry.id == 417 and rows[1] or rows[2]
+    assert(murloc.wave.frame.shown and #murloc.wave.bars == 16, "a bar per waveform step")
+    assert(murloc.meta:GetText():find("0.8 s", 1, true) and murloc.meta:GetText():find("3 variations", 1, true))
+    -- Hover play: rest on the row, then leave.
+    local count = #Mock.sounds
+    murloc.scripts.OnEnter(murloc)
+    for _, timer in ipairs(Mock.timers) do -- just the hover delay, not the running sound
+        if not timer.cancelled and not timer.done then timer.done = true; timer.callback() end
+    end
+    equal(#Mock.sounds, count + 1, "resting on a row plays it")
+    equal(ML.SoundPlayer.source, "hover")
+    Mock.now = Mock.now + 0.4
+    ML.SoundPlayer:Tick()
+    assert(murloc.wave.head.shown, "the playhead moves across the row")
+    murloc.scripts.OnLeave(murloc)
+    assert(not ML.SoundPlayer:IsPlaying(), "moving off stops a hover-played sound")
+    -- The preview: details, the Name field, previous and next.
+    local entry = find(ML, "sound", 417)
+    ML.UI:Select(entry)
+    local preview = ML.UI.inspector.previews.sound
+    assert(preview.details:GetText():find("Played by: Creature murloc: Attack", 1, true))
+    assert(preview.details:GetText():find("3 variations", 1, true))
+    equal(ML.UI.inspector.fields[1].box:GetText(), "mmurlocattack", "a kit's Name is its name, not its ID")
+    preview.nextButton.scripts.OnClick(preview.nextButton)
+    equal(ML.UI.inspector.entry.id, 418, "Next picks and plays the next sound")
+    equal(Mock.sounds[#Mock.sounds].id, 418)
+    preview.previous.scripts.OnClick(preview.previous)
+    equal(ML.UI.inspector.entry.id, 417)
+    -- Play through: when a sound of known length ends, the next one plays.
+    local through
+    for _, button in ipairs(preview.switches) do if button.switch.key == "playThrough" then through = button end end
+    through.scripts.OnClick(through)
+    ML.SoundPlayer:Play(entry, "click")
+    Mock.now = Mock.now + 2
+    ML.SoundPlayer:Tick()
+    equal(ML.UI.inspector.entry.id, 418, "the next sound plays when this one ends")
+    -- The game's finished event ends a sound too.
+    local handle = ML.SoundPlayer.handle
+    through.scripts.OnClick(through)
+    ML.SoundPlayer.ticker.scripts.OnEvent(ML.SoundPlayer.ticker, "SOUNDKIT_FINISHED", handle)
+    assert(not ML.SoundPlayer:IsPlaying())
 end)
 
 test("controls build once on request, never in combat, and survive failures", function()

@@ -223,6 +223,8 @@ function Mock.install()
         return id ~= 404, #Mock.sounds
     end
     StopSound = function(handle) Mock.stopped[#Mock.stopped + 1] = handle end
+    Mock.now = 100
+    GetTime = function() return Mock.now end
     GetMacroIcons = function(values) values[#values + 1] = 134400; values[#values + 1] = "INV_Misc_Map_01" end
     GetMacroItemIcons = function(values) values[#values + 1] = "134400"; values[#values + 1] = "Interface\\Icons\\INV_Sword_04" end
     GetLooseMacroIcons, GetLooseMacroItemIcons = nil, nil
@@ -237,7 +239,7 @@ function Mock.install()
     }
     Mock.soundKits = {
         [850] = "uescapescreenopen\tInterface\t\tIG_MAINMENU_OPEN\t1",
-        [417] = "mmurlocattack\tCreature\tmurloc\t\t3",
+        [417] = "mmurlocattack\tCreature\tmurloc\t\t3\t800\t0158ff9632100000\t80\tCreature murloc: Attack",
         [418] = "mmurlocwound\tCreature\tmurloc\t\t3",
         [20000] = "elwynn day_forest\tMusic\telwynn\t\t4",
     }

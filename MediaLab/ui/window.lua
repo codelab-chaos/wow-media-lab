@@ -233,6 +233,7 @@ function UI:Layout()
         emptyText = "No " .. tab.noun .. " match. Try fewer words or the All filter."
     end
     return {mode = tab.layout, cell = tab.cell, scale = thumb, caption = tab.caption, mixed = tab.id == ML.ListsTab,
+        rowHeight = tab.rowHeight,
         emptyText = emptyText}
 end
 
@@ -340,6 +341,40 @@ function UI:RenderTray()
     for index = 1, math.min(#entries, TRAY_NAMES) do names[index] = entries[index].name end
     self.tray.label:SetText(#entries .. " selected:  " .. table.concat(names, ", ")
         .. (#entries > TRAY_NAMES and ", ..." or ""))
+end
+
+---------------------------------------------------------------------------
+-- Sounds: play from a row, step through the results, play through
+---------------------------------------------------------------------------
+-- A row's Play (or its waveform): stop it if it is playing, else pick and play it.
+function UI:PlayFromRow(entry)
+    local player = ML.SoundPlayer
+    if player:IsPlaying(entry) then return player:Stop() end
+    self:Select(entry)
+    if not player:IsPlaying(entry) then player:Play(entry, "click") end
+end
+
+-- The sound before or after the one picked (or just played), in the results.
+function UI:StepSound(direction, from)
+    from = from or self.selected[self.tabId]
+    local index
+    for position, entry in ipairs(self.results) do
+        if from and entry.key == from.key then index = position; break end
+    end
+    local target = self.results[(index or 0) + direction]
+    if not target or target.kind ~= "sound" then return false end
+    self:Select(target)
+    self.browser:Reveal(target)
+    if not ML.SoundPlayer:IsPlaying(target) then ML.SoundPlayer:Play(target, "next") end
+    return true
+end
+
+function UI:WireSounds()
+    local player = ML.SoundPlayer
+    player:Listen(function() if self.frame and self.frame:IsShown() then self.browser:RefreshSound() end end)
+    player.onFinished = function(entry)
+        if ML.Previews.sound.IsOn("playThrough") and self.frame:IsShown() then self:StepSound(1, entry) end
+    end
 end
 
 -- The star: in or out of Favorites.
@@ -854,6 +889,7 @@ function UI:Create()
         onFavorite = function(entry) self:ToggleFavorite(entry) end,
         onLists = function(entry, button) self:OpenListMenu(self:Picked(entry), button) end,
         onTarget = function() self:FromTarget() end,
+        onStep = function(direction) self:StepSound(direction) end,
     })
     self.inspector.frame:SetPoint("TOPRIGHT", -12, -(TITLE + 40))
     self.inspector.frame:SetPoint("BOTTOMRIGHT", -12, 12)
@@ -875,10 +911,15 @@ function UI:Create()
         onMenu = function(entry) self:ContextMenu(entry) end,
         isSelected = function(entry) return ML.Selection:Count() > 1 and ML.Selection:Has(entry) end,
         onZoom = function(delta) self:ZoomBy(delta > 0 and 1 or -1) end,
-        onPlay = function(entry)
-            self:Select(entry)
-            local preview = self.inspector:Preview("sound")
-            if not ML.db.view.autoplay then preview:Play(entry) end
+        onPlay = function(entry) self:PlayFromRow(entry) end,
+        onHoverSound = function(entry)
+            if ML.Previews.sound.IsOn("hoverPlay") and not ML.SoundPlayer:IsPlaying(entry) then
+                ML.SoundPlayer:Play(entry, "hover")
+            end
+        end,
+        onLeaveSound = function(entry)
+            local player = ML.SoundPlayer
+            if player.source == "hover" and player:IsPlaying(entry) then player:Stop() end
         end,
         onChanged = function() self:UpdatePager() end,
     })
@@ -899,6 +940,7 @@ function UI:Create()
 
     ML.HelpPanel.Create(body, function() self:HideHelp() end)
     ML.Loader.Create(body, function() ML.Loader.Hide() end)
+    self:WireSounds()
 
     frame:SetScript("OnHide", function()
         self.search.box:ClearFocus()

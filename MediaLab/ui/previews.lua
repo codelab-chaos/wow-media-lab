@@ -259,8 +259,29 @@ local Sound = {}
 Sound.__index = Sound
 Previews.sound = Sound
 
+-- On/off switches under the transport, as data: the view setting, its label
+-- and tip, and whether it starts on.
+Sound.SWITCHES = {
+    {key = "hoverPlay", label = "Hover play", default = true, tip = "Play a sound when the pointer rests on its row; it stops when you move off."},
+    {key = "autoplay", label = "Auto-play", tip = "Play each sound as soon as you select it."},
+    {key = "playThrough", label = "Play through", tip = "When a sound ends, play the next one in the results."},
+}
+
+function Sound.IsOn(key)
+    for _, switch in ipairs(Sound.SWITCHES) do
+        if switch.key == key then
+            local value = view()[key]
+            if value == nil then return switch.default == true end
+            return value == true
+        end
+    end
+    return false
+end
+
+local function seconds(value) return value and string.format(value < 10 and "%.1f s" or "%d s", value) or "?" end
+
 function Sound.New(parent)
-    local self = setmetatable({}, Sound)
+    local self = setmetatable({switches = {}}, Sound)
     self.frame = baseFrame(parent)
     local stage = stageFrame(self.frame, 0)
     self.title = W.Label(stage, "", 14, T.accent)
@@ -268,65 +289,120 @@ function Sound.New(parent)
     self.title:SetPoint("TOPRIGHT", -12, -14)
     self.id = W.Label(stage, "", 11, T.muted)
     self.id:SetPoint("TOPLEFT", 12, -36)
-    self.play = W.Button(stage, "Play", 70, function() self:Play() end, 26)
-    self.play:SetPoint("TOPLEFT", 12, -64)
-    self.stop = W.Button(stage, "Stop", 70, function() self:Stop() end, 26)
-    self.stop:SetPoint("LEFT", self.play, "RIGHT", 6, 0)
-    self.channel = W.Button(stage, "", 110, function()
+    self.id:SetPoint("TOPRIGHT", -12, -36)
+    -- The waveform, big, with the playhead and a time counter.
+    self.wave = ML.Waveform.New(stage)
+    self.wave.frame:SetPoint("TOPLEFT", 12, -60)
+    self.wave.frame:SetPoint("TOPRIGHT", -12, -60)
+    self.wave.frame:SetHeight(64)
+    self.wave.frame:SetScript("OnClick", function() self:Toggle() end)
+    self.time = W.Label(stage, "", 10, T.muted)
+    self.time:SetPoint("TOPRIGHT", self.wave.frame, "BOTTOMRIGHT", 0, -4)
+    -- Transport: previous, play or stop, next; then the channel.
+    self.previous = W.Button(stage, "<", 30, function() if self.onStep then self.onStep(-1) end end, 26)
+    self.previous:SetPoint("TOPLEFT", 12, -146)
+    W.Tip(self.previous, "Previous", "Play the sound above this one in the results.")
+    self.play = W.Button(stage, "Play", 70, function() self:Toggle() end, 26)
+    self.play:SetPoint("LEFT", self.previous, "RIGHT", 4, 0)
+    self.nextButton = W.Button(stage, ">", 30, function() if self.onStep then self.onStep(1) end end, 26)
+    self.nextButton:SetPoint("LEFT", self.play, "RIGHT", 4, 0)
+    W.Tip(self.nextButton, "Next", "Play the sound below this one in the results.")
+    self.channel = W.Button(stage, "", 120, function()
         view().channel = nextIn(ML.SoundChannels, view().channel or "Master")
         self:Refresh()
         if self.onOptions then self.onOptions() end
     end, 26)
-    self.channel:SetPoint("LEFT", self.stop, "RIGHT", 6, 0)
+    self.channel:SetPoint("LEFT", self.nextButton, "RIGHT", 8, 0)
     W.Tip(self.channel, "Sound channel", "Which volume slider the sound obeys. A muted channel plays nothing.")
-    self.auto = W.Button(stage, "", 140, function()
-        view().autoplay = not view().autoplay or nil
-        self:Refresh()
-    end, 22)
-    self.auto:SetPoint("TOPLEFT", 12, -100)
-    W.Tip(self.auto, "Auto-play", "Play each sound as soon as you select it.")
-    self.status = W.Label(stage, "", 11, T.muted)
-    self.status:SetPoint("TOPLEFT", 12, -134)
-    self.status:SetPoint("TOPRIGHT", -12, -134)
+    local previous
+    for _, switch in ipairs(Sound.SWITCHES) do
+        local button = W.Button(stage, "", 104, function()
+            view()[switch.key] = not Sound.IsOn(switch.key)
+            self:Refresh()
+        end, 22)
+        if previous then button:SetPoint("LEFT", previous, "RIGHT", 4, 0) else button:SetPoint("TOPLEFT", 12, -180) end
+        W.Tip(button, switch.label, switch.tip)
+        button.switch = switch
+        self.switches[#self.switches + 1] = button
+        previous = button
+    end
+    self.details = W.Label(stage, "", 11, T.text)
+    self.details:SetPoint("TOPLEFT", 12, -214)
+    self.details:SetPoint("TOPRIGHT", -12, -214)
+    self.details:SetWordWrap(true)
+    self.details:SetJustifyV("TOP")
+    self.status = W.Label(stage, "", 10, T.muted)
+    self.status:SetPoint("BOTTOMLEFT", 12, 10)
+    self.status:SetPoint("BOTTOMRIGHT", -12, 10)
     self.status:SetWordWrap(true)
+    ML.SoundPlayer:Listen(function() if self.frame:IsShown() then self:Update() end end)
     return self
 end
 
 function Sound:Refresh()
     self.channel:SetLabel("Channel: " .. (view().channel or "Master"))
-    self.auto:SetLabel(view().autoplay and "Auto-play: on" or "Auto-play: off")
-    self.auto:SetActive(view().autoplay == true)
+    for _, button in ipairs(self.switches) do
+        local on = Sound.IsOn(button.switch.key)
+        button:SetLabel(button.switch.label .. ": " .. (on and "on" or "off"))
+        button:SetActive(on)
+    end
+end
+
+-- What the codex knows about the sound, as a few short lines.
+function Sound.Details(entry)
+    local lines = {}
+    if entry.duration then lines[#lines + 1] = "Length: " .. seconds(entry.duration) end
+    if entry.files and entry.files > 1 then
+        lines[#lines + 1] = entry.files .. " variations; the game picks one at random each time."
+    end
+    if entry.volume then lines[#lines + 1] = "Volume: " .. entry.volume .. "%" end
+    if entry.usage then lines[#lines + 1] = "Played by: " .. entry.usage end
+    if type(entry.value) == "string" then lines[#lines + 1] = "SOUNDKIT." .. entry.value end
+    return table.concat(lines, "\n")
+end
+
+-- The playhead, the time and the play button follow the player.
+function Sound:Update()
+    local player, entry = ML.SoundPlayer, self.entry
+    if not entry then return end
+    local playing = player:IsPlaying(entry)
+    self.play:SetLabel(playing and "Stop" or "Play")
+    self.play:SetActive(playing)
+    self.wave:Set(entry.wave, playing and (player:Progress() or 0) or nil)
+    self.time:SetText(playing and (seconds(player:Elapsed()) .. " / " .. seconds(entry.duration)) or seconds(entry.duration))
+    if player.refused and not player.entry then
+        self.status:SetText("The game did not play this sound. The channel may be muted, or the kit has no audio here.")
+    elseif type(PlaySound) ~= "function" then
+        self.status:SetText("PlaySound is unavailable in this client.")
+    else
+        self.status:SetText("")
+    end
 end
 
 function Sound:Show(entry)
     self.entry = entry
     self.title:SetText(entry.name)
-    self.id:SetText("Sound kit " .. tostring(entry.id))
-    self.status:SetText(type(PlaySound) == "function" and "" or "PlaySound is unavailable in this client.")
+    local where = {ML.Catalog.FacetLabels(entry.facets)}
+    self.id:SetText("Sound kit " .. tostring(entry.id) .. "  /  " .. table.concat(where, ", "))
+    self.details:SetText(Sound.Details(entry))
     self:Refresh()
+    self:Update()
     self.frame:Show()
-    if view().autoplay then self:Play() end
+    if Sound.IsOn("autoplay") and not ML.SoundPlayer:IsPlaying(entry) then self:Play(entry, "auto") end
 end
 
--- Returns whether the client accepted the sound.
-function Sound:Play(entry)
+-- Returns whether the game played it.
+function Sound:Play(entry, source)
     entry = entry or self.entry
-    if not entry or type(PlaySound) ~= "function" then return false end
-    self:Stop()
-    local ok, willPlay, handle = pcall(PlaySound, entry.id, view().channel or "Master")
-    if ok and willPlay then
-        self.handle = handle
-        self.status:SetText("Playing " .. entry.name .. ".")
-        return true
-    end
-    self.status:SetText("The client did not play this sound. The channel may be muted, or the kit has no audio here.")
-    return false
+    return ML.SoundPlayer:Play(entry, source or "click")
 end
 
-function Sound:Stop()
-    if self.handle and type(StopSound) == "function" then pcall(StopSound, self.handle) end
-    self.handle = nil
+function Sound:Toggle()
+    if ML.SoundPlayer:IsPlaying(self.entry) then return ML.SoundPlayer:Stop() end
+    return self:Play(self.entry, "click")
 end
+
+function Sound:Stop() ML.SoundPlayer:Stop() end
 
 function Sound:Hide() self.frame:Hide() end
 

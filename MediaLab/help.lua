@@ -25,7 +25,8 @@ ML.Help = {
             "Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.",
         },
         sound = {
-            "Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.",
+            "Rest the pointer on a sound to hear it, or press Play; Play through moves on to the next one when it ends.",
+            "The waveform shows how loud a sound is over time, and a playhead follows it while it plays.",
             "Pick the channel it plays on, so the game's volume sliders apply.",
             "Filter by Creature, Spell, Music or Ambience in the left column, or search for a creature by name.",
         },

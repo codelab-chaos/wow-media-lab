@@ -14,7 +14,8 @@ local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
 -- handlers: onSelect(entry, modifiers) ({ctrl, shift}), onMenu(entry, cell)
 -- (right-click), onPlay(entry), onChanged(), isSelected(entry), onZoom(delta)
--- (Ctrl+wheel on a grid)
+-- (Ctrl+wheel on a grid), onHoverSound(entry) and onLeaveSound(entry) (a sound
+-- row rested on, then left)
 function Browser.New(parent, handlers)
     local self = setmetatable({handlers = handlers, offset = 0, results = {}, cells = {}, rows = {}}, Browser)
     local frame = CreateFrame("Frame", nil, parent)
@@ -144,7 +145,8 @@ function Browser:Geometry()
         local rows = math.max(1, math.floor((height + GAP) / (cellHeight + GAP)))
         return columns, rows, cell, cellHeight
     end
-    return 1, math.max(1, math.floor(height / ROW)), width, ROW
+    local rowHeight = layout.rowHeight or ROW
+    return 1, math.max(1, math.floor(height / rowHeight)), width, rowHeight
 end
 
 function Browser:PageSize()
@@ -177,6 +179,14 @@ end
 local function onCellEnter(cell)
     local entry = cell.entry
     if not entry then return end
+    local browser = cell.browser
+    if entry.kind == "sound" and browser.handlers.onHoverSound then
+        if cell.hoverTimer then cell.hoverTimer:Cancel() end
+        cell.hoverTimer = C_Timer.NewTimer(ML.HoverPlayDelay, function()
+            cell.hoverTimer = nil
+            if cell.entry == entry then browser.handlers.onHoverSound(entry) end
+        end)
+    end
     GameTooltip:SetOwner(cell, "ANCHOR_RIGHT")
     GameTooltip:SetText(entry.name, unpack(T.accent))
     if tostring(entry.value) ~= entry.name then GameTooltip:AddLine(tostring(entry.value), 0.85, 0.88, 0.93, true) end
@@ -238,9 +248,15 @@ function Browser:Row(index)
     row.name:SetPoint("RIGHT", row.detail, "LEFT", -8, 0)
     row.star = W.Label(row, "*", 13, T.accent)
     row.star:SetPoint("RIGHT", -5, 0)
+    row.meta = W.Label(row, "", 9, T.muted)
+    row.meta:SetJustifyH("RIGHT")
     row:SetScript("OnClick", onCellClick)
     row:SetScript("OnEnter", onCellEnter)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+        if row.hoverTimer then row.hoverTimer:Cancel(); row.hoverTimer = nil end
+        if row.entry and row.entry.kind == "sound" and self.handlers.onLeaveSound then self.handlers.onLeaveSound(row.entry) end
+    end)
     self.rows[index] = row
     return row
 end
@@ -280,21 +296,69 @@ function Browser:RenderGrid(first, size)
     for _, row in ipairs(self.rows) do row:Hide() end
 end
 
+-- A sound's second line: its waveform (with the playhead while it plays),
+-- length and variations.
+local function soundLine(entry)
+    local parts = {}
+    if entry.duration then parts[#parts + 1] = string.format(entry.duration < 10 and "%.1f s" or "%d s", entry.duration) end
+    if entry.files and entry.files > 1 then parts[#parts + 1] = entry.files .. " variations" end
+    return table.concat(parts, "  /  ")
+end
+
+function Browser:RenderSoundLine(row, entry, tall)
+    local show = tall and entry.kind == "sound"
+    if row.wave then row.wave.frame:SetShown(show) end
+    row.meta:SetShown(show)
+    if not show then return end
+    if not row.wave then
+        row.wave = ML.Waveform.New(row)
+        row.wave.frame:SetScript("OnClick", function() if row.entry then self.handlers.onPlay(row.entry) end end)
+    end
+    row.wave.frame:ClearAllPoints()
+    row.wave.frame:SetPoint("BOTTOMLEFT", 42, 4)
+    row.wave.frame:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -200, 4)
+    row.wave.frame:SetHeight(14)
+    row.meta:ClearAllPoints()
+    row.meta:SetPoint("BOTTOMRIGHT", -18, 5)
+    row.meta:SetText(soundLine(entry))
+    local player = ML.SoundPlayer
+    row.wave:Set(entry.wave, player:IsPlaying(entry) and (player:Progress() or 0) or nil)
+end
+
+-- Only the playheads move while a sound plays; cheaper than a full render.
+function Browser:RefreshSound()
+    if not self.layout or self.layout.mode ~= "rows" then return end
+    local player = ML.SoundPlayer
+    for _, row in ipairs(self.rows) do
+        if row:IsShown() and row.entry and row.entry.kind == "sound" then
+            local playing = player:IsPlaying(row.entry)
+            if row.wave and row.wave.frame:IsShown() then row.wave:Set(row.entry.wave, playing and (player:Progress() or 0) or nil) end
+            row.play:SetLabel(playing and "Stop" or "Play")
+        end
+    end
+end
+
 function Browser:RenderRows(first, size)
     local mixed = self.layout.mixed
+    local height = self.layout.rowHeight or ROW
+    local tall = height > ROW
     for index = 1, size do
         local entry = self.results[first + index]
         local row = self:Row(index)
         row.entry = entry
         row:SetShown(entry ~= nil)
         if entry then
+            row:SetHeight(height)
             row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", 0, -(index - 1) * ROW)
-            row:SetPoint("TOPRIGHT", -(BAR + BAR_GAP), -(index - 1) * ROW)
+            row:SetPoint("TOPLEFT", 0, -(index - 1) * height)
+            row:SetPoint("TOPRIGHT", -(BAR + BAR_GAP), -(index - 1) * height)
             row.base:SetShown(index % 2 == 0)
             local visual = ML.KindById[entry.kind].visual
             local playable = entry.kind == "sound"
             row.play:SetShown(playable)
+            row.play:ClearAllPoints()
+            row.play:SetPoint(tall and "TOPLEFT" or "LEFT", 2, tall and -3 or 0)
+            row.play:SetLabel(ML.SoundPlayer:IsPlaying(entry) and "Stop" or "Play")
             row.art:ClearAllPoints()
             row.art:SetPoint("LEFT", playable and 42 or 4, 0)
             if visual then
@@ -303,8 +367,11 @@ function Browser:RenderRows(first, size)
                 ML.Art.Reset(row.art)
             end
             row.name:ClearAllPoints()
-            row.name:SetPoint("LEFT", (playable and 42 or 6) + (visual and 24 or 0), 0)
+            row.name:SetPoint(tall and "TOPLEFT" or "LEFT", (playable and 42 or 6) + (visual and 24 or 0), tall and -6 or 0)
+            row.detail:ClearAllPoints()
+            row.detail:SetPoint(tall and "TOPRIGHT" or "RIGHT", -18, tall and -6 or 0)
             row.name:SetPoint("RIGHT", row.detail, "LEFT", -8, 0)
+            self:RenderSoundLine(row, entry, tall)
             row.name:SetText(entry.name)
             local picked = self.handlers.isSelected and self.handlers.isSelected(entry)
             row.picked:SetShown(picked and true or false)

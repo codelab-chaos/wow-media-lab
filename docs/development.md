@@ -26,6 +26,7 @@ Code layout (one job per file):
 | `catalog.lua` | Entry store, batched indexing, search, filters |
 | `lists.lua` | Named lists of entry keys; one entry in any number of lists |
 | `selection.lua` | The picked entries: click, Ctrl+click, Shift+click |
+| `soundplayer.lua` | Plays one sound at a time, tracks its progress and when it ends |
 | `npcs.lua` | NPC names learned from your target, and the target's display |
 | `snippets.lua` | Copyable fields and Lua per kind |
 | `export.lua` | Rows per kind for CSV and the Lua table |
@@ -42,6 +43,7 @@ Code layout (one job per file):
 | `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |
 | `ui/rangeslider.lua` | The two-handle size range that snaps to popular sizes |
 | `ui/loader.lua` | The loading card: a bar and count per library while the catalog fills |
+| `ui/waveform.lua` | A sound's waveform bars and playhead, for rows and the preview |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
 | `MediaLab_Icons/` | Load-on-demand icon names, colors and descriptions (generated) |
 | `MediaLab_Models/` | Load-on-demand creature displays (generated) |
@@ -100,7 +102,8 @@ filter Textures by Wide and drag the size handles to 64 and 256, zoom and pan bo
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Shift+click and Ctrl+click a few entries on two tabs, check the
-strip under the results, right-click one and add them all to a list. Type a sample on Fonts. Press **Dev**: the code fields and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
+strip under the results, right-click one and add them all to a list. On Sounds, rest on a row (it plays, and stops when you leave), watch the
+playhead, step with < and >, turn on Play through. Type a sample on Fonts. Press **Dev**: the code fields and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
 filter and preview columns wider, maximize and restore (button and
 title-bar double-click), minimize to the dock, drag the dock icon to another
 edge and click it, resize, `/reload` and confirm the lists, the NPC name, developer mode,

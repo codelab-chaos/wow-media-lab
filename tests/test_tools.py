@@ -51,9 +51,12 @@ def codex_fixture():
                                  (135274, 'inv_sword_04', '["gray"]', NULL, '[]', NULL);
         CREATE TABLE models (id INTEGER PRIMARY KEY, name TEXT, type TEXT, family TEXT, model_file INTEGER, skins TEXT);
         INSERT INTO models VALUES (10, 'murloc blue', 'Creature', 'murloc', 1, '["murlocskinblue"]');
-        CREATE TABLE sounds (id INTEGER PRIMARY KEY, name TEXT, category TEXT, folder TEXT, constant TEXT, files INTEGER, file INTEGER);
-        INSERT INTO sounds VALUES (850, 'uescapescreenopen', 'Interface', NULL, 'IG_MAINMENU_OPEN', 1, 5),
-                                  (417, 'mmurlocattack', 'Creature', 'murloc', NULL, 3, 6);
+        CREATE TABLE sounds (id INTEGER PRIMARY KEY, name TEXT, category TEXT, folder TEXT, constant TEXT, files INTEGER,
+                             file INTEGER, duration_ms INTEGER, waveform TEXT, volume REAL);
+        INSERT INTO sounds VALUES (850, 'uescapescreenopen', 'Interface', NULL, 'IG_MAINMENU_OPEN', 1, 5, NULL, NULL, NULL),
+                                  (417, 'mmurlocattack', 'Creature', 'murloc', NULL, 3, 6, 812, '0f8', 0.8);
+        CREATE TABLE sound_usage (sound INTEGER, kind TEXT, ref INTEGER, name TEXT, role TEXT);
+        INSERT INTO sound_usage VALUES (417, 'creature', 9, 'murloc', 'Attack'), (417, 'creature', 9, 'murloc', 'Aggro');
     """)
     return db
 
@@ -89,8 +92,8 @@ class SyncCodexTests(unittest.TestCase):
         self.assertIn('[135274]="inv_sword_04\tgray\t\t\t",', icons)
         self.assertIn('[10]="murloc blue\tCreature\tmurloc\t1\tmurlocskinblue",', sync.models(db, meta))
         sounds = sync.sounds_data(db, meta)
-        self.assertIn('[417]="mmurlocattack\tCreature\tmurloc\t\t3",', sounds)
-        self.assertIn('[850]="uescapescreenopen\tInterface\t\tIG_MAINMENU_OPEN\t1",', sounds)
+        self.assertIn('[417]="mmurlocattack\tCreature\tmurloc\t\t3\t812\t0f8\t80\tCreature murloc: Aggro, Attack",', sounds)
+        self.assertIn('[850]="uescapescreenopen\tInterface\t\tIG_MAINMENU_OPEN\t1\t\t\t\t",', sounds)
 
     def test_writes_the_files_into_a_tree(self):
         with tempfile.TemporaryDirectory() as folder:
