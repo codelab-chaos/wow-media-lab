@@ -1,26 +1,28 @@
-## MediaLab backlog (2026-11-18)
+## WoW Media Lab backlog (2026-11-23)
 
-MediaLab is an independent project: an in-game media catalog plus offline
-tools (catalog builder, CASC reader, icon metadata, JSON catalog). Other
-projects, such as wow-addon-studio, may use its scripts and `catalog/` output,
-but nothing here is built for or depends on them.
+WoW Media Lab is a stand-alone, player-first addon. Reading the game (data
+tables, CASC, the UI source, icon metadata) belongs to the Codex of Azeroth;
+the lab ships data synced from it (`scripts/sync-codex.py`).
 
-- **icon-vision-full-run** (story, running 2026-11-18): finish the
-  `qwen/qwen3.5-9b` pass over all icons, then `icon-metadata.py merge`,
-  deploy and commit the full `MediaLab_Icons/data.lua` and
-  `catalog/icons-meta.json`. Complexity: small (waiting).
-- **smoke-test-in-game** (task, owner): first run in the client: every tab,
-  icon filters (Type, Subject, Color), CSV, `/mlab export` with
-  `MediaLab_Export` enabled, minimize and resize, `/reload`. Complexity: small.
-- **html-library** (story): `scripts/html-library.py` builds a static,
-  searchable HTML reference library on the owner's machine from `catalog/`
-  and `catalog/icons-meta.json`, with images extracted locally from their
-  install by `casc.py` into an ignored output folder. Never published or
-  committed. Done: open `index.html`, search icons by name, tag and color,
-  copy IDs and snippets. Complexity: medium.
-- **atlas-coords-offline** (spike): read atlas coordinates from the game files
-  through CASC so atlases can be cut without a client export. Useful for the
-  HTML library. Complexity: unknown.
+- **smoke-test-in-game** (task, owner): the checklist in
+  `docs/development.md`: welcome card, every tab, Textures' Files and
+  Atlases, Dev mode (code fields, Fonts, Copy), the column splitters,
+  Target on a real NPC, `/reload`. Complexity: small.
+- **share-first-release** (task, owner to decide): GitHub release and/or
+  CurseForge, with screenshots or a GIF in the README. Git history stays as
+  is (measured 2026-11-23: 5.5 MB, the old scripts are a few kB).
+- **list-reader** (story, low priority): a `tools/` folder of downloadable,
+  read-only, at-your-own-risk tools, starting with one HTML file that opens a
+  player's `SavedVariables/MediaLab.lua` and shows their lists as a plain
+  reference (kind, name, ID), offline. Packaged as its own
+  `MediaLab-tools-<version>.zip`. Complexity: small.
+- **model-details** (idea, later): tell same-named models apart. Measured
+  2026-11-23: 13,118 displays share 907 names; size and transparency, all
+  skins, and humanoid NPCs' class and outfit leave about 1,100 identical. Most
+  NPC-to-display links are server side (574 of 14,192 displays are named in
+  the client: mounts, forms, player models), so names would come from the
+  codex's passive NPC recording. Needs the codex first (its backlog).
+  Complexity: medium.
 
 - **zip4d-motion** (proposal, owner to decide): bring zip4d's container
   conventions (`../../codelab/zip4d/docs/vision.md`) to the lab, as behavior
