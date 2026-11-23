@@ -117,6 +117,14 @@ function Catalog:SavedCount(list)
     return count
 end
 
+-- The Lists tab's badge: how many lists, and how many entries across them
+-- (an entry counts once in every list that holds it). "2:8" is two lists of four.
+function Catalog:ListsBadge()
+    local lists, entries = ML.Lists:All(), 0
+    for _, list in ipairs(lists) do entries = entries + self:SavedCount(list) end
+    return #lists .. ":" .. entries
+end
+
 function Catalog:TabCount(tabId)
     return tabId == ML.ListsTab and self:SavedCount() or self:Count(tabId)
 end

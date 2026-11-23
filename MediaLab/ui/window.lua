@@ -242,6 +242,7 @@ function UI:Refresh()
     for _, button in ipairs(self.tabButtons) do
         local count = 0
         for _, kind in ipairs(button.tab.kinds) do count = count + C:TabCount(kind) end
+        if button.tab.id == ML.ListsTab then count = C:ListsBadge() end
         button:SetLabel(button.tab.label .. "  " .. count)
         button:SetActive(button.tab == current)
     end

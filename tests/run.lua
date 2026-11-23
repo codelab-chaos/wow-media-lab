@@ -739,6 +739,27 @@ test("both side columns widen by dragging their inner edge, within bounds, and r
     equal(ML.db.view.facetWidth, nil)
 end)
 
+test("the Lists tab counts lists, then entries across them", function()
+    local ML = open()
+    local function badge()
+        for _, button in ipairs(ML.UI.tabButtons) do
+            if button.tab.id == ML.ListsTab then return button.text:GetText() end
+        end
+    end
+    equal(badge(), "Lists  1:0", "Favorites is always a list")
+    local keys = {}
+    for _, ref in ipairs({{"icon", 134400}, {"sound", "IG_MAINMENU_OPEN"}, {"atlas", "test-glow"}, {"model", 1693}}) do
+        local entry = find(ML, ref[1], ref[2])
+        ML.UI:ToggleFavorite(entry)
+        keys[#keys + 1] = entry.key
+    end
+    equal(badge(), "Lists  1:4")
+    local list = ML.Lists:Create("Same four")
+    for _, key in ipairs(keys) do ML.Lists:Set(list, key, true) end
+    ML.UI:RefreshSaved()
+    equal(badge(), "Lists  2:8", "an entry counts once per list")
+end)
+
 test("grouped filters show bare names under a heading", function()
     local ML = open()
     ML.UI:SelectTab("model")
