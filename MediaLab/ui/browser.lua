@@ -12,7 +12,8 @@ local GAP, ROW = 6, 22
 -- The scrollbar's width plus its gap from the cells.
 local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
--- handlers: onSelect(entry), onFavorite(entry) (right-click), onPlay(entry), onChanged()
+-- handlers: onSelect(entry, modifiers) ({ctrl, shift}), onMenu(entry, cell)
+-- (right-click), onPlay(entry), onChanged(), isSelected(entry)
 function Browser.New(parent, handlers)
     local self = setmetatable({handlers = handlers, offset = 0, results = {}, cells = {}, rows = {}}, Browser)
     local frame = CreateFrame("Frame", nil, parent)
@@ -152,7 +153,8 @@ function Browser:Page(direction) self:Scroll(direction * self:PageSize()) end
 local function onCellClick(cell, mouse)
     local self, entry = cell.browser, cell.entry
     if not entry then return end
-    if mouse == "RightButton" then self.handlers.onFavorite(entry) else self.handlers.onSelect(entry) end
+    if mouse == "RightButton" then return self.handlers.onMenu(entry, cell) end
+    self.handlers.onSelect(entry, {ctrl = IsControlKeyDown() and true or false, shift = IsShiftKeyDown() and true or false})
 end
 
 local function onCellEnter(cell)
@@ -165,8 +167,7 @@ local function onCellEnter(cell)
     if entry.description then GameTooltip:AddLine(entry.description, 1, 1, 1, true) end
     if entry.tags then GameTooltip:AddLine(entry.tags, 0.62, 0.78, 0.91, true) end
     GameTooltip:AddLine(ML.Catalog.FacetLabels(entry.facets), unpack(T.muted))
-    GameTooltip:AddLine("Click to inspect  /  Right-click to " .. (ML.Lists:IsFavorite(entry.key) and "unfavorite" or "favorite"),
-        0.6, 0.6, 0.6)
+    GameTooltip:AddLine("Click to inspect  /  Ctrl or Shift+click to pick more  /  Right-click for lists", 0.6, 0.6, 0.6)
     GameTooltip:Show()
 end
 
@@ -180,6 +181,7 @@ function Browser:Cell(index)
     cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     cell:SetHighlightTexture(W.WHITE)
     cell:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.06)
+    cell.picked = W.Fill(cell, {T.accent[1], T.accent[2], T.accent[3], 0.16}, "BORDER")
     cell.art = cell:CreateTexture(nil, "ARTWORK")
     cell.art:SetPoint("CENTER", cell, "TOP", 0, 0)
     cell.caption = W.Label(cell, "", 10, T.muted)
@@ -204,6 +206,7 @@ function Browser:Row(index)
     row:SetHeight(ROW)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.base = W.Fill(row, {1, 1, 1, 0.025})
+    row.picked = W.Fill(row, {T.accent[1], T.accent[2], T.accent[3], 0.14}, "BORDER")
     row:SetHighlightTexture(W.WHITE)
     row:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
     row.play = W.Button(row, "Play", 36, function() if row.entry then self.handlers.onPlay(row.entry) end end, 18)
@@ -244,7 +247,9 @@ function Browser:RenderGrid(first, size)
             frame:ClearAllPoints()
             frame:SetPoint("TOPLEFT", column * (cell + GAP), -line * (cellHeight + GAP))
             frame:SetSize(cell, cellHeight)
-            frame:SetBackdropBorderColor(unpack(entry.key == self.selectedKey and T.selected or T.border))
+            local picked = self.handlers.isSelected and self.handlers.isSelected(entry)
+            frame:SetBackdropBorderColor(unpack((entry.key == self.selectedKey or picked) and T.selected or T.border))
+            frame.picked:SetShown(picked and true or false)
             frame.art:ClearAllPoints()
             frame.art:SetPoint("CENTER", frame, "TOP", 0, -cell / 2)
             local loaded = ML.Art.Fit(frame.art, entry, cell - 8, cell - 8, true)
@@ -284,7 +289,9 @@ function Browser:RenderRows(first, size)
             row.name:SetPoint("LEFT", (playable and 42 or 6) + (visual and 24 or 0), 0)
             row.name:SetPoint("RIGHT", row.detail, "LEFT", -8, 0)
             row.name:SetText(entry.name)
-            row.name:SetTextColor(unpack(entry.key == self.selectedKey and T.accent or T.text))
+            local picked = self.handlers.isSelected and self.handlers.isSelected(entry)
+            row.picked:SetShown(picked and true or false)
+            row.name:SetTextColor(unpack((entry.key == self.selectedKey or picked) and T.accent or T.text))
             row.detail:SetText(detailText(entry, mixed))
             row.star:SetShown(ML.Catalog:IsFavorite(entry))
         end

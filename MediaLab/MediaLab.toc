@@ -21,6 +21,7 @@ data\templates.lua
 sources.lua
 catalog.lua
 lists.lua
+selection.lua
 npcs.lua
 snippets.lua
 export.lua

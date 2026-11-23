@@ -11,6 +11,7 @@ ML.UI = UI
 
 local DEFAULT = {width = 1120, height = 700}
 local MAXIMIZED_MARGIN = 8 -- room left around a maximized window
+local TRAY, TRAY_NAMES = 22, 12 -- the selection strip's height, and names it lists
 local BOUNDS = {minWidth = 860, minHeight = 560, maxWidth = 1900, maxHeight = 1300}
 local TITLE, FACET_ROW = 30, 20
 -- The two side columns, as data: default and narrowest width (and widest, for
@@ -267,13 +268,76 @@ function UI:UpdatePager()
     self.status:SetText(C.error and "Indexing stopped; see chat." or (C.ready and "Ready" or "Indexing..."))
 end
 
-function UI:Select(entry)
+-- A click in the results (with modifiers {ctrl, shift}), or the lab choosing
+-- an entry itself. The inspector shows the entry clicked; the selection
+-- (selection.lua) can hold many.
+function UI:Select(entry, modifiers)
+    ML.ListMenu.Hide()
+    if entry then entry = ML.Selection:Click(entry, modifiers, self.results) else ML.Selection:Clear() end
     self.selected[self.tabId] = entry
     self.inspector:Show(entry)
     self.browser:SetSelected(entry and entry.key)
+    self:RenderTray()
 end
 
--- Right-click and the star: in or out of Favorites.
+-- What the lists menu and Copy act on: the selection when it holds several.
+function UI:Picked(entry)
+    if ML.Selection:Count() > 1 and (not entry or ML.Selection:Has(entry)) then return ML.Selection:Entries() end
+    return entry and {entry} or {}
+end
+
+function UI:OpenListMenu(entries, anchor)
+    if #entries == 0 then return end
+    ML.ListMenu.Open(self.frame, {entries = entries, anchor = anchor,
+        onChanged = function() self:RefreshSaved() end,
+        onManage = function() self:SelectTab(ML.ListsTab) end})
+end
+
+-- Right-click: the menu for the selection when the entry is part of it, else
+-- for the entry alone, which becomes the selection.
+function UI:ContextMenu(entry)
+    local entries = ML.Selection:For(entry)
+    if #entries == 1 then
+        self.selected[self.tabId] = entry
+        self.inspector:Show(entry)
+        self.browser:SetSelected(entry.key)
+    end
+    self:RenderTray()
+    self.browser:Render()
+    self:OpenListMenu(entries)
+end
+
+-- A thin strip under the results while several entries are selected.
+function UI:CreateTray(body)
+    local tray = CreateFrame("Frame", nil, body)
+    tray:SetHeight(TRAY)
+    tray.clear = W.Button(tray, "Clear", 48, function() self:Select(self.selected[self.tabId]) end, 20)
+    tray.clear:SetPoint("RIGHT")
+    W.Tip(tray.clear, "Clear selection", "Keep only the entry you are inspecting.")
+    tray.lists = W.Button(tray, "Lists", 48, function(button) self:OpenListMenu(ML.Selection:Entries(), button) end, 20)
+    tray.lists:SetPoint("RIGHT", tray.clear, "LEFT", -4, 0)
+    W.Tip(tray.lists, "Lists", "Add the selection to Favorites or any list, or start a new one.")
+    tray.label = W.Label(tray, "", 10, T.muted)
+    tray.label:SetPoint("LEFT", 2, 0)
+    tray.label:SetPoint("RIGHT", tray.lists, "LEFT", -8, 0)
+    tray:Hide()
+    self.tray = tray
+end
+
+function UI:RenderTray()
+    if not self.tray then return end
+    local entries = ML.Selection:Entries()
+    local shown = #entries > 1
+    self.tray:SetShown(shown)
+    self.browser.frame:SetPoint("BOTTOMRIGHT", self.inspector.frame, "BOTTOMLEFT", -10, shown and (TRAY + 6) or 0)
+    if not shown then return end
+    local names = {}
+    for index = 1, math.min(#entries, TRAY_NAMES) do names[index] = entries[index].name end
+    self.tray.label:SetText(#entries .. " selected:  " .. table.concat(names, ", ")
+        .. (#entries > TRAY_NAMES and ", ..." or ""))
+end
+
+-- The star: in or out of Favorites.
 function UI:ToggleFavorite(entry)
     ML.Lists:ToggleFavorite(entry.key)
     self:RefreshSaved()
@@ -493,6 +557,7 @@ end
 -- What the results are called in the Copy dialog and its Lua table: the
 -- picked list, else the tab and its filter.
 function UI:ResultsName()
+    if ML.Selection:Count() > 1 then return "Selected media" end
     local facet = view().facets[self.tabId]
     if self.tabId == ML.ListsTab then
         local list = ML.Lists:FromFacet(facet)
@@ -503,7 +568,8 @@ function UI:ResultsName()
 end
 
 function UI:CopyResults(format)
-    return ML.CopyDialog.Show(self.frame, {entries = self.results, name = self:ResultsName(), format = format})
+    local entries = ML.Selection:Count() > 1 and ML.Selection:Entries() or self.results
+    return ML.CopyDialog.Show(self.frame, {entries = entries, name = self:ResultsName(), format = format})
 end
 
 ---------------------------------------------------------------------------
@@ -710,9 +776,7 @@ function UI:Create()
 
     self.inspector = ML.Inspector.New(body, {
         onFavorite = function(entry) self:ToggleFavorite(entry) end,
-        onLists = function(entry, button)
-            ML.ListMenu.Toggle(self.frame, button, entry, function() self:RefreshSaved() end)
-        end,
+        onLists = function(entry, button) self:OpenListMenu(self:Picked(entry), button) end,
         onTarget = function() self:FromTarget() end,
     })
     self.inspector.frame:SetPoint("TOPRIGHT", -12, -(TITLE + 40))
@@ -731,8 +795,9 @@ function UI:Create()
     self.range:SetJustifyH("RIGHT")
 
     self.browser = ML.Browser.New(body, {
-        onSelect = function(entry) self:Select(entry) end,
-        onFavorite = function(entry) self:ToggleFavorite(entry) end,
+        onSelect = function(entry, modifiers) self:Select(entry, modifiers) end,
+        onMenu = function(entry) self:ContextMenu(entry) end,
+        isSelected = function(entry) return ML.Selection:Count() > 1 and ML.Selection:Has(entry) end,
         onPlay = function(entry)
             self:Select(entry)
             local preview = self.inspector:Preview("sound")
@@ -742,6 +807,9 @@ function UI:Create()
     })
     self.browser.frame:SetPoint("TOPLEFT", facets, "TOPRIGHT", 10, 0)
     self.browser.frame:SetPoint("BOTTOMRIGHT", self.inspector.frame, "BOTTOMLEFT", -10, 0)
+    self:CreateTray(body)
+    self.tray:SetPoint("BOTTOMLEFT", facets, "BOTTOMRIGHT", 10, 0)
+    self.tray:SetPoint("BOTTOMRIGHT", self.inspector.frame, "BOTTOMLEFT", -10, 0)
 
     local resize = CreateFrame("Button", nil, body)
     self.resizeGrip = resize

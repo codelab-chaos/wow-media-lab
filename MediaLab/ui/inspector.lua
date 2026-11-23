@@ -10,6 +10,7 @@ ML.Inspector = Inspector
 local MAX_FIELDS = 4
 
 -- handlers: onFavorite(entry), onLists(entry, button) opens the list menu for
+-- the entry (or the selection it is part of),
 -- the entry, onTarget() loads the player's target (the model preview's button)
 function Inspector.New(parent, handlers)
     local self = setmetatable({handlers = handlers, previews = {}, fields = {}}, Inspector)

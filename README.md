@@ -17,8 +17,8 @@ Made for **WoW Forever** (interface **16001**). Version **0.1.0**.
 - **Play every sound.** Hundreds of interface sounds, one click each.
 - **Browse the game's art.** Its textures and the pieces its windows are
   drawn from, zoomed and on any background.
-- **Keep what you like.** Favorite anything with a right-click, and make your
-  own lists.
+- **Keep what you like.** Right-click anything to favorite it or put it in
+  your own lists, one at a time or a whole selection at once.
 
 ## Install
 
@@ -40,7 +40,7 @@ minimap. The first time, a welcome card says hello:
 >
 > - Every icon, texture, sound and creature model in the game, in one window.
 > - Type in the search box to find anything: a name, a color, a subject or an ID.
-> - Right-click anything to add it to your Favorites.
+> - Right-click anything to add it to your Favorites or one of your lists.
 > - Press ? in the title bar any time for tips about the tab you are on.
 
 Drag the title bar to move the window and the corner to resize it. Want a
@@ -90,8 +90,12 @@ Press Build preview to see a live copy of one.
 ### Favorites and lists
 
 Favorites and your own lists, with any kind of media in them.
-Right-click anything, or press the star in the right panel, to favorite it.
-Press New to start a list, and Add to list in the right panel to fill it.
+Right-click anything for the lists menu: Favorites, then your lists by name
+(a check when it is in one), then **+ New list...** and **Manage lists...**
+Ctrl+click or Shift+click to pick several things, then right-click to add them all at once.
+Like in a file browser, Ctrl+click adds or removes one and Shift+click picks
+everything between two clicks; a strip under the results shows what you
+picked. Press New to start a list, and Add to list in the right panel to fill it.
 Something can be in as many lists as you like.
 
 ## Commands

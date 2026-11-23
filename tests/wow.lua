@@ -188,6 +188,8 @@ function Mock.install()
     UnitGUID = function(unit) return unit == "target" and Mock.target and Mock.target.guid or nil end
     UnitName = function(unit) return unit == "target" and Mock.target and Mock.target.name or nil end
     GetCursorPosition = function() return Mock.cursorX or 0, Mock.cursorY or 0 end
+    IsShiftKeyDown = function() return Mock.shift == true end
+    IsControlKeyDown = function() return Mock.ctrl == true end
     InCombatLockdown = function() return Mock.combat end
     C_Texture = {
         GetAtlasElements = function() return {"test-background", "test-glow", "common-icon-checkmark"} end,

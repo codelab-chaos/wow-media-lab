@@ -23,9 +23,9 @@ It is remembered, so it stays on until you turn it off.
 2. **Preview** it. Zoom to **1:1** to see the size you will draw it at, and
    cycle **Canvas** to check the transparency against light and dark frames.
    For a sound, pick the **Channel** your addon will play it on.
-3. **Save** the candidates: right-click to favorite, or **Add to list** in the
-   right panel. Keep a list per addon or per screen; an entry can be in
-   several.
+3. **Save** the candidates: right-click for the lists menu, or **Add to list**
+   in the right panel. Ctrl+click and Shift+click pick several at once. Keep a
+   list per addon or per screen; an entry can be in several.
 4. **Copy** the field you need into your code (click it, then **Ctrl+C**).
 5. **Copy** a whole list, or any results, when you want them all at once: a
    set of icons for a picker, every atlas with a prefix, the sounds for an
@@ -52,6 +52,7 @@ It is remembered, so it stays on until you turn it off.
    ```
 
    CSV gives one row per entry. `/mlab copy` and `/mlab csv` do the same.
+   With several entries picked, Copy takes just those.
 
 ## What you can copy
 

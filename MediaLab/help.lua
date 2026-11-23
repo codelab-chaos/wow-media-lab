@@ -9,7 +9,7 @@ ML.Help = {
         lines = {
             "Every icon, texture, sound and creature model in the game, in one window.",
             "Type in the search box to find anything: a name, a color, a subject or an ID.",
-            "Right-click anything to add it to your Favorites.",
+            "Right-click anything to add it to your Favorites or one of your lists.",
             "Press ? in the title bar any time for tips about the tab you are on.",
         },
     },
@@ -39,6 +39,7 @@ ML.Help = {
         },
         lists = {
             "Favorites and your own lists, with any kind of media in them.",
+            "Ctrl+click or Shift+click to pick several things, then right-click to add them all at once.",
             "Press New to start a list, and Add to list in the right panel to fill it.",
         },
     },

@@ -25,6 +25,7 @@ Code layout (one job per file):
 | `sources.lua` | One provider per kind: client APIs first, generated data as fallback |
 | `catalog.lua` | Entry store, batched indexing, search, filters |
 | `lists.lua` | Named lists of entry keys; one entry in any number of lists |
+| `selection.lua` | The picked entries: click, Ctrl+click, Shift+click |
 | `npcs.lua` | NPC names learned from your target, and the target's display |
 | `snippets.lua` | Copyable fields and Lua per kind |
 | `export.lua` | Rows per kind for CSV and the Lua table |
@@ -36,7 +37,7 @@ Code layout (one job per file):
 | `ui/inspector.lua` | Selection details, preview host, copy fields |
 | `ui/copydialog.lua` | The Copy popup, Lua or CSV |
 | `ui/prompt.lua` | The one-line name prompt |
-| `ui/listmenu.lua` | The inspector's list menu |
+| `ui/listmenu.lua` | The lists menu (right-click and Add to list), for one entry or a selection |
 | `ui/helppanel.lua` | The welcome and tips card |
 | `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
@@ -91,7 +92,8 @@ every tab, search and filter, switch Textures between **Files** and
 **Atlases**, zoom and pan both, play and stop a sound, change its channel,
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
-to two lists. Press **Dev**: the code fields, the Fonts tab (type a sample)
+to two lists. Shift+click and Ctrl+click a few entries on two tabs, check the
+strip under the results, right-click one and add them all to a list. Press **Dev**: the code fields, the Fonts tab (type a sample)
 and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
 filter and preview columns wider, maximize and restore (button and
 title-bar double-click), minimize to the dock, drag the dock icon to another

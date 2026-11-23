@@ -206,6 +206,89 @@ test("the inspector stars favorites and its list menu adds to any list and makes
     equal(#ML.Lists:Of(atlas.key), 2)
 end)
 
+test("selection works like a file browser: click, Ctrl+click and Shift+click", function()
+    local ML = open()
+    local S = ML.Selection
+    local results = {{key = "a"}, {key = "b"}, {key = "c"}, {key = "d"}, {key = "e"}}
+    S:Click(results[2], {}, results)
+    equal(S:Count(), 1)
+    S:Click(results[4], {shift = true}, results)
+    equal(S:Count(), 3, "Shift picks the range b..d")
+    assert(S:Has(results[3]))
+    S:Click(results[1], {ctrl = true}, results)
+    equal(S:Count(), 4, "Ctrl adds one")
+    local focus = S:Click(results[3], {ctrl = true}, results)
+    assert(not S:Has(results[3]), "Ctrl takes one out")
+    equal(focus, results[1], "and the inspector moves to the last one still picked")
+    S:Click(results[5], {ctrl = true, shift = true}, results)
+    equal(S:Count(), 5, "Ctrl+Shift adds the range from the last click")
+    S:Click(results[2], {}, results)
+    equal(S:Count(), 1, "a plain click starts over")
+end)
+
+test("right-click opens the lists menu on every kind, for one entry or the whole selection", function()
+    local ML = open()
+    local list = ML.Lists:Create("Gnomes")
+    -- A grid tile (icons) and a list row (sounds) both open the menu.
+    for _, tab in ipairs({"icon", "sound"}) do
+        ML.UI:SelectTab(tab)
+        local holder = tab == "icon" and ML.UI.browser.cells[1] or ML.UI.browser.rows[1]
+        holder.scripts.OnClick(holder, "RightButton")
+        local menu = ML.ListMenu.frame
+        assert(menu:IsShown(), tab .. " opens the menu")
+        local labels = {}
+        for _, row in ipairs(menu.rows) do if row:IsShown() then labels[#labels + 1] = row.name:GetText() end end
+        equal(table.concat(labels, ","), "Favorites,Gnomes,+ New list...,Manage lists...")
+        assert(menu.rows[1].star.shown or menu.rows[1].icon.shown, "Favorites has its star")
+        equal(ML.UI.inspector.entry, holder.entry, "right-click picks what it was on")
+        ML.ListMenu.Hide()
+    end
+    -- Three sounds, picked with Shift, then one already in Gnomes: a dash.
+    local rows = ML.UI.browser.rows
+    rows[1].scripts.OnClick(rows[1], "LeftButton")
+    Mock.shift = true
+    rows[3].scripts.OnClick(rows[3], "LeftButton")
+    Mock.shift = false
+    equal(ML.Selection:Count(), 3)
+    assert(ML.UI.tray.shown and ML.UI.tray.label:GetText():find("^3 selected:"), "the strip lists the selection")
+    assert(rows[2].picked.shown, "picked rows are tinted")
+    ML.Lists:Set(list, rows[2].entry.key, true)
+    rows[2].scripts.OnClick(rows[2], "RightButton")
+    local menu = ML.ListMenu.frame
+    equal(menu.rows[1].name:GetText(), "3 selected")
+    local gnomes = menu.rows[3]
+    equal(gnomes.name:GetText(), "Gnomes")
+    assert(gnomes.partial.shown and not gnomes.check.shown, "some are in Gnomes: a dash")
+    gnomes.scripts.OnClick(gnomes)
+    assert(gnomes.check.shown, "a click adds them all")
+    for index = 1, 3 do assert(ML.Lists:Has(list, rows[index].entry.key)) end
+    gnomes.scripts.OnClick(gnomes)
+    for index = 1, 3 do assert(not ML.Lists:Has(list, rows[index].entry.key), "and again removes them all") end
+    local favorite = menu.rows[2]
+    favorite.scripts.OnClick(favorite)
+    for index = 1, 3 do assert(ML.Lists:IsFavorite(rows[index].entry.key)) end
+    -- New list from the menu holds the whole selection.
+    local new
+    for _, row in ipairs(menu.rows) do if row:IsShown() and row.name:GetText() == "+ New list..." then new = row end end
+    new.scripts.OnClick(new)
+    ML.Prompt.frame.input.box:SetText("QParty sounds")
+    ML.Prompt.Accept()
+    equal(ML.Catalog:SavedCount(ML.Lists:Named("QParty sounds")), 3)
+    -- Copy takes the selection, and Clear keeps only the inspected entry.
+    ML.UI:SetDeveloper(true)
+    ML.UI.copyButton.scripts.OnClick(ML.UI.copyButton)
+    assert(ML.CopyDialog.frame.title:GetText():find("Selected media", 1, true))
+    ML.UI.tray.clear.scripts.OnClick(ML.UI.tray.clear)
+    equal(ML.Selection:Count(), 1)
+    assert(not ML.UI.tray.shown)
+    -- Manage lists jumps to the Lists tab.
+    rows[1].scripts.OnClick(rows[1], "RightButton")
+    local manage
+    for _, row in ipairs(menu.rows) do if row:IsShown() and row.name:GetText() == "Manage lists..." then manage = row end end
+    manage.scripts.OnClick(manage)
+    equal(ML.UI.tabId, ML.ListsTab)
+end)
+
 test("a list copies as one Lua table of every asset, grouped by kind", function()
     local ML = open()
     local list = ML.Lists:Create("Raid frame kit")
