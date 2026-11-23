@@ -91,9 +91,9 @@ every tab, search and filter, switch Textures between **Files** and
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Press **Dev**: the code fields, the Fonts tab (type a sample)
-and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Minimize,
-resize, `/reload` and confirm the lists, the NPC name, developer mode,
-placement, and that the welcome card stays away.
+and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
+preview column wider, minimize, resize, `/reload` and confirm the lists, the NPC name, developer mode,
+placement, the preview width, and that the welcome card stays away.
 The tests cannot verify the game's renderer or that every listed image
 exists, so run this before each release.
 

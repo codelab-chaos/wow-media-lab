@@ -697,4 +697,29 @@ test("the welcome card shows once, and ? shows tips for the tab", function()
     assert(blocks[3].body:GetText():find(ML.Help.developer.lines[1], 1, true), "developer tips when on")
 end)
 
+test("the preview column widens by dragging its edge, within bounds, and remembers it", function()
+    local ML = open()
+    local inspector, handle = ML.UI.inspector.frame, ML.UI.splitter
+    equal(inspector:GetWidth(), 330)
+    Mock.cursorX = 800
+    handle.scripts.OnMouseDown(handle)
+    Mock.cursorX = 600
+    handle.scripts.OnUpdate(handle)
+    equal(inspector:GetWidth(), 530, "dragging left widens it")
+    Mock.cursorX = -5000
+    handle.scripts.OnUpdate(handle)
+    equal(inspector:GetWidth(), ML.UI:InspectorMax(), "never crowds out the results")
+    Mock.cursorX = 700
+    handle.scripts.OnUpdate(handle)
+    handle.scripts.OnMouseUp(handle)
+    equal(ML.db.view.inspectorWidth, 430)
+    ML = Mock.load(ML.db)
+    SlashCmdList.MEDIALAB("")
+    Mock.flush()
+    equal(ML.UI.inspector.frame:GetWidth(), 430, "the width survives a reload")
+    ML.UI.splitter.scripts.OnDoubleClick(ML.UI.splitter)
+    equal(ML.UI.inspector.frame:GetWidth(), 330)
+    equal(ML.db.view.inspectorWidth, nil, "the default is not saved")
+end)
+
 print(string.format("%d integration tests passed (mocked WoW APIs; in-game rendering needs a client smoke test).", passed))

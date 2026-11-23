@@ -11,7 +11,10 @@ ML.UI = UI
 
 local DEFAULT = {width = 1120, height = 700}
 local BOUNDS = {minWidth = 860, minHeight = 560, maxWidth = 1900, maxHeight = 1300}
-local TITLE, FACET_WIDTH, INSPECTOR_WIDTH, FACET_ROW = 30, 150, 330, 20
+local TITLE, FACET_WIDTH, FACET_ROW = 30, 150, 20
+-- The inspector column: its default width, the narrowest it goes, and the
+-- room it always leaves the results when dragged wider.
+local INSPECTOR = {width = 330, min = 280, browserMin = 300, handle = 8}
 
 local function view() return ML.db.view end
 
@@ -557,6 +560,57 @@ function UI:CreateFacetColumn(body)
     return column
 end
 
+---------------------------------------------------------------------------
+-- The splitter between the results and the inspector
+---------------------------------------------------------------------------
+-- The widest the inspector can be in a window this size.
+function UI:InspectorMax()
+    local width = self.frame:GetWidth() or 0
+    return math.max(INSPECTOR.min, width - 12 - FACET_WIDTH - 10 - INSPECTOR.browserMin - 10 - 12)
+end
+
+function UI:SetInspectorWidth(width, save)
+    width = W.Clamp(tonumber(width) or INSPECTOR.width, INSPECTOR.min, self:InspectorMax())
+    self.inspector.frame:SetWidth(width)
+    if save then view().inspectorWidth = width ~= INSPECTOR.width and width or nil end
+    return width
+end
+
+-- Drag the inspector's left edge to widen the preview; double-click resets it.
+function UI:CreateSplitter(body)
+    local handle = CreateFrame("Button", nil, body)
+    handle:SetWidth(INSPECTOR.handle)
+    handle:SetPoint("TOPRIGHT", self.inspector.frame, "TOPLEFT", -1, 0)
+    handle:SetPoint("BOTTOMRIGHT", self.inspector.frame, "BOTTOMLEFT", -1, 0)
+    handle:EnableMouse(true)
+    local line = handle:CreateTexture(nil, "OVERLAY")
+    line:SetPoint("TOP")
+    line:SetPoint("BOTTOM")
+    line:SetWidth(2)
+    line:SetColorTexture(unpack(T.accent))
+    line:SetAlpha(0)
+    handle.line = line
+    handle:SetScript("OnEnter", function() line:SetAlpha(0.6) end)
+    handle:SetScript("OnLeave", function() if not handle.drag then line:SetAlpha(0) end end)
+    handle:SetScript("OnMouseDown", function()
+        handle.drag = {x = GetCursorPosition(), width = self.inspector.frame:GetWidth()}
+        handle:SetScript("OnUpdate", function()
+            local x = GetCursorPosition()
+            self:SetInspectorWidth(handle.drag.width + (handle.drag.x - x) / handle:GetEffectiveScale())
+        end)
+    end)
+    handle:SetScript("OnMouseUp", function()
+        handle:SetScript("OnUpdate", nil)
+        handle.drag = nil
+        line:SetAlpha(0)
+        self:SetInspectorWidth(self.inspector.frame:GetWidth(), true)
+    end)
+    handle:SetScript("OnDoubleClick", function() self:SetInspectorWidth(INSPECTOR.width, true) end)
+    W.Tip(handle, "Preview width", "Drag to widen or narrow the preview. Double-click to reset.")
+    self.splitter = handle
+    self:SetInspectorWidth(view().inspectorWidth)
+end
+
 function UI:Create()
     local frame = W.Panel(UIParent, T.window, "MediaLabFrame")
     self.frame, self.selected, self.facetCache, self.query, self.results = frame, {}, {}, "", {}
@@ -571,6 +625,10 @@ function UI:Create()
     tinsert(UISpecialFrames, "MediaLabFrame")
     self:RestoreWindow()
     self:CreateTitleBar(frame)
+    -- A smaller window keeps the results usable by narrowing the inspector.
+    frame:SetScript("OnSizeChanged", function()
+        if self.inspector then self:SetInspectorWidth(view().inspectorWidth) end
+    end)
 
     local body = CreateFrame("Frame", nil, frame)
     body:SetAllPoints()
@@ -587,7 +645,7 @@ function UI:Create()
     })
     self.inspector.frame:SetPoint("TOPRIGHT", -12, -(TITLE + 40))
     self.inspector.frame:SetPoint("BOTTOMRIGHT", -12, 12)
-    self.inspector.frame:SetWidth(INSPECTOR_WIDTH)
+    self:CreateSplitter(body)
 
     local prev = W.Button(body, "<", 26, function() self.browser:Page(-1) end, 24)
     local nextPage = W.Button(body, ">", 26, function() self.browser:Page(1) end, 24)

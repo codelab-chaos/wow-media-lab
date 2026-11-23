@@ -43,8 +43,10 @@ minimap. The first time, a welcome card says hello:
 > - Right-click anything to add it to your Favorites.
 > - Press ? in the title bar any time for tips about the tab you are on.
 
-Drag the title bar to move the window and the corner to resize it. **_**
-shrinks it to its title bar, and Escape closes it.
+Drag the title bar to move the window and the corner to resize it. Want a
+bigger preview? Drag the edge between the results and the preview to the
+left (double-click it to reset). **_** shrinks the window to its title bar,
+and Escape closes it.
 
 ## A quick tour
 
