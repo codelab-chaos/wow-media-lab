@@ -9,15 +9,62 @@ end
 
 local function tableOr(value) return type(value) == "table" and value or {} end
 
+local function ids(list, key)
+    local set = {}
+    for _, item in ipairs(list) do set[key and item[key] or item] = true end
+    return set
+end
+
+-- Every view setting, the type it must have, and for some the values it may
+-- take. Anything else (a hand edit, another version's file) is dropped, so
+-- the default applies. Settings not listed here are left alone. Built when
+-- first needed: the allowed values come from kinds.lua, which loads later.
+local function viewRules() return {
+    tab = {type = "string"}, thumb = {type = "number"}, sample = {type = "string"},
+    autoplay = {type = "boolean"}, modelAnimation = {type = "number"},
+    inspectorWidth = {type = "number"}, facetWidth = {type = "number"},
+    canvas = {type = "string", values = ids(ML.Canvases, "id")},
+    channel = {type = "string", values = ids(ML.SoundChannels)},
+    copyFormat = {type = "string", values = ids(ML.CopyFormats, "id")},
+    facets = {type = "table", strings = true}, views = {type = "table", strings = true},
+} end
+local ANCHORS = ids({"TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT"})
+
+local function cleanView(view)
+    for key, rule in pairs(viewRules()) do
+        local value = view[key]
+        if value ~= nil and (type(value) ~= rule.type or (rule.values and not rule.values[value])) then
+            view[key] = nil
+        elseif rule.strings and value then
+            for name, item in pairs(value) do
+                if type(name) ~= "string" or type(item) ~= "string" then value[name] = nil end
+            end
+        end
+    end
+    if type(view.thumb) == "number" and not ML.ThumbScales[view.thumb] then view.thumb = nil end
+    return view
+end
+
+-- The window's restore place: numbers and real anchor names, or none at all.
+local function cleanWindow(window)
+    if type(window) ~= "table" then return nil end
+    if window.point ~= nil and not (ANCHORS[window.point] and ANCHORS[window.relativePoint]) then return nil end
+    for _, key in ipairs({"x", "y", "width", "height"}) do
+        if window[key] ~= nil and type(window[key]) ~= "number" then window[key] = nil end
+    end
+    return window
+end
+
 -- Saved variables are sanitized once here; every other module trusts ML.db.
 function ML.Initialize(saved)
     saved = tableOr(saved)
     saved.view = tableOr(saved.view)
     if saved.view.tab == "favorites" then saved.view.tab = ML.ListsTab end -- Favorites became Lists
     if type(saved.view.facets) == "table" then saved.view.facets.favorites = nil end
+    cleanView(saved.view)
     ML.Lists.Sanitize(saved)
     ML.Npcs.Sanitize(saved)
-    if type(saved.window) ~= "table" then saved.window = nil end
+    saved.window = cleanWindow(saved.window)
     saved.minimized = saved.minimized == true or nil -- docked as an icon at a screen edge
     saved.maximized = saved.maximized == true or nil -- filling the screen
     ML.Dock.Sanitize(saved)

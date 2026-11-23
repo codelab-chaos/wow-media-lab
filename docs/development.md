@@ -107,7 +107,12 @@ exists, so run this before each release.
 
 No artwork, audio or external libraries are bundled. Only lists, captured
 NPC names, window placement, the open tab and preview settings are saved in
-`MediaLabDB`.
+`MediaLabDB`. It is cleaned once at load (`ML.Initialize` in `core.lua`, with
+`Lists.Sanitize`, `Npcs.Sanitize` and `Dock.Sanitize`): each setting has a type
+and, where it matters, a set of allowed values, and anything else is dropped
+so the default applies. A hand-edited file, or one from an older or newer
+version, loads without errors; the tests load junk into every setting and
+click through the whole lab. A new setting gets a row in `viewRules()`.
 
 The window and catalog are built when first opened. Indexing runs in small
 batches across frames (sounds and controls first, icons last), and only the

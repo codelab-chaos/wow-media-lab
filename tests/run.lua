@@ -206,6 +206,56 @@ test("the inspector stars favorites and its list menu adds to any list and makes
     equal(#ML.Lists:Of(atlas.key), 2)
 end)
 
+test("saved variables of any shape load and the whole lab still works", function()
+    -- A hand-edited or foreign MediaLabDB: every setting gets each wrong type.
+    local junk = {42, "junk", true, {1, 2, {x = 1}}, -1}
+    local viewKeys = {"tab", "thumb", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
+        "inspectorWidth", "facetWidth", "facets", "views"}
+    for _, value in ipairs(junk) do
+        local view = {facets = {icon = value, [5] = value}, views = {texture = value, [value] = "atlas"}}
+        for _, key in ipairs(viewKeys) do if key ~= "facets" and key ~= "views" then view[key] = value end end
+        local saved = {
+            view = view, favorites = value, nextListId = value, minimized = value, maximized = value,
+            developer = value, welcomed = value,
+            lists = {value, {id = value, name = value, keys = value}, {id = 7, name = "Kept", keys = {[5] = true, ["icon:134400"] = value, ["sound:IG_MAINMENU_OPEN"] = true}}},
+            npcs = {[value] = value, [12] = {name = value, display = value}},
+            window = {point = value, relativePoint = value, x = value, width = value},
+            dock = {side = value, at = value},
+        }
+        local ML = Mock.load(saved)
+        SlashCmdList.MEDIALAB("")
+        Mock.flush()
+        assert(ML.UI.frame:IsShown(), "opens with " .. tostring(value))
+        equal(ML.Lists:Get(7).name, "Kept", "good lists survive next to bad ones")
+        for _, tab in ipairs(ML.Tabs) do
+            ML.UI:SelectTab(tab.id)
+            local holder = ML.UI.browser.cells[1]
+            if not (holder and holder.shown) then holder = ML.UI.browser.rows[1] end
+            if holder and holder.shown and holder.entry then
+                holder.scripts.OnClick(holder, "LeftButton")
+                holder.scripts.OnClick(holder, "RightButton")
+                ML.ListMenu.Hide()
+            end
+        end
+        ML.UI.thumbButton.scripts.OnClick(ML.UI.thumbButton)
+        ML.UI:SelectTab("texture")
+        local image = ML.UI.inspector.previews.image
+        if image then image.canvasButton.scripts.OnClick(image.canvasButton) end
+        ML.UI:SelectTab("sound")
+        ML.UI.browser.rows[1].play.scripts.OnClick(ML.UI.browser.rows[1].play)
+        ML.UI:SetDeveloper(true)
+        ML.UI:SelectTab("font")
+        ML.UI:CopyResults("lua")
+        ML.UI:CopyResults("csv")
+        ML.UI:SetMaximized(true)
+        ML.UI:SetMaximized(false)
+        ML.UI:SetMinimized(true)
+        ML.Dock.button.scripts.OnClick(ML.Dock.button)
+        ML.UI:ToggleHelp()
+        ML.UI.splitters.inspector.scripts.OnDoubleClick(ML.UI.splitters.inspector)
+    end
+end)
+
 test("selection works like a file browser: click, Ctrl+click and Shift+click", function()
     local ML = open()
     local S = ML.Selection
