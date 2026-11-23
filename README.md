@@ -44,8 +44,9 @@ minimap. The first time, a welcome card says hello:
 > - Press ? in the title bar any time for tips about the tab you are on.
 
 Drag the title bar to move the window and the corner to resize it. Want a
-bigger preview? Drag the edge between the results and the preview to the
-left (double-click it to reset). **_** shrinks the window to its title bar,
+bigger preview, or longer filter names? Drag the edge of the preview or the
+filter column (double-click an edge to reset it). Hover a filter to see its
+full name. **_** shrinks the window to its title bar,
 and Escape closes it.
 
 ## A quick tour

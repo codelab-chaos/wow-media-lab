@@ -697,29 +697,46 @@ test("the welcome card shows once, and ? shows tips for the tab", function()
     assert(blocks[3].body:GetText():find(ML.Help.developer.lines[1], 1, true), "developer tips when on")
 end)
 
-test("the preview column widens by dragging its edge, within bounds, and remembers it", function()
+test("both side columns widen by dragging their inner edge, within bounds, and remember it", function()
     local ML = open()
-    local inspector, handle = ML.UI.inspector.frame, ML.UI.splitter
+    local inspector, filters = ML.UI.inspector.frame, ML.UI.facetColumn
+    local preview, edge = ML.UI.splitters.inspector, ML.UI.splitters.facets
     equal(inspector:GetWidth(), 330)
+    equal(filters:GetWidth(), 190)
     Mock.cursorX = 800
-    handle.scripts.OnMouseDown(handle)
+    preview.scripts.OnMouseDown(preview)
     Mock.cursorX = 600
-    handle.scripts.OnUpdate(handle)
-    equal(inspector:GetWidth(), 530, "dragging left widens it")
+    preview.scripts.OnUpdate(preview)
+    equal(inspector:GetWidth(), 530, "dragging the preview's left edge left widens it")
     Mock.cursorX = -5000
-    handle.scripts.OnUpdate(handle)
-    equal(inspector:GetWidth(), ML.UI:InspectorMax(), "never crowds out the results")
+    preview.scripts.OnUpdate(preview)
+    equal(inspector:GetWidth(), ML.UI:ColumnMax("inspector"), "never crowds out the results")
     Mock.cursorX = 700
-    handle.scripts.OnUpdate(handle)
-    handle.scripts.OnMouseUp(handle)
+    preview.scripts.OnUpdate(preview)
+    preview.scripts.OnMouseUp(preview)
     equal(ML.db.view.inspectorWidth, 430)
+    Mock.cursorX = 100
+    edge.scripts.OnMouseDown(edge)
+    Mock.cursorX = 160
+    edge.scripts.OnUpdate(edge)
+    edge.scripts.OnMouseUp(edge)
+    equal(filters:GetWidth(), 250, "dragging the filters' right edge right widens them")
+    equal(ML.UI.listActions.rename:GetWidth(), math.floor((250 - 16) / 3), "list buttons share the width")
+    local room = ML.UI.frame:GetWidth() - 44 - filters:GetWidth() - inspector:GetWidth()
+    assert(room >= 300, "the results keep their minimum")
     ML = Mock.load(ML.db)
     SlashCmdList.MEDIALAB("")
     Mock.flush()
-    equal(ML.UI.inspector.frame:GetWidth(), 430, "the width survives a reload")
-    ML.UI.splitter.scripts.OnDoubleClick(ML.UI.splitter)
+    equal(ML.UI.inspector.frame:GetWidth(), 430, "widths survive a reload")
+    equal(ML.UI.facetColumn:GetWidth(), 250)
+    for _, name in ipairs({"inspector", "facets"}) do
+        local handle = ML.UI.splitters[name]
+        handle.scripts.OnDoubleClick(handle)
+    end
     equal(ML.UI.inspector.frame:GetWidth(), 330)
-    equal(ML.db.view.inspectorWidth, nil, "the default is not saved")
+    equal(ML.UI.facetColumn:GetWidth(), 190)
+    equal(ML.db.view.inspectorWidth, nil, "defaults are not saved")
+    equal(ML.db.view.facetWidth, nil)
 end)
 
 test("grouped filters show bare names under a heading", function()
@@ -739,6 +756,9 @@ test("grouped filters show bare names under a heading", function()
     for _, row in ipairs(rows) do assert(not row.text:find("Family:", 1, true), row.text) end
     local blue = find(ML, "model", 1693)
     equal(ML.Catalog.FacetLabels(blue.facets), "Creature, Murloc")
+    local murlocButton
+    for _, item in ipairs(ML.UI.facetButtons) do if item.facet == "Family: Murloc" then murlocButton = item end end
+    equal(murlocButton.tip, "Murloc", "hovering shows the full name")
 end)
 
 print(string.format("%d integration tests passed (mocked WoW APIs; in-game rendering needs a client smoke test).", passed))

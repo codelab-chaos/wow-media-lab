@@ -11,10 +11,18 @@ ML.UI = UI
 
 local DEFAULT = {width = 1120, height = 700}
 local BOUNDS = {minWidth = 860, minHeight = 560, maxWidth = 1900, maxHeight = 1300}
-local TITLE, FACET_WIDTH, FACET_ROW = 30, 150, 20
--- The inspector column: its default width, the narrowest it goes, and the
--- room it always leaves the results when dragged wider.
-local INSPECTOR = {width = 330, min = 280, browserMin = 300, handle = 8}
+local TITLE, FACET_ROW = 30, 20
+-- The two side columns, as data: default and narrowest width (and widest, for
+-- the filters), which edge drags, and where the width is saved. The results
+-- in the middle always keep BROWSER_MIN.
+local COLUMNS = {
+    facets = {default = 190, min = 140, max = 400, edge = "right", saved = "facetWidth",
+        title = "Filter width", hint = "Drag to widen or narrow the filters. Double-click to reset."},
+    inspector = {default = 330, min = 280, edge = "left", saved = "inspectorWidth",
+        title = "Preview width", hint = "Drag to widen or narrow the preview. Double-click to reset."},
+}
+local BROWSER_MIN, HANDLE = 300, 8
+local GUTTERS = 12 + 10 + 10 + 12 -- window edge, column gap, column gap, window edge
 
 local function view() return ML.db.view end
 
@@ -137,6 +145,15 @@ function UI:FacetButton(index)
     item:SetHighlightTexture(W.WHITE)
     item:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
     item:SetScript("OnClick", function(button) self:SetFacet(button.facet) end)
+    -- The full name, for names the column is too narrow to show.
+    item:SetScript("OnEnter", function(button)
+        if not button.tip then return end
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(button.tip, unpack(T.accent))
+        GameTooltip:AddLine(button.count:GetText() .. " entries", unpack(T.muted))
+        GameTooltip:Show()
+    end)
+    item:SetScript("OnLeave", function() GameTooltip:Hide() end)
     self.facetButtons[index] = item
     return item
 end
@@ -180,6 +197,7 @@ function UI:RenderFacets()
             local selected = not data.heading and item.facet == active
             item:EnableMouse(not data.heading)
             item.name:SetText(data.heading or data.label or data.name)
+            item.tip = not data.heading and (data.label or data.name) or nil
             item.name:SetTextColor(unpack(data.heading and T.muted or selected and T.accent or T.text))
             item.count:SetText(data.heading and "" or tostring(data.count))
             item.marker:SetShown(selected)
@@ -412,7 +430,7 @@ function UI:CreateToolbar(body)
     self:LayoutTabs()
     self.search = W.EditBox(body, 24, "Search names, paths, IDs...")
     self.search:SetPoint("TOPLEFT", 12, -(TITLE + 40))
-    self.search:SetWidth(FACET_WIDTH + 150)
+    self.search:SetWidth(300)
     self.search.box:SetScript("OnTextChanged", function(box)
         local text = box:GetText()
         self.search.placeholder:SetShown(text == "")
@@ -516,9 +534,8 @@ function UI:CreateListActions(column)
     bar:SetPoint("BOTTOMLEFT", 4, 20)
     bar:SetPoint("BOTTOMRIGHT", -4, 20)
     bar:SetHeight(22)
-    local width = math.floor((FACET_WIDTH - 16) / 3)
     local function button(label, onClick, title, body)
-        local item = W.Button(bar, label, width, onClick, 20)
+        local item = W.Button(bar, label, 40, onClick, 20)
         W.Tip(item, title, body)
         return item
     end
@@ -531,6 +548,12 @@ function UI:CreateListActions(column)
         "Delete list", "Click twice. The media stays in your other lists.")
     bar.delete:SetPoint("LEFT", bar.rename, "RIGHT", 4, 0)
     self.listActions = bar
+end
+
+-- New, Rename and Delete share the column's width.
+function UI:LayoutListActions(columnWidth)
+    local width = math.floor((columnWidth - 16) / 3)
+    for _, key in ipairs({"new", "rename", "delete"}) do self.listActions[key]:SetWidth(width) end
 end
 
 -- Shown on the Lists tab only; Rename and Delete act on the picked list.
@@ -549,7 +572,7 @@ function UI:CreateFacetColumn(body)
     local column = W.Panel(body)
     column:SetPoint("TOPLEFT", 12, -(TITLE + 72))
     column:SetPoint("BOTTOMLEFT", 12, 12)
-    column:SetWidth(FACET_WIDTH)
+    self.facetColumn = column
     self.facetHeading = W.Label(column, "FILTER", 10, T.muted)
     self.facetHeading:SetPoint("TOPLEFT", 8, -8)
     self.facetList = CreateFrame("Frame", nil, column)
@@ -569,27 +592,46 @@ function UI:CreateFacetColumn(body)
 end
 
 ---------------------------------------------------------------------------
--- The splitter between the results and the inspector
+-- Column widths: drag a side column's inner edge; double-click resets it
 ---------------------------------------------------------------------------
--- The widest the inspector can be in a window this size.
-function UI:InspectorMax()
-    local width = self.frame:GetWidth() or 0
-    return math.max(INSPECTOR.min, width - 12 - FACET_WIDTH - 10 - INSPECTOR.browserMin - 10 - 12)
+function UI:ColumnFrame(name)
+    return name == "facets" and self.facetColumn or self.inspector.frame
 end
 
-function UI:SetInspectorWidth(width, save)
-    width = W.Clamp(tonumber(width) or INSPECTOR.width, INSPECTOR.min, self:InspectorMax())
-    self.inspector.frame:SetWidth(width)
-    if save then view().inspectorWidth = width ~= INSPECTOR.width and width or nil end
+-- The widest a side column can be in a window this size, leaving the
+-- results their minimum beside the other column.
+function UI:ColumnMax(name)
+    local spec, other = COLUMNS[name], name == "facets" and "inspector" or "facets"
+    local otherWidth = self:ColumnFrame(other) and self:ColumnFrame(other):GetWidth() or COLUMNS[other].default
+    local room = (self.frame:GetWidth() or 0) - GUTTERS - otherWidth - BROWSER_MIN
+    return math.max(spec.min, math.min(spec.max or room, room))
+end
+
+function UI:SetColumnWidth(name, width, save)
+    local spec = COLUMNS[name]
+    width = W.Clamp(tonumber(width) or spec.default, spec.min, self:ColumnMax(name))
+    self:ColumnFrame(name):SetWidth(width)
+    if name == "facets" then self:LayoutListActions(width) end
+    if save then view()[spec.saved] = width ~= spec.default and width or nil end
     return width
 end
 
--- Drag the inspector's left edge to widen the preview; double-click resets it.
-function UI:CreateSplitter(body)
+function UI:FitColumns()
+    for _, name in ipairs({"facets", "inspector"}) do self:SetColumnWidth(name, view()[COLUMNS[name].saved]) end
+end
+
+function UI:CreateSplitter(body, name)
+    local spec, column = COLUMNS[name], self:ColumnFrame(name)
+    local leftEdge = spec.edge == "left"
     local handle = CreateFrame("Button", nil, body)
-    handle:SetWidth(INSPECTOR.handle)
-    handle:SetPoint("TOPRIGHT", self.inspector.frame, "TOPLEFT", -1, 0)
-    handle:SetPoint("BOTTOMRIGHT", self.inspector.frame, "BOTTOMLEFT", -1, 0)
+    handle:SetWidth(HANDLE)
+    if leftEdge then
+        handle:SetPoint("TOPRIGHT", column, "TOPLEFT", -1, 0)
+        handle:SetPoint("BOTTOMRIGHT", column, "BOTTOMLEFT", -1, 0)
+    else
+        handle:SetPoint("TOPLEFT", column, "TOPRIGHT", 1, 0)
+        handle:SetPoint("BOTTOMLEFT", column, "BOTTOMRIGHT", 1, 0)
+    end
     handle:EnableMouse(true)
     local line = handle:CreateTexture(nil, "OVERLAY")
     line:SetPoint("TOP")
@@ -598,25 +640,26 @@ function UI:CreateSplitter(body)
     line:SetColorTexture(unpack(T.accent))
     line:SetAlpha(0)
     handle.line = line
-    handle:SetScript("OnEnter", function() line:SetAlpha(0.6) end)
-    handle:SetScript("OnLeave", function() if not handle.drag then line:SetAlpha(0) end end)
+    W.Tip(handle, spec.title, spec.hint)
+    local showTip = handle:GetScript("OnEnter")
+    local hideTip = handle:GetScript("OnLeave")
+    handle:SetScript("OnEnter", function(frame) line:SetAlpha(0.6); showTip(frame) end)
+    handle:SetScript("OnLeave", function(frame) if not handle.drag then line:SetAlpha(0) end; hideTip(frame) end)
     handle:SetScript("OnMouseDown", function()
-        handle.drag = {x = GetCursorPosition(), width = self.inspector.frame:GetWidth()}
+        handle.drag = {x = GetCursorPosition(), width = column:GetWidth()}
         handle:SetScript("OnUpdate", function()
-            local x = GetCursorPosition()
-            self:SetInspectorWidth(handle.drag.width + (handle.drag.x - x) / handle:GetEffectiveScale())
+            local moved = (GetCursorPosition() - handle.drag.x) / handle:GetEffectiveScale()
+            self:SetColumnWidth(name, handle.drag.width + (leftEdge and -moved or moved))
         end)
     end)
     handle:SetScript("OnMouseUp", function()
         handle:SetScript("OnUpdate", nil)
         handle.drag = nil
         line:SetAlpha(0)
-        self:SetInspectorWidth(self.inspector.frame:GetWidth(), true)
+        self:SetColumnWidth(name, column:GetWidth(), true)
     end)
-    handle:SetScript("OnDoubleClick", function() self:SetInspectorWidth(INSPECTOR.width, true) end)
-    W.Tip(handle, "Preview width", "Drag to widen or narrow the preview. Double-click to reset.")
-    self.splitter = handle
-    self:SetInspectorWidth(view().inspectorWidth)
+    handle:SetScript("OnDoubleClick", function() self:SetColumnWidth(name, spec.default, true) end)
+    self.splitters[name] = handle
 end
 
 function UI:Create()
@@ -633,9 +676,9 @@ function UI:Create()
     tinsert(UISpecialFrames, "MediaLabFrame")
     self:RestoreWindow()
     self:CreateTitleBar(frame)
-    -- A smaller window keeps the results usable by narrowing the inspector.
+    -- A smaller window keeps the results usable by narrowing the side columns.
     frame:SetScript("OnSizeChanged", function()
-        if self.inspector then self:SetInspectorWidth(view().inspectorWidth) end
+        if self.splitters then self:FitColumns() end
     end)
 
     local body = CreateFrame("Frame", nil, frame)
@@ -653,7 +696,10 @@ function UI:Create()
     })
     self.inspector.frame:SetPoint("TOPRIGHT", -12, -(TITLE + 40))
     self.inspector.frame:SetPoint("BOTTOMRIGHT", -12, 12)
-    self:CreateSplitter(body)
+    self.splitters = {}
+    self:CreateSplitter(body, "facets")
+    self:CreateSplitter(body, "inspector")
+    self:FitColumns()
 
     local prev = W.Button(body, "<", 26, function() self.browser:Page(-1) end, 24)
     local nextPage = W.Button(body, ">", 26, function() self.browser:Page(1) end, 24)
