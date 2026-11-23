@@ -34,4 +34,5 @@ ui\copydialog.lua
 ui\prompt.lua
 ui\listmenu.lua
 ui\helppanel.lua
+ui\dock.lua
 ui\window.lua

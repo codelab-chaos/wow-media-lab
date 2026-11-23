@@ -38,6 +38,7 @@ Code layout (one job per file):
 | `ui/prompt.lua` | The one-line name prompt |
 | `ui/listmenu.lua` | The inspector's list menu |
 | `ui/helppanel.lua` | The welcome and tips card |
+| `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
 | `MediaLab_Icons/` | Load-on-demand icon names, colors and descriptions (generated) |
 | `MediaLab_Models/` | Load-on-demand creature displays (generated) |
@@ -92,7 +93,9 @@ build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Press **Dev**: the code fields, the Fonts tab (type a sample)
 and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
-filter and preview columns wider, minimize, resize, `/reload` and confirm the lists, the NPC name, developer mode,
+filter and preview columns wider, maximize and restore (button and
+title-bar double-click), minimize to the dock, drag the dock icon to another
+edge and click it, resize, `/reload` and confirm the lists, the NPC name, developer mode,
 placement, the preview width, and that the welcome card stays away.
 The tests cannot verify the game's renderer or that every listed image
 exists, so run this before each release.

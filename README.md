@@ -46,8 +46,14 @@ minimap. The first time, a welcome card says hello:
 Drag the title bar to move the window and the corner to resize it. Want a
 bigger preview, or longer filter names? Drag the edge of the preview or the
 filter column (double-click an edge to reset it). Hover a filter to see its
-full name. **_** shrinks the window to its title bar,
-and Escape closes it.
+full name.
+
+- **_** minimizes the lab to a small icon docked at the edge of your screen.
+  Click the icon to bring it back, or drag it along the edge, or to another
+  edge, where it snaps.
+- **The square** maximizes it to fill the screen; click it again (or
+  double-click the title bar) to go back.
+- **x** or Escape closes it.
 
 ## A quick tour
 
@@ -97,6 +103,7 @@ Something can be in as many lists as you like.
 | `/mlab tab <name>` | Jumps to a tab: icons, textures, atlases, models, sounds, controls, lists |
 | `/mlab target` | Finds your target's model and remembers its name |
 | `/mlab reset` | Puts the window back in the middle at its normal size |
+| `/mlab dock <edge>` | Where it minimizes to: left, right, top or bottom |
 | `/mlab dev` | Turns developer mode on or off |
 | `/mlab help` | Lists these in chat |
 

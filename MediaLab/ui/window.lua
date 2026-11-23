@@ -10,6 +10,7 @@ local UI = {}
 ML.UI = UI
 
 local DEFAULT = {width = 1120, height = 700}
+local MAXIMIZED_MARGIN = 8 -- room left around a maximized window
 local BOUNDS = {minWidth = 860, minHeight = 560, maxWidth = 1900, maxHeight = 1300}
 local TITLE, FACET_ROW = 30, 20
 -- The two side columns, as data: default and narrowest width (and widest, for
@@ -31,21 +32,27 @@ function UI:Tab(id)
 end
 
 ---------------------------------------------------------------------------
--- Window placement and minimizing
+-- Window placement, maximizing and minimizing to the dock
 ---------------------------------------------------------------------------
+-- The restore size and place; a maximized window keeps the one it had.
 function UI:SaveWindow()
+    if ML.db.maximized then return end
     local frame = self.frame
     local point, _, relativePoint, x, y = frame:GetPoint()
     local saved = ML.db.window or {}
     saved.point, saved.relativePoint, saved.x, saved.y = point, relativePoint, x, y
-    saved.width = frame:GetWidth()
-    if not ML.db.minimized then saved.height = frame:GetHeight() end
+    saved.width, saved.height = frame:GetWidth(), frame:GetHeight()
     ML.db.window = saved
 end
 
 function UI:RestoreWindow()
     local frame, saved = self.frame, ML.db.window
     frame:ClearAllPoints()
+    if ML.db.maximized then
+        frame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", MAXIMIZED_MARGIN, -MAXIMIZED_MARGIN)
+        frame:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -MAXIMIZED_MARGIN, MAXIMIZED_MARGIN)
+        return
+    end
     frame:SetSize(W.Clamp(saved and tonumber(saved.width) or DEFAULT.width, BOUNDS.minWidth, BOUNDS.maxWidth),
         W.Clamp(saved and tonumber(saved.height) or DEFAULT.height, BOUNDS.minHeight, BOUNDS.maxHeight))
     if saved and type(saved.point) == "string" and type(saved.relativePoint) == "string" then
@@ -56,40 +63,38 @@ function UI:RestoreWindow()
 end
 
 function UI:ResetWindow()
+    ML.db.window, ML.db.maximized = nil, nil
     self:Show()
-    ML.db.window = nil
-    self:SetMinimized(false)
     self:RestoreWindow()
+    self:UpdateMaximize()
     self:SaveWindow()
 end
 
--- Anchors by the top-left corner so height changes keep the title bar in place.
-function UI:PinTopLeft()
-    local frame = self.frame
-    local left, top = frame:GetLeft(), frame:GetTop()
-    if not left or not top then return end
-    frame:ClearAllPoints()
-    frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+-- Maximized fills the screen; again restores the size and place it had.
+function UI:SetMaximized(maximized)
+    if maximized and not ML.db.maximized then self:SaveWindow() end
+    ML.db.maximized = maximized and true or nil
+    self:RestoreWindow()
+    self:UpdateMaximize()
+    self:FitColumns()
+    self:Refresh()
 end
 
--- Minimized keeps only the title bar; the window keeps its place and width.
+function UI:UpdateMaximize()
+    local maximized = ML.db.maximized == true
+    self.maximize.back:SetShown(maximized)
+    self.resizeGrip:SetShown(not maximized)
+end
+
+-- Minimized hides the window and docks an icon at a screen edge; the icon,
+-- /mlab or the addon menu bring it back.
 function UI:SetMinimized(minimized)
-    local frame = self.frame
-    self:PinTopLeft()
-    ML.db.minimized = minimized or nil
-    self.body:SetShown(not minimized)
-    self.minimize:SetLabel(minimized and "+" or "_")
     if minimized then
-        frame:SetResizeBounds(BOUNDS.minWidth, TITLE, BOUNDS.maxWidth, TITLE)
-        frame:SetHeight(TITLE)
+        ML.db.minimized = true
+        self.frame:Hide()
+        ML.Dock.Show(function() self:Show() end)
     else
-        frame:SetResizeBounds(BOUNDS.minWidth, BOUNDS.minHeight, BOUNDS.maxWidth, BOUNDS.maxHeight)
-        local saved = ML.db.window
-        frame:SetHeight(W.Clamp(saved and tonumber(saved.height) or DEFAULT.height, BOUNDS.minHeight, BOUNDS.maxHeight))
-        self:Refresh()
-        if self.tabId and not self.selected[self.tabId] and self.results[1] and self.tabId ~= ML.ListsTab then
-            self:Select(self.results[1])
-        end
+        self:Show()
     end
 end
 
@@ -231,7 +236,7 @@ function UI:Layout()
 end
 
 function UI:Refresh()
-    if not self.frame or ML.db.minimized then return end
+    if not self.frame or not self.frame:IsShown() then return end
     local facet = view().facets[self.tabId]
     self.results = C:Filter(self.tabId, facet, self.query)
     local tab = self:Tab(self.tabId)
@@ -337,14 +342,15 @@ end
 -- Construction
 ---------------------------------------------------------------------------
 function UI:CreateTitleBar(frame)
-    local bar = CreateFrame("Frame", nil, frame)
+    local bar = CreateFrame("Button", nil, frame)
     bar:SetPoint("TOPLEFT", 1, -1)
     bar:SetPoint("TOPRIGHT", -1, -1)
     bar:SetHeight(TITLE - 2)
     bar:EnableMouse(true)
     bar:RegisterForDrag("LeftButton")
-    bar:SetScript("OnDragStart", function() frame:StartMoving() end)
+    bar:SetScript("OnDragStart", function() if not ML.db.maximized then frame:StartMoving() end end)
     bar:SetScript("OnDragStop", function() frame:StopMovingOrSizing(); self:SaveWindow() end)
+    bar:SetScript("OnDoubleClick", function() self:SetMaximized(not ML.db.maximized) end)
     W.Fill(bar, {0.09, 0.105, 0.125, 1})
     local title = W.Label(bar, ML.TITLE, 13, T.accent)
     title:SetPoint("LEFT", 10, 0)
@@ -353,9 +359,23 @@ function UI:CreateTitleBar(frame)
     local close = W.Button(bar, "x", 22, function() frame:Hide() end, 20)
     close:SetPoint("RIGHT", -4, 0)
     W.Tip(close, "Close", "/mlab opens it again.")
-    self.minimize = W.Button(bar, "_", 22, function() self:SetMinimized(not ML.db.minimized) end, 20)
-    self.minimize:SetPoint("RIGHT", close, "LEFT", -4, 0)
-    W.Tip(self.minimize, "Minimize", "Collapse to the title bar. Click again to restore.")
+    self.maximize = W.Button(bar, "", 22, function() self:SetMaximized(not ML.db.maximized) end, 20)
+    self.maximize:SetPoint("RIGHT", close, "LEFT", -4, 0)
+    W.Tip(self.maximize, "Maximize", "Fill the screen. Click again, or double-click the title bar, to restore.")
+    -- A drawn window icon: one square, or two overlapping when maximized.
+    local function square(x, y)
+        local box = CreateFrame("Frame", nil, self.maximize, "BackdropTemplate")
+        box:SetSize(9, 8)
+        box:SetPoint("CENTER", x, y)
+        box:SetBackdrop({edgeFile = W.WHITE, edgeSize = 1})
+        box:SetBackdropBorderColor(unpack(T.text))
+        return box
+    end
+    self.maximize.front = square(-1, -1)
+    self.maximize.back = square(2, 2)
+    self.minimize = W.Button(bar, "_", 22, function() self:SetMinimized(true) end, 20)
+    self.minimize:SetPoint("RIGHT", self.maximize, "LEFT", -4, 0)
+    W.Tip(self.minimize, "Minimize", "Dock to an icon at the edge of the screen. Click the icon to bring it back.")
     self.helpButton = W.Button(bar, "?", 22, function() self:ToggleHelp() end, 20)
     self.helpButton:SetPoint("RIGHT", self.minimize, "LEFT", -4, 0)
     W.Tip(self.helpButton, "Help", "Tips for the tab you are on.")
@@ -724,6 +744,7 @@ function UI:Create()
     self.browser.frame:SetPoint("BOTTOMRIGHT", self.inspector.frame, "BOTTOMLEFT", -10, 0)
 
     local resize = CreateFrame("Button", nil, body)
+    self.resizeGrip = resize
     resize:SetSize(16, 16)
     resize:SetPoint("BOTTOMRIGHT", -1, 1)
     resize:SetNormalTexture([[Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up]])
@@ -744,16 +765,21 @@ function UI:Create()
     local saved = view().tab
     self.tabId = self:Tab(saved) and self:Available(saved) and saved or ML.Tabs[1].id
     self.devButton:SetActive(ML.db.developer and true or false)
-    self:SetMinimized(ML.db.minimized == true)
+    self:UpdateMaximize()
     C:Start(function(kind) self:OnIndexed(kind) end)
     self:SelectTab(self.tabId)
     if not ML.db.welcomed then self:ShowHelp() end
 end
 
 function UI:Show()
+    ML.db.minimized = nil
+    ML.Dock.Hide()
     if not self.frame then self:Create() end
     self.frame:Show()
     self:Refresh()
+    if self.tabId and not self.selected[self.tabId] and self.results[1] and self.tabId ~= ML.ListsTab then
+        self:Select(self.results[1])
+    end
 end
 
 function UI:Toggle()

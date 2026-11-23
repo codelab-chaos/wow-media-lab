@@ -18,7 +18,9 @@ function ML.Initialize(saved)
     ML.Lists.Sanitize(saved)
     ML.Npcs.Sanitize(saved)
     if type(saved.window) ~= "table" then saved.window = nil end
-    saved.minimized = saved.minimized == true or nil
+    saved.minimized = saved.minimized == true or nil -- docked as an icon at a screen edge
+    saved.maximized = saved.maximized == true or nil -- filling the screen
+    ML.Dock.Sanitize(saved)
     saved.developer = saved.developer == true or nil -- code fields, Fonts and Copy
     saved.welcomed = saved.welcomed == true or nil   -- the welcome card was dismissed
     ML.db = saved
@@ -39,7 +41,7 @@ local commands = {
         ML.Print("/mlab opens the lab. /mlab search <words> searches the current tab.")
         ML.Print("/mlab tab <icons|textures|atlases|models|sounds|controls|lists> jumps to a tab.")
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
-        ML.Print("/mlab reset restores the window's size and position.")
+        ML.Print("/mlab reset restores the window's size and position. /mlab dock <left|right|top|bottom> picks where it minimizes to.")
         ML.Print("/mlab dev turns developer mode on or off: code to copy, the Fonts tab, /mlab copy and /mlab csv.")
     end,
     dev = function()
@@ -61,8 +63,14 @@ local commands = {
         ML.UI:FromTarget()
     end,
     reset = function()
-        ML.db.window, ML.db.minimized = nil, nil
+        ML.db.window, ML.db.minimized, ML.db.maximized = nil, nil, nil
         ML.UI:ResetWindow()
+    end,
+    dock = function(argument)
+        if not ML.Dock.SetSide(argument:lower()) then
+            return ML.Print("/mlab dock left, right, top or bottom: where the minimized lab sits.")
+        end
+        ML.Print("When minimized, the lab docks to the " .. argument:lower() .. " edge.")
     end,
     search = function(argument)
         ML.UI:Show()
@@ -86,6 +94,7 @@ events:SetScript("OnEvent", function(self, _, name)
     if name ~= addonName then return end
     self:UnregisterEvent("ADDON_LOADED")
     MediaLabDB = ML.Initialize(MediaLabDB)
+    if ML.db.minimized then ML.Dock.Show(function() ML.UI:Show() end) end
     SLASH_MEDIALAB1 = "/mlab"
     SLASH_MEDIALAB2 = "/medialab"
     SlashCmdList.MEDIALAB = ML.HandleSlash
