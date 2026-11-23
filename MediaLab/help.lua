@@ -57,7 +57,7 @@ ML.Help = {
         hint = "Making an addon? Press Dev in the title bar for the code behind each entry.",
         lines = {
             "Developer mode adds the code for each entry: SetTexture, SetAtlas, PlaySound, CreateFrame and more.",
-            "It also adds the Fonts tab and a Copy button that copies a whole list or the results as a Lua table.",
+            "It also adds a Copy button that copies a whole list or the results as a Lua table.",
         },
     },
 }

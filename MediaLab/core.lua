@@ -79,7 +79,7 @@ function ML.Initialize(saved)
     saved.minimized = saved.minimized == true or nil -- docked as an icon at a screen edge
     saved.maximized = saved.maximized == true or nil -- filling the screen
     ML.Dock.Sanitize(saved)
-    saved.developer = saved.developer == true or nil -- code fields, Fonts and Copy
+    saved.developer = saved.developer == true or nil -- code fields and Copy
     saved.welcomed = saved.welcomed == true or nil   -- the welcome card was dismissed
     -- How many of each kind the last session found: the loading card's totals.
     local counts = {}
@@ -103,16 +103,16 @@ local commands = {
     [""] = function() ML.Toggle() end,
     help = function()
         ML.Print("/mlab opens the lab. /mlab search <words> searches the current tab.")
-        ML.Print("/mlab tab <icons|textures|atlases|models|sounds|controls|lists> jumps to a tab.")
+        ML.Print("/mlab tab <icons|textures|atlases|models|sounds|controls|fonts|lists> jumps to a tab.")
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
         ML.Print("/mlab reset restores the window's size and position. /mlab dock <left|right|top|bottom> picks where it minimizes to.")
-        ML.Print("/mlab dev turns developer mode on or off: code to copy, the Fonts tab, /mlab copy and /mlab csv.")
+        ML.Print("/mlab dev turns developer mode on or off: code to copy, /mlab copy and /mlab csv.")
         ML.Print("Ideas or bugs? " .. ML.SITE .. "/issues")
     end,
     dev = function()
         ML.UI:Show()
         ML.UI:SetDeveloper(not ML.db.developer)
-        ML.Print(ML.db.developer and "Developer mode on: code fields, the Fonts tab and Copy."
+        ML.Print(ML.db.developer and "Developer mode on: code fields and Copy."
             or "Developer mode off.")
     end,
     copy = function()

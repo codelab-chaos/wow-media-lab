@@ -100,8 +100,7 @@ filter Textures by Wide and drag the size handles to 64 and 256, zoom and pan bo
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Shift+click and Ctrl+click a few entries on two tabs, check the
-strip under the results, right-click one and add them all to a list. Press **Dev**: the code fields, the Fonts tab (type a sample)
-and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
+strip under the results, right-click one and add them all to a list. Type a sample on Fonts. Press **Dev**: the code fields and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Drag the
 filter and preview columns wider, maximize and restore (button and
 title-bar double-click), minimize to the dock, drag the dock icon to another
 edge and click it, resize, `/reload` and confirm the lists, the NPC name, developer mode,

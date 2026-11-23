@@ -97,6 +97,11 @@ Filter by Creature, Spell, Music or Ambience in the left column, or search for a
 The game doesn't name most of its sounds, so each one is named after its
 sound files, like `mmurlocattack`.
 
+### Fonts
+
+Type your own sample text to see it in any of the game's fonts.
+Each font shows its file, size and outline, and your sample is remembered.
+
 ### Controls (a bonus)
 
 These are the building blocks of the game's windows: buttons, frames, sliders.
@@ -119,7 +124,7 @@ Something can be in as many lists as you like.
 | --- | --- |
 | `/mlab` | Opens and closes the lab |
 | `/mlab search <words>` | Searches the tab you are on |
-| `/mlab tab <name>` | Jumps to a tab: icons, textures, atlases, models, sounds, controls, lists |
+| `/mlab tab <name>` | Jumps to a tab: icons, textures, atlases, models, sounds, controls, fonts, lists |
 | `/mlab target` | Finds your target's model and remembers its name |
 | `/mlab reset` | Puts the window back in the middle at its normal size |
 | `/mlab dock <edge>` | Where it minimizes to: left, right, top or bottom |
@@ -131,8 +136,7 @@ Something can be in as many lists as you like.
 Making an addon? Press Dev in the title bar for the code behind each entry.
 
 Developer mode adds the code for each entry: SetTexture, SetAtlas, PlaySound, CreateFrame and more.
-It also adds the Fonts tab and a Copy button that copies a whole list or the results as a Lua table.
-**Fonts tab:** Type your own sample text to see it in any of the game's fonts.
+It also adds a Copy button that copies a whole list or the results as a Lua table.
 
 The [developer guide](docs/addon-dev.md) has the details: every field you can
 copy, building a list for your addon, and what to watch out for.

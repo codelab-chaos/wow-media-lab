@@ -942,7 +942,7 @@ test("csv copies the current results with one shape per kind, capped and escaped
     equal(mixed, "kind,name,value,id\nsound,IG_MAINMENU_OPEN,IG_MAINMENU_OPEN,850\natlas,test-glow,test-glow,")
 end)
 
-test("players see media first; developer mode adds code, Fonts and Copy, and persists", function()
+test("players see every tab; developer mode adds code and Copy, and persists", function()
     local ML = open()
     local function shownTabs()
         local labels = {}
@@ -951,23 +951,22 @@ test("players see media first; developer mode adds code, Fonts and Copy, and per
         end
         return table.concat(labels, ",")
     end
-    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Lists")
-    assert(not ML.UI:SelectTab("font"), "Fonts needs developer mode")
-    SlashCmdList.MEDIALAB("tab fonts")
-    assert(Mock.messages[#Mock.messages]:find("Fonts is part of developer mode", 1, true), "says how to get it")
+    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Fonts,Lists", "Fonts is for everyone")
+    assert(ML.UI:SelectTab("font"))
     assert(not ML.UI.copyButton.shown, "no Copy button for players")
     SlashCmdList.MEDIALAB("dev")
     assert(Mock.messages[#Mock.messages]:find("Developer mode on", 1, true))
-    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Fonts,Lists")
+    equal(shownTabs(), "Icons,Textures,Models,Sounds,Controls,Fonts,Lists", "the same tabs")
     assert(ML.UI.copyButton.shown and ML.UI.devButton.active, "Copy and an active Dev button")
-    assert(ML.UI:SelectTab("font"))
     local saved = ML.db
     ML = Mock.load(saved)
     SlashCmdList.MEDIALAB("")
     Mock.flush()
-    equal(ML.UI.tabId, "font", "developer mode and the tab survive a reload")
+    equal(ML.UI.tabId, "font", "the tab survives a reload")
+    assert(ML.db.developer and ML.UI.copyButton.shown, "and so does developer mode")
     ML.UI:SetDeveloper(false)
-    equal(ML.UI.tabId, "icon", "leaving developer mode leaves its tab")
+    equal(ML.UI.tabId, "font", "leaving developer mode keeps you where you are")
+    assert(not ML.UI.copyButton.shown)
 end)
 
 test("atlases live in the Textures tab, behind a Files and Atlases switch", function()

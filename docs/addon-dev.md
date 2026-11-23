@@ -9,7 +9,6 @@ copying the code for it. Installing and the everyday controls are in the
 Press **Dev** in the title bar, or type `/mlab dev`. It adds:
 
 - the code behind every entry in the right panel, ready to paste;
-- the **Fonts** tab;
 - **Copy** in the toolbar, which copies the results or a whole list.
 
 It is remembered, so it stays on until you turn it off.

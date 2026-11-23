@@ -466,7 +466,7 @@ function UI:CreateTitleBar(frame)
     W.Tip(self.helpButton, "Help", "Tips for the tab you are on.")
     self.devButton = W.Button(bar, "Dev", 40, function() self:SetDeveloper(not ML.db.developer) end, 20)
     self.devButton:SetPoint("RIGHT", self.helpButton, "LEFT", -4, 0)
-    W.Tip(self.devButton, "Developer mode", "Show the code behind each entry, the Fonts tab and Copy. For addon makers.")
+    W.Tip(self.devButton, "Developer mode", "Show the code behind each entry, and Copy. For addon makers.")
 end
 
 ---------------------------------------------------------------------------

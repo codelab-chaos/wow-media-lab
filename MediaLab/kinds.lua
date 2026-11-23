@@ -30,7 +30,7 @@ ML.Kinds = {
         facetGroups = {"Folder", "Prefix"}, holds = "creatures, spells, music, ambience  /  MediaLab_Sounds"},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control",
         holds = "buttons, frames and sliders  /  UI source"},
-    {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font", developer = true,
+    {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font",
         holds = "the game's font objects  /  the client"},
 }
 
