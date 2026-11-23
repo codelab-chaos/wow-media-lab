@@ -5,7 +5,8 @@ local _, ML = ...
 local Art = {}
 ML.Art = Art
 
--- File textures expose no dimensions to addons, so non-atlas sizes are assumed.
+-- File textures expose no dimensions to addons: sizes come from the shipped
+-- data (entry.width, entry.height) when known, else these are assumed.
 local ASSUMED = {icon = 64, texture = 256}
 
 function Art.Reset(texture)
@@ -29,6 +30,7 @@ function Art.Apply(texture, entry)
     end
     if not texture:SetTexture(entry.value) then return false end
     texture:Show()
+    if entry.width and entry.height then return true, entry.width, entry.height, true end
     local size = ASSUMED[entry.kind] or 128
     return true, size, size, false
 end

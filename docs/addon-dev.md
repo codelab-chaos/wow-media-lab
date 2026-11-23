@@ -75,8 +75,9 @@ model file renders without the display's skin.
 ## Things to know while you build
 
 - **Sizes.** Atlas sizes are exact, from the client. Addons cannot read a file
-  texture's size, so **1:1** assumes 64 x 64 for icons and 256 x 256 for other
-  textures. Check large textures in your own frame.
+  texture's size, so the lab ships the sizes of the UI's texture files, read
+  from the game's files; **1:1** and the size filter use them. Icons, and the
+  few textures without a known size, assume 64 x 64 and 256 x 256.
 - **Missing art.** Texture paths come partly from Blizzard's UI source, which
   covers other game families too. A texture that Forever does not ship shows
   **?**, or renders blank or green. Atlases are checked with

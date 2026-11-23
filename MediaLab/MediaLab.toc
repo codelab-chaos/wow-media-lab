@@ -37,4 +37,5 @@ ui\prompt.lua
 ui\listmenu.lua
 ui\helppanel.lua
 ui\dock.lua
+ui\rangeslider.lua
 ui\window.lua

@@ -38,8 +38,8 @@ def codex_fixture():
         CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
         INSERT INTO meta VALUES ('schema_version', '4'), ('client_build', '1.60.1.71037'),
             ('ui_source_version', '1.60.1.71037'), ('ui_source_commit', 'abc123');
-        CREATE TABLE textures (path TEXT PRIMARY KEY, is_icon INTEGER NOT NULL);
-        INSERT INTO textures VALUES ('Interface\\Buttons\\WHITE8X8', 0), ('Interface\\AchievementFrame\\X', 0);
+        CREATE TABLE textures (path TEXT PRIMARY KEY, is_icon INTEGER NOT NULL, width INTEGER, height INTEGER);
+        INSERT INTO textures VALUES ('Interface\\Buttons\\WHITE8X8', 0, 8, 8), ('Interface\\AchievementFrame\\X', 0, NULL, NULL);
         CREATE TABLE atlases (name TEXT PRIMARY KEY);
         INSERT INTO atlases VALUES ('common-icon-checkmark');
         CREATE TABLE sound_kits (name TEXT PRIMARY KEY, id INTEGER NOT NULL);
@@ -76,6 +76,7 @@ class SyncCodexTests(unittest.TestCase):
         art = sync.art(db, meta)
         self.assertIn('ML.SourceCommit = "abc123"', art)
         self.assertLess(art.index("AchievementFrame"), art.index("WHITE8X8"))  # case-insensitive path order
+        self.assertIn('ML.TextureSizes = {\n    ["Interface\\\\Buttons\\\\WHITE8X8"] = {8, 8},\n}', art)
         self.assertIn('{"IG_MAINMENU_OPEN", 850},', sync.sounds(db, meta))
         templates = sync.templates(db, meta)
         self.assertLess(templates.index("ML.Templates"), templates.index("UIPanelButtonTemplate"))

@@ -219,8 +219,10 @@ function Image:Layout()
     self.art:ClearAllPoints()
     self.art:SetPoint("CENTER", self.stage, "CENTER", self.panX, self.panY)
     self.zoomLabel:SetText(self:ZoomText())
-    if exact then
+    if exact and info then
         self.note:SetText(string.format("%d x %d native  /  file %s", width, height, tostring(info.file or info.filename or "?")))
+    elseif exact then
+        self.note:SetText(string.format("%d x %d native, from the game's files. Wheel zooms, drag pans.", width, height))
     else
         self.note:SetText(string.format("Size unknown to addons; 1:1 assumes %d x %d. Wheel zooms, drag pans.", width, height))
     end

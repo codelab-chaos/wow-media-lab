@@ -22,6 +22,7 @@ ML.Help = {
         texture = {
             "Files are the game's images; Atlases are the pieces its interface is drawn from.",
             "Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.",
+            "Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.",
         },
         sound = {
             "Press Play to hear a sound, or turn on Auto-play to hear each one as you select it.",

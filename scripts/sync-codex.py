@@ -45,11 +45,17 @@ def namespaced(note, body):
 def art(db, meta):
     paths = sorted((row[0] for row in db.execute("SELECT path FROM textures")), key=str.lower)
     atlases = sorted(row[0] for row in db.execute("SELECT name FROM atlases"))
+    # Addons cannot read a texture file's size; the codex reads it from the file.
+    sizes = sorted(db.execute("SELECT path, width, height FROM textures WHERE width IS NOT NULL AND is_icon = 0"),
+                   key=lambda row: row[0].lower())
     return namespaced("References only; no artwork included.", [
         f"ML.SourceVersion = {json.dumps(meta['ui_source_version'])}",
         f"ML.SourceCommit = {json.dumps(meta['ui_source_commit'])}",
         *lua_list("TexturePaths", paths),
         *lua_list("AtlasFallback", atlases),
+        "ML.TextureSizes = {",
+        *[f"    [{json.dumps(path)}] = {{{width}, {height}}}," for path, width, height in sizes],
+        "}",
     ])
 
 
@@ -94,7 +100,7 @@ def models(db, _meta):
 
 OUTPUTS = [
     {"path": "MediaLab/data/art.lua", "render": art,
-     "reads": {"textures": {"path"}, "atlases": {"name"}}},
+     "reads": {"textures": {"path", "is_icon", "width", "height"}, "atlases": {"name"}}},
     {"path": "MediaLab/data/sounds.lua", "render": sounds, "reads": {"sound_kits": {"name", "id"}}},
     {"path": "MediaLab/data/templates.lua", "render": templates,
      "reads": {"templates": {"name", "type", "inherits", "source"}}},

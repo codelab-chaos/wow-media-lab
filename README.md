@@ -72,6 +72,9 @@ their own zoom.
 Files are the game's images; Atlases are the pieces its interface is drawn from.
 Switch between them with **Files** and **Atlases** above the results.
 Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.
+Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.
+The handles snap to the usual sizes (16, 32, 64 up to 4096 pixels, on the
+longer side); click the size shown above them to go back to any size.
 
 ### Models
 

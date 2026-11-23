@@ -106,6 +106,17 @@ Sources.icon = function(add, step)
     end
 end
 
+-- Records an image's size and its Square / Wide / Tall filter.
+function Sources.Sized(entry, width, height)
+    width, height = tonumber(width), tonumber(height)
+    if not (width and height and width > 0 and height > 0) then return entry end
+    entry.width, entry.height = width, height
+    local ratio = ML.Shapes.ratio
+    local shape = width >= height * ratio and "Wide" or height >= width * ratio and "Tall" or "Square"
+    entry.facets[#entry.facets + 1] = "Shape: " .. shape
+    return entry
+end
+
 Sources.texture = function(add, step)
     -- Folder filters: one spelling per folder, whatever casing the source used.
     local spelling = {}
@@ -113,8 +124,9 @@ Sources.texture = function(add, step)
         if not isIconPath(path) then
             local folder = token(path, "^[^\\]+\\([^\\]+)\\")
             spelling[folder:lower()] = spelling[folder:lower()] or lowerFirst(folder)
-            add({value = path, name = path:match("[^\\]+$"), facets = {spelling[folder:lower()]},
-                origin = "Blizzard UI source"})
+            local size = ML.TextureSizes and ML.TextureSizes[path]
+            add(Sources.Sized({value = path, name = path:match("[^\\]+$"), facets = {spelling[folder:lower()]},
+                origin = "Blizzard UI source"}, size and size[1], size and size[2]))
         end
         step()
     end
@@ -131,9 +143,10 @@ Sources.atlas = function(add, step)
     local native = type(names) == "table"
     Sources.nativeAtlases = native
     for _, name in pairs(native and names or ML.AtlasFallback or {}) do
-        if type(name) == "string" and name ~= "" and (native or Sources.AtlasInfo(name)) then
-            add({value = name, name = name, facets = {lowerFirst(token(name, "^([%w]+)"))},
-                origin = native and "Client atlas list" or "UI source (validated)"})
+        local info = type(name) == "string" and name ~= "" and Sources.AtlasInfo(name)
+        if info or (native and type(name) == "string" and name ~= "") then
+            add(Sources.Sized({value = name, name = name, facets = {lowerFirst(token(name, "^([%w]+)"))},
+                origin = native and "Client atlas list" or "UI source (validated)"}, info and info.width, info and info.height))
         end
         step()
     end

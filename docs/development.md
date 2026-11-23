@@ -40,6 +40,7 @@ Code layout (one job per file):
 | `ui/listmenu.lua` | The lists menu (right-click and Add to list), for one entry or a selection |
 | `ui/helppanel.lua` | The welcome and tips card |
 | `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |
+| `ui/rangeslider.lua` | The two-handle size range that snaps to popular sizes |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
 | `MediaLab_Icons/` | Load-on-demand icon names, colors and descriptions (generated) |
 | `MediaLab_Models/` | Load-on-demand creature displays (generated) |
@@ -89,7 +90,8 @@ and packages the zip. It never commits or deploys.
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
 Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
 every tab, search and filter, switch Textures between **Files** and
-**Atlases**, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom), zoom and pan both, play and stop a sound, change its channel,
+**Atlases**, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom),
+filter Textures by Wide and drag the size handles to 64 and 256, zoom and pan both, play and stop a sound, change its channel,
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Shift+click and Ctrl+click a few entries on two tabs, check the

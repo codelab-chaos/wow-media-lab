@@ -10,13 +10,16 @@ local _, ML = ...
 --   tab      the tab button it lives under, when that is another kind's (atlases
 --            are textures); view names it inside that tab
 --   developer  shown only in developer mode
+--   sized    entries know their pixel size: Square / Wide / Tall filters and the
+--            size range under the filter column
+--   groupsFirst  grouped filters (SHAPE) come before the plain ones
 ML.Kinds = {
     {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
         facetGroups = {"Subject", "Color"}},
     {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true,
-        preview = "image", view = "Files"},
+        preview = "image", view = "Files", sized = true, facetGroups = {"Shape"}, groupsFirst = true},
     {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true,
-        preview = "image", tab = "texture", view = "Atlases"},
+        preview = "image", tab = "texture", view = "Atlases", sized = true, facetGroups = {"Shape"}, groupsFirst = true},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
         facetGroups = {"Family"}},
     {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id"},
@@ -63,6 +66,11 @@ ML.CopyFormats = {
 
 -- Build order: small, fast lists first so their tabs are usable immediately.
 ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
+
+-- Sizes: an image is Wide or Tall when one side is at least ratio times the
+-- other, else Square. The size range snaps to these stops (the longer side).
+ML.Shapes = {ratio = 1.2}
+ML.SizeStops = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096}
 
 -- Grid thumbnail zoom, per tab: a multiple of the kind's base cell size, from
 -- min to max; each wheel notch or - / + press multiplies or divides by step.

@@ -239,8 +239,13 @@ end
 function UI:Refresh()
     if not self.frame or not self.frame:IsShown() then return end
     local facet = view().facets[self.tabId]
-    self.results = C:Filter(self.tabId, facet, self.query)
+    self.results = C:Filter(self.tabId, facet, self.query, self:SizeFilter())
     local tab = self:Tab(self.tabId)
+    self.sizeRange.frame:SetShown(tab.sized == true)
+    if tab.sized then
+        local range = self:SizeFilter()
+        self.sizeRange:SetValues(range and range[1], range and range[2])
+    end
     self.zoomControl:SetShown(tab.layout == "grid")
     self.zoomControl.label:SetLabel(math.floor(self:ThumbScale() * 100 + 0.5) .. "%")
     self.copyButton:SetShown(ML.db.developer and true or false)
@@ -551,6 +556,21 @@ function UI:CreateToolbar(body)
 end
 
 ---------------------------------------------------------------------------
+-- Size range (textures and atlases): {min, max} pixels on the longer side
+---------------------------------------------------------------------------
+function UI:SizeFilter(tabId)
+    local sizes = view().sizes
+    return sizes and sizes[tabId or self.tabId] or nil
+end
+
+function UI:SetSizeFilter(low, high)
+    view().sizes = view().sizes or {}
+    view().sizes[self.tabId] = low and {low, high} or nil
+    self.browser:ResetScroll()
+    self:Refresh()
+end
+
+---------------------------------------------------------------------------
 -- Thumbnail zoom: Ctrl+wheel over a grid, or - / 100% / + in the toolbar
 ---------------------------------------------------------------------------
 function UI:ThumbScale(tabId)
@@ -685,7 +705,9 @@ function UI:RenderListActions(list)
     local editable = list and not ML.Lists.IsBuiltIn(list)
     bar.rename:SetEnabled(editable and true or false)
     bar.delete:SetEnabled(editable and true or false)
-    self.facetList:SetPoint("BOTTOMRIGHT", -2, shown and 46 or 22)
+    local tab = self:Tab(self.tabId)
+    local bottom = 22 + (shown and 24 or 0) + (tab and tab.sized and 50 or 0)
+    self.facetList:SetPoint("BOTTOMRIGHT", -2, bottom)
 end
 
 function UI:CreateFacetColumn(body)
@@ -708,6 +730,11 @@ function UI:CreateFacetColumn(body)
     self.facetMore:SetPoint("BOTTOMLEFT", 8, 7)
     self.facetButtons = {}
     self:CreateListActions(column)
+    -- Textures and atlases: the size range, on the longer side.
+    self.sizeRange = ML.RangeSlider.New(column, "SIZE", ML.SizeStops, function(low, high) self:SetSizeFilter(low, high) end)
+    self.sizeRange.frame:SetPoint("BOTTOMLEFT", 4, 20)
+    self.sizeRange.frame:SetPoint("BOTTOMRIGHT", -4, 20)
+    self.sizeRange.frame:Hide()
     return column
 end
 

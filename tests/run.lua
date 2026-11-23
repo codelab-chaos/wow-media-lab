@@ -210,7 +210,7 @@ end)
 test("saved variables of any shape load and the whole lab still works", function()
     -- A hand-edited or foreign MediaLabDB: every setting gets each wrong type.
     local junk = {42, "junk", true, {1, 2, {x = 1}}, -1}
-    local viewKeys = {"tab", "thumb", "thumbScales", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
+    local viewKeys = {"tab", "thumb", "thumbScales", "sizes", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
         "inspectorWidth", "facetWidth", "facets", "views"}
     for _, value in ipairs(junk) do
         local view = {facets = {icon = value, [5] = value}, views = {texture = value, [value] = "atlas"}}
@@ -255,6 +255,60 @@ test("saved variables of any shape load and the whole lab still works", function
         ML.UI:ToggleHelp()
         ML.UI.splitters.inspector.scripts.OnDoubleClick(ML.UI.splitters.inspector)
     end
+end)
+
+test("textures and atlases filter by shape and by a size range that snaps to popular sizes", function()
+    local ML = open()
+    ML.UI:SelectTab("atlas")
+    local glow = find(ML, "atlas", "test-glow")
+    equal(glow.width, 256); equal(glow.height, 128)
+    assert(glow.facetSet["Shape: Wide"], "256 x 128 is wide")
+    local facets = ML.Catalog:Facets("atlas")
+    local firstShape, firstPlain
+    for index, facet in ipairs(facets) do
+        if ML.Catalog.FacetGroup(facet.name) == "Shape" then firstShape = firstShape or index
+        elseif facet.name ~= "Common" then firstPlain = firstPlain or index end
+    end
+    assert(firstShape and firstPlain and firstShape < firstPlain, "SHAPE comes before the plain filters on Textures")
+    ML.UI:SelectTab("texture")
+    local range = ML.UI.sizeRange
+    assert(range.frame.shown, "the size range shows on Textures")
+    equal(range.value.text:GetText(), "Any")
+    -- Drag the low handle to the 64 groove and the high one to 256.
+    local track = range.track
+    local function at(stop)
+        for index, value in ipairs(ML.SizeStops) do
+            if value == stop then return track:GetLeft() + (index - 1) / (#ML.SizeStops - 1) * track:GetWidth() + 2 end
+        end
+    end
+    Mock.cursorX = at(64)
+    range.handles[1].scripts.OnMouseDown(range.handles[1])
+    range.handles[1].scripts.OnMouseUp(range.handles[1])
+    Mock.cursorX = at(256)
+    range.handles[2].scripts.OnMouseDown(range.handles[2])
+    range.handles[2].scripts.OnMouseUp(range.handles[2])
+    equal(range.value.text:GetText(), "64 to 256 px", "the handles snap to the grooves")
+    assert(#ML.UI.results > 0)
+    for _, entry in ipairs(ML.UI.results) do
+        local longer = math.max(entry.width, entry.height)
+        assert(longer >= 64 and longer <= 256, entry.name)
+    end
+    local all = #ML.Catalog:Filter("texture", nil, "")
+    assert(#ML.UI.results < all, "the range narrows the results")
+    ML.UI:SetFacet("Shape: Square")
+    for _, entry in ipairs(ML.UI.results) do assert(entry.facetSet["Shape: Square"]) end
+    ML.UI:SelectTab("atlas")
+    equal(ML.UI.sizeRange.value.text:GetText(), "Any", "each view has its own range")
+    ML.UI:SelectTab("model")
+    assert(not ML.UI.sizeRange.frame.shown, "models have no size")
+    local saved = ML.db
+    ML = Mock.load(saved)
+    SlashCmdList.MEDIALAB(""); Mock.flush()
+    ML.UI:SelectTab("texture")
+    equal(ML.UI.sizeRange.value.text:GetText(), "64 to 256 px", "the range survives a reload")
+    ML.UI.sizeRange.value.scripts.OnClick(ML.UI.sizeRange.value)
+    equal(ML.UI.sizeRange.value.text:GetText(), "Any")
+    equal(ML.db.view.sizes.texture, nil)
 end)
 
 test("selection works like a file browser: click, Ctrl+click and Shift+click", function()
@@ -556,8 +610,16 @@ test("image preview zooms within limits, pans, and resets per image", function()
     ML.UI:Select(find(ML, "atlas", "test-glow"))
     assert(not image.zoom and image.panX == 0, "new image starts fitted")
     ML.UI:SelectTab("texture")
-    ML.UI:Select(ML.UI.results[1])
-    assert(image.note:GetText():find("assumes 256 x 256", 1, true))
+    local sized, unsized
+    for _, entry in ipairs(ML.UI.results) do
+        if entry.width and not sized then sized = entry end
+        if not entry.width and not unsized then unsized = entry end
+    end
+    ML.UI:Select(sized)
+    assert(image.note:GetText():find(sized.width .. " x " .. sized.height .. " native, from the game's files", 1, true),
+        "a texture's real size, from the shipped data")
+    ML.UI:Select(unsized)
+    assert(image.note:GetText():find("assumes 256 x 256", 1, true), "an unknown size is still assumed")
     image.canvasButton.scripts.OnClick()
     equal(ML.db.view.canvas, "Checker")
 end)

@@ -178,7 +178,12 @@ function Catalog:Facets(tabId)
     -- Grouped facets ("Color: Green") follow the kind's facetGroups order, after plain ones.
     local groups = {}
     for index, group in ipairs((ML.KindById[tabId] or {}).facetGroups or {}) do groups[group] = index end
-    local function rank(facet) return groups[facet:match("^([^:]+): ") or ""] or 0 end
+    local first = (ML.KindById[tabId] or {}).groupsFirst
+    local function rank(facet)
+        local group = groups[facet:match("^([^:]+): ") or ""]
+        if not group then return 0 end
+        return first and group - 100 or group
+    end
     table.sort(order, function(a, b)
         if (a == "Common") ~= (b == "Common") then return a == "Common" end
         if rank(a) ~= rank(b) then return rank(a) < rank(b) end
@@ -191,7 +196,8 @@ function Catalog:Facets(tabId)
 end
 
 -- Every search word must appear (literally) in the entry's name, reference, ID or facets.
-function Catalog:Filter(tabId, facet, query)
+-- size, when given, is {min, max} on the longer side; entries of unknown size drop out.
+function Catalog:Filter(tabId, facet, query, size)
     local terms = {}
     for term in tostring(query or ""):lower():gmatch("%S+") do terms[#terms + 1] = term end
     local result = {}
@@ -199,6 +205,10 @@ function Catalog:Filter(tabId, facet, query)
         local include = not facet
             or (tabId == ML.ListsTab and ML.Lists:Has(ML.Lists:FromFacet(facet), entry.key))
             or (tabId ~= ML.ListsTab and entry.facetSet[facet])
+        if include and size then
+            local longer = entry.width and math.max(entry.width, entry.height)
+            include = longer ~= nil and longer >= size[1] and longer <= size[2]
+        end
         if include then
             for _, term in ipairs(terms) do
                 if not entry.search:find(term, 1, true) then include = false; break end
