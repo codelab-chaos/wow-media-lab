@@ -85,10 +85,19 @@ end
 ---------------------------------------------------------------------------
 -- Tabs and facets
 ---------------------------------------------------------------------------
+-- Tabs a player can see right now: developer-only ones need developer mode.
+function UI:Available(id)
+    local button = ML.TabButtonOf(id)
+    return button ~= nil and (ML.db.developer or not button.developer)
+end
+
 function UI:SelectTab(id)
-    if not self:Tab(id) then return false end
+    if not self:Tab(id) or not self:Available(id) then return false end
     self.tabId = id
     view().tab = id
+    local button = ML.TabButtonOf(id)
+    view().views = type(view().views) == "table" and view().views or {}
+    view().views[button.id] = id
     self.browser:ResetScroll()
     self:Refresh()
     local selected = self.selected[id]
@@ -198,11 +207,20 @@ function UI:Refresh()
     self.results = C:Filter(self.tabId, facet, self.query)
     local tab = self:Tab(self.tabId)
     self.thumbButton:SetShown(tab.layout == "grid")
+    self.copyButton:SetShown(ML.db.developer and true or false)
     self.thumbButton:SetLabel("Size: " .. math.floor((ML.ThumbScales[view().thumb or 2] or 1) * 100) .. "%")
+    local current = ML.TabButtonOf(self.tabId)
     for _, button in ipairs(self.tabButtons) do
-        button:SetLabel(button.tab.label .. "  " .. C:TabCount(button.tab.id))
-        button:SetActive(button.tab.id == self.tabId)
+        local count = 0
+        for _, kind in ipairs(button.tab.kinds) do count = count + C:TabCount(kind) end
+        button:SetLabel(button.tab.label .. "  " .. count)
+        button:SetActive(button.tab == current)
     end
+    for _, button in ipairs(self.viewButtons) do
+        button:SetShown(button.group == current)
+        button:SetActive(button.kind == self.tabId)
+    end
+    self:LayoutToolbar()
     local selected = self.selected[self.tabId]
     self.browser:SetData(self.results, self:Layout(), selected and selected.key)
     self:RenderFacets()
@@ -298,7 +316,7 @@ function UI:CreateTitleBar(frame)
     bar:SetScript("OnDragStart", function() frame:StartMoving() end)
     bar:SetScript("OnDragStop", function() frame:StopMovingOrSizing(); self:SaveWindow() end)
     W.Fill(bar, {0.09, 0.105, 0.125, 1})
-    local title = W.Label(bar, "MediaLab", 13, T.accent)
+    local title = W.Label(bar, ML.TITLE, 13, T.accent)
     title:SetPoint("LEFT", 10, 0)
     self.status = W.Label(bar, "", 10, T.muted)
     self.status:SetPoint("LEFT", title, "RIGHT", 12, 0)
@@ -308,21 +326,82 @@ function UI:CreateTitleBar(frame)
     self.minimize = W.Button(bar, "_", 22, function() self:SetMinimized(not ML.db.minimized) end, 20)
     self.minimize:SetPoint("RIGHT", close, "LEFT", -4, 0)
     W.Tip(self.minimize, "Minimize", "Collapse to the title bar. Click again to restore.")
+    self.helpButton = W.Button(bar, "?", 22, function() self:ToggleHelp() end, 20)
+    self.helpButton:SetPoint("RIGHT", self.minimize, "LEFT", -4, 0)
+    W.Tip(self.helpButton, "Help", "Tips for the tab you are on.")
+    self.devButton = W.Button(bar, "Dev", 40, function() self:SetDeveloper(not ML.db.developer) end, 20)
+    self.devButton:SetPoint("RIGHT", self.helpButton, "LEFT", -4, 0)
+    W.Tip(self.devButton, "Developer mode", "Show the code behind each entry, the Fonts tab and Copy. For addon makers.")
+end
+
+---------------------------------------------------------------------------
+-- Developer mode and help
+---------------------------------------------------------------------------
+function UI:SetDeveloper(on)
+    ML.db.developer = on and true or nil
+    self.devButton:SetActive(on and true or false)
+    if not self:Available(self.tabId) then self:SelectTab(ML.TabBar[1].kinds[1]) end
+    self:LayoutTabs()
+    self.inspector:RefreshFields()
+    self:Refresh()
+    if ML.HelpPanel.IsShown() then ML.HelpPanel.Render(self.tabId, ML.db.developer) end
+end
+
+function UI:ShowHelp()
+    ML.HelpPanel.Show(self.tabId, ML.db.developer)
+    self.helpButton:SetActive(true)
+end
+
+function UI:HideHelp()
+    ML.HelpPanel.Hide()
+    self.helpButton:SetActive(false)
+    ML.db.welcomed = true
+end
+
+function UI:ToggleHelp()
+    if ML.HelpPanel.IsShown() then self:HideHelp() else self:ShowHelp() end
+end
+
+-- The tab buttons in order, skipping the ones developer mode hides.
+function UI:LayoutTabs()
+    local previous
+    for _, button in ipairs(self.tabButtons) do
+        local shown = not button.tab.developer or ML.db.developer
+        button:SetShown(shown and true or false)
+        if shown then
+            button:ClearAllPoints()
+            if previous then button:SetPoint("LEFT", previous, "RIGHT", 4, 0) else button:SetPoint("TOPLEFT", 12, -(TITLE + 8)) end
+            previous = button
+        end
+    end
+end
+
+-- The second row, left to right: search, Clear, then whichever tools apply.
+function UI:LayoutToolbar()
+    local previous = self.clearButton
+    for _, item in ipairs(self.toolbarItems) do
+        if item:IsShown() then
+            item:ClearAllPoints()
+            item:SetPoint("LEFT", previous, "RIGHT", 4, 0)
+            previous = item
+        end
+    end
 end
 
 function UI:CreateToolbar(body)
-    self.tabButtons = {}
-    local previous
-    for _, tab in ipairs(ML.Tabs) do
-        local button = W.Button(body, tab.label, 96, function() self:SelectTab(tab.id) end, 24)
+    self.tabButtons, self.viewButtons, self.toolbarItems = {}, {}, {}
+    for _, tab in ipairs(ML.TabBar) do
+        local button = W.Button(body, tab.label, 96, function()
+            local remembered = type(view().views) == "table" and view().views[tab.id]
+            self:SelectTab(remembered or tab.kinds[1])
+        end, 24)
         button.tab = tab
-        if previous then button:SetPoint("LEFT", previous, "RIGHT", 4, 0) else button:SetPoint("TOPLEFT", 12, -(TITLE + 8)) end
         self.tabButtons[#self.tabButtons + 1] = button
-        previous = button
     end
+    self:LayoutTabs()
     self.search = W.EditBox(body, 24, "Search names, paths, IDs...")
     self.search:SetPoint("TOPLEFT", 12, -(TITLE + 40))
-    self.search:SetWidth(FACET_WIDTH + 200)
+    self.search:SetWidth(FACET_WIDTH + 150)
     self.search.box:SetScript("OnTextChanged", function(box)
         local text = box:GetText()
         self.search.placeholder:SetShown(text == "")
@@ -334,18 +413,31 @@ function UI:CreateToolbar(body)
             self:Refresh()
         end)
     end)
-    local clear = W.Button(body, "Clear", 48, function() self:Search("") end, 24)
-    clear:SetPoint("LEFT", self.search, "RIGHT", 4, 0)
+    self.clearButton = W.Button(body, "Clear", 48, function() self:Search("") end, 24)
+    self.clearButton:SetPoint("LEFT", self.search, "RIGHT", 4, 0)
+    -- A tab holding several kinds (Textures: Files, Atlases) gets a switch.
+    for _, tab in ipairs(ML.TabBar) do
+        if #tab.kinds > 1 then
+            for _, kind in ipairs(tab.kinds) do
+                local label = ML.KindById[kind].view or ML.KindById[kind].label
+                local button = W.Button(body, label, 58, function() self:SelectTab(kind) end, 24)
+                button.group, button.kind = tab, kind
+                W.Tip(button, label, "Show the " .. ML.KindById[kind].noun .. " in this tab.")
+                self.viewButtons[#self.viewButtons + 1] = button
+                self.toolbarItems[#self.toolbarItems + 1] = button
+            end
+        end
+    end
     self.thumbButton = W.Button(body, "Size", 86, function()
         view().thumb = (view().thumb or 2) % #ML.ThumbScales + 1
         self:Refresh()
     end, 24)
-    self.thumbButton:SetPoint("LEFT", clear, "RIGHT", 4, 0)
     W.Tip(self.thumbButton, "Thumbnail size", "Cycle the grid's thumbnail zoom.")
-    local copy = W.Button(body, "Copy", 48, function() self:CopyResults() end, 24)
-    copy:SetPoint("LEFT", self.thumbButton, "RIGHT", 4, 0)
-    W.Tip(copy, "Copy results", "The current results (a list, on the Lists tab) as a Lua table or CSV, first "
+    self.toolbarItems[#self.toolbarItems + 1] = self.thumbButton
+    self.copyButton = W.Button(body, "Copy", 48, function() self:CopyResults() end, 24)
+    W.Tip(self.copyButton, "Copy results", "The current results (a list, on the Lists tab) as a Lua table or CSV, first "
         .. ML.Export.CSV_LIMIT .. ".")
+    self.toolbarItems[#self.toolbarItems + 1] = self.copyButton
 end
 
 -- What the results are called in the Copy dialog and its Lua table: the
@@ -526,6 +618,8 @@ function UI:Create()
     resize:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
     resize:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); self:SaveWindow() end)
 
+    ML.HelpPanel.Create(body, function() self:HideHelp() end)
+
     frame:SetScript("OnHide", function()
         self.search.box:ClearFocus()
         ML.ListMenu.Hide()
@@ -534,10 +628,13 @@ function UI:Create()
         GameTooltip:Hide()
     end)
 
-    self.tabId = self:Tab(view().tab) and view().tab or ML.Tabs[1].id
+    local saved = view().tab
+    self.tabId = self:Tab(saved) and self:Available(saved) and saved or ML.Tabs[1].id
+    self.devButton:SetActive(ML.db.developer and true or false)
     self:SetMinimized(ML.db.minimized == true)
     C:Start(function(kind) self:OnIndexed(kind) end)
     self:SelectTab(self.tabId)
+    if not ML.db.welcomed then self:ShowHelp() end
 end
 
 function UI:Show()

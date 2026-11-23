@@ -73,7 +73,10 @@ end
 function Inspector:RefreshFields()
     if not self.entry then return end
     local options = {channel = ML.db.view.channel}
-    local values = ML.Snippets.For(self.entry, options)
+    local values = {}
+    for _, value in ipairs(ML.Snippets.For(self.entry, options)) do
+        if ML.db.developer or not value.developer then values[#values + 1] = value end
+    end
     for index, field in ipairs(self.fields) do
         local value = values[index]
         field:SetShown(value ~= nil)

@@ -1,6 +1,6 @@
 ## Interface: 16001
-## Title: MediaLab
-## Notes: A catalog of the icons, textures, atlases, sounds, controls, fonts and creature models your addons can use.
+## Title: WoW Media Lab
+## Notes: Browse every icon, texture, sound and creature model in the game. Favorite them, make lists, and copy the code if you make addons. /mlab
 ## Author: Wizwonk
 ## Version: 0.1.0
 ## X-License: MIT
@@ -13,6 +13,7 @@
 
 core.lua
 kinds.lua
+help.lua
 data\featured.lua
 data\art.lua
 data\sounds.lua
@@ -32,4 +33,5 @@ ui\inspector.lua
 ui\copydialog.lua
 ui\prompt.lua
 ui\listmenu.lua
+ui\helppanel.lua
 ui\window.lua

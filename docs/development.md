@@ -19,7 +19,8 @@ Code layout (one job per file):
 | File | Responsibility |
 | --- | --- |
 | `core.lua` | Saved variables, slash commands, load event |
-| `kinds.lua` | Tab registry and option lists, as data |
+| `kinds.lua` | Tab registry and option lists, as data (which tab a kind lives under, developer-only kinds) |
+| `help.lua` | The welcome card and tips, as data; the README uses the same words |
 | `data/*.lua` | Generated references and the curated Common lists |
 | `sources.lua` | One provider per kind: client APIs first, generated data as fallback |
 | `catalog.lua` | Entry store, batched indexing, search, filters |
@@ -36,6 +37,7 @@ Code layout (one job per file):
 | `ui/copydialog.lua` | The Copy popup, Lua or CSV |
 | `ui/prompt.lua` | The one-line name prompt |
 | `ui/listmenu.lua` | The inspector's list menu |
+| `ui/helppanel.lua` | The welcome and tips card |
 | `ui/window.lua` | Window, tabs, search, filter column, wiring |
 | `MediaLab_Icons/` | Load-on-demand icon names, colors and descriptions (generated) |
 | `MediaLab_Models/` | Load-on-demand creature displays (generated) |
@@ -83,12 +85,15 @@ data from the codex first. It bumps the `.toc` and README, runs every check
 and packages the zip. It never commits or deploys.
 
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
-Visit every tab, search and filter, zoom and pan an atlas and a texture, play
-and stop a sound, change its channel, build `UIPanelButtonTemplate` from
-Controls > Common, type a font sample, copy a field with Ctrl+C, save
-something to two lists, copy a list as Lua, turn and zoom a model and cycle
-its animations, target an NPC and press **Target**, minimize, resize,
-`/reload` and confirm the lists, the NPC name and placement.
+Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
+every tab, search and filter, switch Textures between **Files** and
+**Atlases**, zoom and pan both, play and stop a sound, change its channel,
+build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
+and cycle its animations, target an NPC and press **Target**, save something
+to two lists. Press **Dev**: the code fields, the Fonts tab (type a sample)
+and **Copy** appear; copy a field with Ctrl+C and a list as Lua. Minimize,
+resize, `/reload` and confirm the lists, the NPC name, developer mode,
+placement, and that the welcome card stays away.
 The tests cannot verify the game's renderer or that every listed image
 exists, so run this before each release.
 

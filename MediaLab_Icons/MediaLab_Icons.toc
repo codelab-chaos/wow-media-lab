@@ -1,6 +1,6 @@
 ## Interface: 16001
-## Title: MediaLab Icons
-## Notes: Icon names, colors, tags and descriptions for MediaLab. Loaded only when the lab indexes icons.
+## Title: WoW Media Lab: Icons
+## Notes: Icon names, colors, tags and descriptions for WoW Media Lab. Loaded only when the lab shows icons.
 ## Author: Wizwonk
 ## Version: 0.1.0
 ## X-License: MIT

@@ -276,6 +276,7 @@ end)
 
 test("sounds play, stop, honor the channel and auto-play", function()
     local ML = open()
+    ML.UI:SetDeveloper(true)
     ML.UI:SelectTab("sound")
     local entry = find(ML, "sound", "IG_MAINMENU_OPEN")
     ML.UI:Select(entry)
@@ -429,6 +430,7 @@ end)
 
 test("fonts render the saved sample text", function()
     local ML = open()
+    ML.UI:SetDeveloper(true)
     ML.UI:SelectTab("font")
     ML.UI:Select(find(ML, "font", "SystemFont_Large"))
     local preview = ML.UI.inspector.previews.font
@@ -510,9 +512,14 @@ test("icon metadata names, tags, describes and groups icons, merging paths into 
     ML.UI:SelectTab("icon")
     ML.UI:Select(mark)
     equal(ML.UI.inspector.subtitle:GetText(), "A red question mark.")
-    local labels = {}
-    for _, field in ipairs(ML.UI.inspector.fields) do if field:IsShown() then labels[#labels + 1] = field.caption:GetText() end end
-    equal(table.concat(labels, ","), "File ID,Lua,Inline text,Tags")
+    local function labels()
+        local shown = {}
+        for _, field in ipairs(ML.UI.inspector.fields) do if field:IsShown() then shown[#shown + 1] = field.caption:GetText() end end
+        return table.concat(shown, ",")
+    end
+    equal(labels(), "File ID,Tags", "players see the reference, not the code")
+    ML.UI:SetDeveloper(true)
+    equal(labels(), "File ID,Lua,Inline text,Tags")
 end)
 
 test("icons still index without the metadata addon", function()
@@ -539,9 +546,14 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     local preview = ML.UI.inspector.previews.model
     equal(preview.model.displayInfo, 1693)
     equal(preview.model.animationId, 0)
-    local labels = {}
-    for _, field in ipairs(ML.UI.inspector.fields) do if field:IsShown() then labels[#labels + 1] = field.caption:GetText() end end
-    equal(table.concat(labels, ","), "Display ID,Lua,Model scene,Model file (no skin)")
+    local function labels()
+        local shown = {}
+        for _, field in ipairs(ML.UI.inspector.fields) do if field:IsShown() then shown[#shown + 1] = field.caption:GetText() end end
+        return table.concat(shown, ",")
+    end
+    equal(labels(), "Display ID")
+    ML.UI:SetDeveloper(true)
+    equal(labels(), "Display ID,Lua,Model scene,Model file (no skin)")
     -- Animations skip what the model lacks (the mock has Stand, Walk, Death).
     preview:NextAnimation(); equal(preview.model.animationId, 4)
     preview:NextAnimation(); equal(preview.model.animationId, 1)
@@ -614,6 +626,75 @@ test("csv copies the current results with one shape per kind, capped and escaped
     assert(text:find('\n"A,""B""1",1,UI\n', 1, true), text:sub(1, 80))
     local mixed = ML.Export.Csv({find(ML, "sound", "IG_MAINMENU_OPEN"), find(ML, "atlas", "test-glow")})
     equal(mixed, "kind,name,value,id\nsound,IG_MAINMENU_OPEN,IG_MAINMENU_OPEN,850\natlas,test-glow,test-glow,")
+end)
+
+test("players see media first; developer mode adds code, Fonts and Copy, and persists", function()
+    local ML = open()
+    local function shownTabs()
+        local labels = {}
+        for _, button in ipairs(ML.UI.tabButtons) do
+            if button.shown then labels[#labels + 1] = button.tab.label end
+        end
+        return table.concat(labels, ",")
+    end
+    equal(shownTabs(), "Icons,Textures,Sounds,Controls,Models,Lists")
+    assert(not ML.UI:SelectTab("font"), "Fonts needs developer mode")
+    assert(not ML.UI.copyButton.shown, "no Copy button for players")
+    SlashCmdList.MEDIALAB("dev")
+    assert(Mock.messages[#Mock.messages]:find("Developer mode on", 1, true))
+    equal(shownTabs(), "Icons,Textures,Sounds,Controls,Fonts,Models,Lists")
+    assert(ML.UI.copyButton.shown and ML.UI.devButton.active, "Copy and an active Dev button")
+    assert(ML.UI:SelectTab("font"))
+    local saved = ML.db
+    ML = Mock.load(saved)
+    SlashCmdList.MEDIALAB("")
+    Mock.flush()
+    equal(ML.UI.tabId, "font", "developer mode and the tab survive a reload")
+    ML.UI:SetDeveloper(false)
+    equal(ML.UI.tabId, "icon", "leaving developer mode leaves its tab")
+end)
+
+test("atlases live in the Textures tab, behind a Files and Atlases switch", function()
+    local ML = open()
+    local textures
+    for _, button in ipairs(ML.UI.tabButtons) do if button.tab.id == "texture" then textures = button end end
+    local C = ML.Catalog
+    assert(textures.text:GetText():find(tostring(C:TabCount("texture") + C:TabCount("atlas")), 1, true), "counts both")
+    ML.UI:SelectTab("icon")
+    for _, button in ipairs(ML.UI.viewButtons) do assert(not button.shown, "no switch outside Textures") end
+    textures.scripts.OnClick(textures)
+    equal(ML.UI.tabId, "texture")
+    local atlases = ML.UI.viewButtons[2]
+    equal(atlases.text:GetText(), "Atlases")
+    atlases.scripts.OnClick(atlases)
+    equal(ML.UI.tabId, "atlas")
+    assert(textures.active and atlases.active, "the Textures tab stays lit on its Atlases view")
+    ML.UI:SelectTab("sound")
+    textures.scripts.OnClick(textures)
+    equal(ML.UI.tabId, "atlas", "the tab remembers its view")
+    SlashCmdList.MEDIALAB("tab atlases")
+    equal(ML.UI.tabId, "atlas")
+end)
+
+test("the welcome card shows once, and ? shows tips for the tab", function()
+    local ML = open()
+    local card = ML.HelpPanel.frame
+    assert(card.shown, "welcome on first open")
+    equal(card.blocks[1].heading:GetText(), ML.Help.welcome.title)
+    assert(card.blocks[3].body:GetText():find(ML.Help.developer.hint, 1, true), "players get the hint")
+    card.dismiss.scripts.OnClick(card.dismiss)
+    assert(not card.shown and ML.db.welcomed)
+    ML = Mock.load(ML.db)
+    SlashCmdList.MEDIALAB("")
+    Mock.flush()
+    assert(not ML.HelpPanel.frame.shown, "not again after Got it")
+    ML.UI:SelectTab("atlas")
+    ML.UI.helpButton.scripts.OnClick(ML.UI.helpButton)
+    local blocks = ML.HelpPanel.frame.blocks
+    equal(blocks[2].heading:GetText(), "Textures")
+    assert(blocks[2].body:GetText():find(ML.Help.tabs.texture[1], 1, true), "tips of the whole tab")
+    ML.UI:SetDeveloper(true)
+    assert(blocks[3].body:GetText():find(ML.Help.developer.lines[1], 1, true), "developer tips when on")
 end)
 
 print(string.format("%d integration tests passed (mocked WoW APIs; in-game rendering needs a client smoke test).", passed))

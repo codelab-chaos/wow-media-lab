@@ -69,6 +69,7 @@ function W.Button(parent, text, width, onClick, height)
     frame:SetScript("OnDisable", function(self) self:SetAlpha(0.35) end)
     function frame:SetLabel(value) self.text:SetText(value) end
     function frame:SetActive(active)
+        self.active = active and true or false
         self:SetBackdropBorderColor(unpack(active and T.selected or T.border))
         self.text:SetTextColor(unpack(active and T.accent or T.text))
     end

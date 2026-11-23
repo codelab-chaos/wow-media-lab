@@ -2,6 +2,7 @@ local _, ML = ...
 
 -- Copyable fields for each kind: the reference itself first, then ready-to-paste
 -- Lua. Pure functions of an entry; the inspector only displays what these return.
+-- Fields marked developer = true (code) show only in developer mode.
 local Snippets = {}
 ML.Snippets = Snippets
 
@@ -19,8 +20,8 @@ local function textureFields(entry)
         fields[#fields + 1] = {label = "Name", text = entry.name}
         fields[#fields + 1] = {label = "Path", text = entry.value}
     end
-    fields[#fields + 1] = {label = "Lua", text = "texture:SetTexture(" .. ref .. ")"}
-    fields[#fields + 1] = {label = "Inline text", text = "CreateSimpleTextureMarkup(" .. ref .. ", 16, 16)"}
+    fields[#fields + 1] = {label = "Lua", developer = true, text = "texture:SetTexture(" .. ref .. ")"}
+    fields[#fields + 1] = {label = "Inline text", developer = true, text = "CreateSimpleTextureMarkup(" .. ref .. ", 16, 16)"}
     if entry.tags then fields[#fields + 1] = {label = "Tags", text = entry.tags} end
     return fields
 end
@@ -32,8 +33,8 @@ Snippets.atlas = function(entry)
     local ref = literal(entry.value)
     return {
         {label = "Atlas", text = entry.value},
-        {label = "Lua", text = "texture:SetAtlas(" .. ref .. ", true)"},
-        {label = "Inline text", text = "CreateAtlasMarkup(" .. ref .. ", 16, 16)"},
+        {label = "Lua", developer = true, text = "texture:SetAtlas(" .. ref .. ", true)"},
+        {label = "Inline text", developer = true, text = "CreateAtlasMarkup(" .. ref .. ", 16, 16)"},
     }
 end
 
@@ -47,7 +48,7 @@ Snippets.sound = function(entry, options)
     return {
         {label = "Name", text = entry.value},
         {label = "Sound kit ID", text = tostring(entry.id)},
-        {label = "Lua", text = "PlaySound(" .. soundKitExpression(entry) .. ", " .. literal(channel) .. ")"},
+        {label = "Lua", developer = true, text = "PlaySound(" .. soundKitExpression(entry) .. ", " .. literal(channel) .. ")"},
     }
 end
 
@@ -73,9 +74,9 @@ end
 Snippets.control = function(entry)
     local fields = {
         {label = "Template", text = entry.value},
-        {label = "Lua", text = Snippets.ControlCode(entry), lines = 3},
+        {label = "Lua", developer = true, text = Snippets.ControlCode(entry), lines = 3},
     }
-    if entry.inherits then fields[#fields + 1] = {label = "Inherits", text = entry.inherits} end
+    if entry.inherits then fields[#fields + 1] = {label = "Inherits", developer = true, text = entry.inherits} end
     return fields
 end
 
@@ -83,8 +84,8 @@ Snippets.font = function(entry)
     local ref = literal(entry.value)
     return {
         {label = "Font object", text = entry.value},
-        {label = "Lua", text = "fontString:SetFontObject(" .. ref .. ")"},
-        {label = "New text", text = "parent:CreateFontString(nil, \"OVERLAY\", " .. ref .. ")"},
+        {label = "Lua", developer = true, text = "fontString:SetFontObject(" .. ref .. ")"},
+        {label = "New text", developer = true, text = "parent:CreateFontString(nil, \"OVERLAY\", " .. ref .. ")"},
     }
 end
 
@@ -94,10 +95,10 @@ Snippets.model = function(entry)
     local id = tostring(entry.id)
     local fields = {
         {label = "Display ID", text = id},
-        {label = "Lua", text = "local model = CreateFrame(\"PlayerModel\", nil, parent)\nmodel:SetDisplayInfo(" .. id .. ")", lines = 2},
-        {label = "Model scene", text = "actor:SetModelByCreatureDisplayID(" .. id .. ")"},
+        {label = "Lua", developer = true, text = "local model = CreateFrame(\"PlayerModel\", nil, parent)\nmodel:SetDisplayInfo(" .. id .. ")", lines = 2},
+        {label = "Model scene", developer = true, text = "actor:SetModelByCreatureDisplayID(" .. id .. ")"},
     }
-    if entry.model then fields[#fields + 1] = {label = "Model file (no skin)", text = tostring(entry.model)} end
+    if entry.model then fields[#fields + 1] = {label = "Model file (no skin)", developer = true, text = tostring(entry.model)} end
     return fields
 end
 

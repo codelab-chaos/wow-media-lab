@@ -1,8 +1,10 @@
 local addonName, ML = ...
 ML.name = addonName
 
+ML.TITLE = "WoW Media Lab"
+
 function ML.Print(message)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff9ec7e8MediaLab|r  " .. tostring(message))
+    DEFAULT_CHAT_FRAME:AddMessage("|cff9ec7e8Media Lab|r  " .. tostring(message))
 end
 
 local function tableOr(value) return type(value) == "table" and value or {} end
@@ -17,6 +19,8 @@ function ML.Initialize(saved)
     ML.Npcs.Sanitize(saved)
     if type(saved.window) ~= "table" then saved.window = nil end
     saved.minimized = saved.minimized == true or nil
+    saved.developer = saved.developer == true or nil -- code fields, Fonts and Copy
+    saved.welcomed = saved.welcomed == true or nil   -- the welcome card was dismissed
     ML.db = saved
     return saved
 end
@@ -33,10 +37,16 @@ local commands = {
     [""] = function() ML.Toggle() end,
     help = function()
         ML.Print("/mlab opens the lab. /mlab search <words> searches the current tab.")
-        ML.Print("/mlab tab <icons|textures|atlases|sounds|controls|fonts|models|lists> jumps to a tab.")
+        ML.Print("/mlab tab <icons|textures|atlases|sounds|controls|models|lists> jumps to a tab.")
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
         ML.Print("/mlab reset restores the window's size and position.")
-        ML.Print("/mlab copy copies the current results as Lua, /mlab csv as CSV.")
+        ML.Print("/mlab dev turns developer mode on or off: code to copy, the Fonts tab, /mlab copy and /mlab csv.")
+    end,
+    dev = function()
+        ML.UI:Show()
+        ML.UI:SetDeveloper(not ML.db.developer)
+        ML.Print(ML.db.developer and "Developer mode on: code fields, the Fonts tab and Copy."
+            or "Developer mode off.")
     end,
     copy = function()
         ML.UI:Show()

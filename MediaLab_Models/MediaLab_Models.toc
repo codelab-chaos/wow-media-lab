@@ -1,6 +1,6 @@
 ## Interface: 16001
-## Title: MediaLab Models
-## Notes: Creature display names, families and skins for MediaLab. Loaded only when the lab indexes models.
+## Title: WoW Media Lab: Models
+## Notes: Creature display names, families and skins for WoW Media Lab. Loaded only when the lab shows models.
 ## Author: Wizwonk
 ## Version: 0.1.0
 ## X-License: MIT

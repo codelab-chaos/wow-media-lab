@@ -7,14 +7,19 @@ local _, ML = ...
 --   visual   entries render as images (thumbnails, zoomable preview)
 --   preview  which inspector preview renders the selection
 --   detail   what a row shows on the right: "id" for the ID, else the first facet
+--   tab      the tab button it lives under, when that is another kind's (atlases
+--            are textures); view names it inside that tab
+--   developer  shown only in developer mode
 ML.Kinds = {
     {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
         facetGroups = {"Subject", "Color"}},
-    {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true, preview = "image"},
-    {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true, preview = "image"},
+    {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true,
+        preview = "image", view = "Files"},
+    {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true,
+        preview = "image", tab = "texture", view = "Atlases"},
     {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id"},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control"},
-    {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font"},
+    {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font", developer = true},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
         facetGroups = {"Family"}},
 }
@@ -30,6 +35,25 @@ end
 ML.ListsTab = "lists"
 ML.Tabs[#ML.Tabs + 1] = {id = ML.ListsTab, label = "Lists", noun = "saved entries", layout = "rows",
     aliases = {"favorites", "list"}}
+
+-- The tab bar: one button per tab, holding the kinds that live under it in
+-- order (Textures holds Files and Atlases). Built from the fields above.
+ML.TabBar = {}
+local buttons = {}
+for _, tab in ipairs(ML.Tabs) do
+    local owner = tab.tab or tab.id
+    local button = buttons[owner]
+    if not button then
+        button = {id = owner, label = tab.label, kinds = {}, developer = tab.developer}
+        buttons[owner] = button
+        ML.TabBar[#ML.TabBar + 1] = button
+    end
+    button.kinds[#button.kinds + 1] = tab.id
+end
+function ML.TabButtonOf(tabId)
+    local tab = ML.KindById[tabId]
+    return buttons[tab and tab.tab or tabId]
+end
 
 -- The formats the Copy dialog offers for a set of entries, in button order.
 ML.CopyFormats = {

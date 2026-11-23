@@ -55,6 +55,19 @@ def codex_fixture():
     return db
 
 
+class HelpTests(unittest.TestCase):
+    """The in-game help and the README tell the same story in the same words."""
+
+    def test_every_help_line_is_in_the_readme(self):
+        import re
+        help_text = (ROOT / "MediaLab" / "help.lua").read_text()
+        lines = re.findall(r'"((?:[^"\\]|\\.)*)"', help_text)
+        self.assertGreater(len(lines), 20)
+        readme = " ".join((ROOT / "README.md").read_text().split())
+        missing = [line for line in lines if line not in readme]
+        self.assertEqual(missing, [], "help.lua lines missing from README.md")
+
+
 class SyncCodexTests(unittest.TestCase):
     def test_renders_every_data_file_from_the_codex(self):
         db = codex_fixture()

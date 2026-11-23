@@ -95,6 +95,10 @@ function methods:Type(value)
     if self.scripts.OnTextChanged then self.scripts.OnTextChanged(self, true) end
 end
 function methods:GetText() return self.text end
+function methods:GetStringHeight()
+    local _, lines = tostring(self.text or ""):gsub("\n", "")
+    return (lines + 1) * 14
+end
 function methods:SetFocus() self.focus = true; if self.scripts.OnEditFocusGained then self.scripts.OnEditFocusGained(self) end end
 function methods:ClearFocus()
     if not self.focus then return end
