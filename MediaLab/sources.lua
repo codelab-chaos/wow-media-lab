@@ -201,3 +201,46 @@ Sources.font = function(add, step)
     end
     for _, row in ipairs(ML.FontTemplates or {}) do font(row[1], "UI source") end
 end
+
+-- Creature displays from the load-on-demand MediaLab_Models addon, built
+-- offline by scripts/creature-models.py from the client's DB2 tables:
+-- [displayID] = "name\ttype\tfamily\tmodel file ID\tskins". Loaded once, when
+-- models are indexed, and released from the global table.
+function Sources.ModelData()
+    if Sources.modelData ~= nil then return Sources.modelData or nil end
+    local load = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+    if load and type(MediaLabModels) ~= "table" then pcall(load, "MediaLab_Models") end
+    Sources.modelData = type(MediaLabModels) == "table" and MediaLabModels or false
+    MediaLabModels = nil
+    return Sources.modelData or nil
+end
+
+Sources.SEEN = "Seen in game"
+
+-- NPC names learned from targets (npcs.lua) join a display's description,
+-- search words and facets. Safe to call again after a new capture; the
+-- catalog's Touch then refreshes its search text.
+function Sources.ApplyNpcs(entry)
+    local names = ML.Npcs:ForDisplay(entry.id)
+    entry.npcs = #names > 0 and names or nil
+    entry.description = entry.npcs and ("Seen as " .. table.concat(names, ", ")) or nil
+    entry.keywords = table.concat({tostring(entry.model or ""), table.concat(names, " ")}, " ")
+    if entry.npcs then
+        local seen = false
+        for _, facet in ipairs(entry.facets) do seen = seen or facet == Sources.SEEN end
+        if not seen then entry.facets[#entry.facets + 1] = Sources.SEEN end
+    end
+    return entry
+end
+
+Sources.model = function(add, step)
+    for id, raw in pairs(Sources.ModelData() or {}) do
+        local name, kind, family, model, skins = raw:match("^([^\t]*)\t([^\t]*)\t([^\t]*)\t([^\t]*)\t(.*)$")
+        if name then
+            add(Sources.ApplyNpcs({value = id, id = id, name = name, model = tonumber(model), family = family,
+                tags = skins ~= "" and skins:gsub(",", ", ") or nil,
+                facets = {kind, "Family: " .. capital(family)}, origin = "Client creature tables"}))
+        end
+        step()
+    end
+end

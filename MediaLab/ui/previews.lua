@@ -69,6 +69,9 @@ local function paintCanvas(stage, id)
     for index = used + 1, #stage.checkers do stage.checkers[index]:Hide() end
 end
 
+-- Shared with previews kept in their own files (modelpreview.lua).
+Previews.Parts = {baseFrame = baseFrame, stageFrame = stageFrame, paintCanvas = paintCanvas, nextIn = nextIn}
+
 ---------------------------------------------------------------------------
 -- Zoom and pan, shared by previews with a stage. The owner provides
 -- self.stage and Layout(); Layout sets self.fitZoom (and optionally

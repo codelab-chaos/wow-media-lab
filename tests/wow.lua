@@ -124,6 +124,19 @@ function methods:SetFrameLevel(value) self.frameLevel = value end
 function methods:SetScale(value) self.scale = value end
 function methods:GetFrameLevel() return self.frameLevel or 1 end
 function methods:AddMessage(value) Mock.messages[#Mock.messages + 1] = value end
+-- PlayerModel: SetUnit loads Mock.target's display and model file.
+function methods:SetDisplayInfo(id) self.displayInfo = id end
+function methods:GetDisplayInfo() return self.displayInfo end
+function methods:SetUnit(unit)
+    local target = unit == "target" and Mock.target
+    self.displayInfo, self.modelFile = target and target.display, target and target.model
+end
+function methods:GetModelFileID() return self.modelFile end
+function methods:ClearModel() self.displayInfo, self.modelFile = nil, nil end
+function methods:SetFacing(value) self.facing = value end
+function methods:SetCamDistanceScale(value) self.camDistance = value end
+function methods:SetAnimation(value) self.animationId = value end
+function methods:HasAnimation(id) return id == 0 or id == 4 or id == 1 end
 
 for _, name in ipairs({
     "SetFont", "SetTextColor", "SetJustifyH", "SetJustifyV", "SetWordWrap", "SetBackdropColor",
@@ -157,6 +170,18 @@ function Mock.install()
         Mock.timers[#Mock.timers + 1] = timer
         return timer
     end}
+    C_Timer.After = function(delay, callback) C_Timer.NewTimer(delay, callback) end
+    strsplit = function(separator, text)
+        local parts = {}
+        for part in (text .. separator):gmatch("(.-)" .. separator:gsub("%p", "%%%0")) do parts[#parts + 1] = part end
+        return unpack(parts)
+    end
+    -- Mock.target = {name, guid, display, model, player}
+    Mock.target = nil
+    UnitExists = function(unit) return unit == "target" and Mock.target ~= nil end
+    UnitIsPlayer = function(unit) return unit == "target" and Mock.target and Mock.target.player or false end
+    UnitGUID = function(unit) return unit == "target" and Mock.target and Mock.target.guid or nil end
+    UnitName = function(unit) return unit == "target" and Mock.target and Mock.target.name or nil end
     GetCursorPosition = function() return Mock.cursorX or 0, Mock.cursorY or 0 end
     InCombatLockdown = function() return Mock.combat end
     C_Texture = {
@@ -203,11 +228,17 @@ function Mock.install()
         [134400] = "inv_misc_questionmark\tred,gray\tsymbol\tquestion mark,unknown,help\tA red question mark.",
         [135274] = "inv_sword_04\tgray\tweapon\tsword,blade,melee\tA steel longsword.",
     }
+    Mock.models = {
+        [1693] = "murloc blue\tCreature\tmurloc\t123456\tmurlocskinblue",
+        [1694] = "murloc green\tCreature\tmurloc\t123456\tmurlocskingreen",
+        [4611] = "orc male\tHumanoid NPC\torc\t1968587\t",
+    }
     C_AddOns = {
         LoadAddOn = function(name)
             if Mock.exportMissing then return false, "MISSING" end
             Mock.loaded[name] = true
             if name == "MediaLab_Icons" then MediaLabIconMeta = Mock.iconMeta end
+            if name == "MediaLab_Models" then MediaLabModels = Mock.models end
             return true
         end,
         GetAddOnMetadata = function(_, field) return field == "Version" and "0.1.0" or nil end,

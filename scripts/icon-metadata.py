@@ -61,16 +61,6 @@ Return JSON:
 No color words. Never use: icon, ui, wow, world of warcraft, item, image."""
 
 
-def game_root():
-    addons = os.environ.get("WOW_ADDONS_DIR")
-    target = ROOT / ".deploy-target"
-    if not addons and target.is_file():
-        addons = target.read_text().splitlines()[0].strip()
-    if not addons:
-        sys.exit("Set WOW_ADDONS_DIR or .deploy-target (the game's Interface/AddOns folder).")
-    return Path(addons).parents[2]
-
-
 def read_jsonl(path):
     rows = {}
     if path.is_file():
@@ -96,8 +86,8 @@ class Appender:
 
 def open_store():
     sys.path.insert(0, str(ROOT / "scripts"))
-    from casc import Casc
-    return Casc(game_root())
+    from casc import Casc, game_root
+    return Casc(game_root(ROOT))
 
 
 def load_names():

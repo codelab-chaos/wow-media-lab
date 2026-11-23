@@ -88,6 +88,26 @@ Snippets.font = function(entry)
     }
 end
 
+-- A creature display: PlayerModel takes the display ID, a ModelScene actor
+-- too. The bare model file renders without the display's skin.
+Snippets.model = function(entry)
+    local id = tostring(entry.id)
+    local fields = {
+        {label = "Display ID", text = id},
+        {label = "Lua", text = "local model = CreateFrame(\"PlayerModel\", nil, parent)\nmodel:SetDisplayInfo(" .. id .. ")", lines = 2},
+        {label = "Model scene", text = "actor:SetModelByCreatureDisplayID(" .. id .. ")"},
+    }
+    if entry.model then fields[#fields + 1] = {label = "Model file (no skin)", text = tostring(entry.model)} end
+    return fields
+end
+
+-- The Lua expression that refers to an entry, as a value in a table: an icon
+-- file ID or path, an atlas, template or font object name, a sound kit.
+function Snippets.Value(entry)
+    if entry.kind == "sound" then return soundKitExpression(entry) end
+    return literal(entry.value)
+end
+
 function Snippets.For(entry, options)
     local build = Snippets[entry.kind]
     return build and build(entry, options) or {{label = "Reference", text = tostring(entry.value)}}

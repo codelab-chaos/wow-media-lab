@@ -6,14 +6,17 @@ local _, ML = ...
 --   cell     base thumbnail size in UI units for grid layouts
 --   visual   entries render as images (thumbnails, zoomable preview)
 --   preview  which inspector preview renders the selection
+--   detail   what a row shows on the right: "id" for the ID, else the first facet
 ML.Kinds = {
     {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
         facetGroups = {"Subject", "Color"}},
     {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true, preview = "image"},
     {id = "atlas", label = "Atlases", noun = "atlases", layout = "grid", cell = 112, visual = true, caption = true, preview = "image"},
-    {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound"},
+    {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id"},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control"},
     {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font"},
+    {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
+        facetGroups = {"Family"}},
 }
 
 ML.Tabs = {}
@@ -22,11 +25,20 @@ for _, kind in ipairs(ML.Kinds) do
     ML.Tabs[#ML.Tabs + 1] = kind
     ML.KindById[kind.id] = kind
 end
--- Favorites is a tab without its own kind: it lists saved entries of every kind.
-ML.Tabs[#ML.Tabs + 1] = {id = "favorites", label = "Favorites", noun = "favorites", layout = "rows"}
+-- Lists is a tab without its own kind: it shows the entries saved to lists
+-- (lists.lua), of every kind. Its filter column lists the lists.
+ML.ListsTab = "lists"
+ML.Tabs[#ML.Tabs + 1] = {id = ML.ListsTab, label = "Lists", noun = "saved entries", layout = "rows",
+    aliases = {"favorites", "list"}}
+
+-- The formats the Copy dialog offers for a set of entries, in button order.
+ML.CopyFormats = {
+    {id = "lua", label = "Lua", hint = "A Lua table of every entry, grouped by kind."},
+    {id = "csv", label = "CSV", hint = "One row per entry."},
+}
 
 -- Build order: small, fast lists first so their tabs are usable immediately.
-ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "icon"}
+ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
 
 -- Grid thumbnail zoom steps (multipliers of a kind's base cell size).
 ML.ThumbScales = {0.75, 1, 1.5, 2}
@@ -41,6 +53,18 @@ ML.Canvases = {
 }
 
 ML.SoundChannels = {"Master", "SFX", "Music", "Ambience", "Dialog"}
+
+-- Animations the model preview cycles through (AnimationData IDs). Ones a
+-- model does not have are skipped.
+ML.ModelAnimations = {
+    {id = 0, label = "Stand"}, {id = 4, label = "Walk"}, {id = 5, label = "Run"},
+    {id = 16, label = "Attack"}, {id = 74, label = "Roar"}, {id = 60, label = "Talk"},
+    {id = 69, label = "Dance"}, {id = 1, label = "Death"},
+}
+
+-- Model preview camera: distance scale limits and step for the wheel, and
+-- how fast dragging turns the model (radians per UI unit).
+ML.ModelCamera = {min = 0.4, max = 4, step = 1.15, turn = 0.012}
 
 -- Font preview text, top to bottom. The headline is replaced by the user's own
 -- sample when they type one; the rest always follows.

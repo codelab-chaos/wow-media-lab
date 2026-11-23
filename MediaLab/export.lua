@@ -38,6 +38,8 @@ Export.Shapes = {
     sound = {fields = {"name", "id", "facets"}, row = function(e) return {e.name, e.id, facets(e)} end},
     control = {fields = {"name", "type", "inherits", "source", "width", "height", "facets"}, row = template},
     font = {fields = {"name", "file", "size", "flags", "facets"}, row = font},
+    model = {fields = {"display", "name", "model", "skins", "npcs", "facets"},
+        row = function(e) return {e.id, e.name, e.model, e.tags, e.npcs and table.concat(e.npcs, ";"), facets(e)} end},
 }
 
 function Export.Rows(kind, entries)
@@ -92,7 +94,7 @@ local function csvCell(value)
 end
 
 -- A CSV listing of the given entries, capped so the text box stays responsive.
--- Mixed kinds (Favorites) share a simple kind,name,value,id shape.
+-- Mixed kinds (a list) share a simple kind,name,value,id shape.
 function Export.Csv(entries)
     local kinds = {}
     for _, entry in ipairs(entries) do kinds[entry.kind] = true end
@@ -108,4 +110,49 @@ function Export.Csv(entries)
         lines[#lines + 1] = table.concat(cells, ",")
     end
     return table.concat(lines, "\n"), count, #entries
+end
+
+-- A Lua identifier from a list name: "Raid frame kit" -> "RaidFrameKit".
+function Export.Identifier(name)
+    local words = {}
+    for word in tostring(name or ""):gmatch("%w+") do words[#words + 1] = word:sub(1, 1):upper() .. word:sub(2) end
+    local identifier = table.concat(words)
+    if identifier == "" then return "media" end
+    if identifier:match("^%d") then identifier = "_" .. identifier end
+    return identifier
+end
+
+-- The given entries as one Lua table, a field per kind in ML.Kinds order
+-- (icons, textures, ...), each value ready to pass to the matching API. A
+-- comment names entries whose value is not their name (icon file IDs).
+-- Capped like the CSV listing.
+function Export.Lua(entries, name)
+    local count = math.min(#entries, Export.CSV_LIMIT)
+    local byKind = {}
+    for index = 1, count do
+        local entry = entries[index]
+        byKind[entry.kind] = byKind[entry.kind] or {}
+        table.insert(byKind[entry.kind], entry)
+    end
+    local lines = {"local " .. Export.Identifier(name) .. " = {"}
+    for _, kind in ipairs(ML.Kinds) do
+        local group = byKind[kind.id]
+        if group then
+            lines[#lines + 1] = "    " .. kind.noun .. " = {"
+            for _, entry in ipairs(group) do
+                local value = ML.Snippets.Value(entry)
+                local note = tostring(entry.value) ~= entry.name and (" -- " .. entry.name:gsub("[\r\n]", " ")) or ""
+                lines[#lines + 1] = "        " .. value .. "," .. note
+            end
+            lines[#lines + 1] = "    },"
+        end
+    end
+    lines[#lines + 1] = "}"
+    return table.concat(lines, "\n"), count, #entries
+end
+
+-- One format from ML.CopyFormats.
+function Export.Format(format, entries, name)
+    if format == "lua" then return Export.Lua(entries, name) end
+    return Export.Csv(entries)
 end

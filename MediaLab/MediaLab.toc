@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: MediaLab
-## Notes: A catalog of the icons, textures, atlases, sounds, controls and fonts your addons can use.
+## Notes: A catalog of the icons, textures, atlases, sounds, controls, fonts and creature models your addons can use.
 ## Author: Wizwonk
 ## Version: 0.1.0
 ## X-License: MIT
@@ -19,12 +19,17 @@ data\sounds.lua
 data\templates.lua
 sources.lua
 catalog.lua
+lists.lua
+npcs.lua
 snippets.lua
 export.lua
 ui\widgets.lua
 ui\art.lua
 ui\browser.lua
 ui\previews.lua
+ui\modelpreview.lua
 ui\inspector.lua
-ui\csvdialog.lua
+ui\copydialog.lua
+ui\prompt.lua
+ui\listmenu.lua
 ui\window.lua

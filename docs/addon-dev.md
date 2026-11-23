@@ -8,16 +8,39 @@ and the controls are in the [README](../README.md).
 
 1. **Search** the tab for what you need. Icons answer to their file name,
    colors and subject (`sword blue`, `potion green`), atlases to their prefix
-   (`common-`, `UI-HUD-`), sounds to their `SOUNDKIT` name.
+   (`common-`, `UI-HUD-`), sounds to their `SOUNDKIT` name, models to their
+   model, skin or NPC name (`murloc`, `raptor violet`, `hogger`).
 2. **Preview** it. Zoom to **1:1** to see the size you will draw it at, and
    cycle **Canvas** to check the transparency against light and dark frames.
    For a sound, pick the **Channel** your addon will play it on.
-3. **Favorite** the candidates (right-click). The Favorites tab is a shortlist
-   across tabs, saved between sessions.
+3. **Save** the candidates: right-click to favorite, or **Add to list** in the
+   inspector. Keep a list per addon or per screen; an entry can be in several.
 4. **Copy** the field you need into your code (click it, then **Ctrl+C**).
-5. Export a whole result list with **CSV** (`/mlab csv`) when you want a
-   table: a set of icons for a picker, every atlas with a prefix, the sounds
-   for an alert menu.
+5. **Copy** a whole list, or any results, when you want them all at once: a
+   set of icons for a picker, every atlas with a prefix, the sounds for an
+   alert menu. Lua gives one table, grouped by kind:
+
+   ```lua
+   local RaidFrameKit = {
+       icons = {
+           134400, -- inv_misc_questionmark
+       },
+       atlases = {
+           "common-icon-checkmark",
+       },
+       sounds = {
+           SOUNDKIT.IG_MAINMENU_OPEN,
+       },
+       templates = {
+           "UIPanelButtonTemplate",
+       },
+       models = {
+           188, -- murloc sahaugin blue
+       },
+   }
+   ```
+
+   CSV gives one row per entry.
 
 ## What you can copy
 
@@ -28,9 +51,11 @@ and the controls are in the [README](../README.md).
 | Sounds | `SOUNDKIT` name, sound kit ID, `PlaySound(SOUNDKIT..., channel)` |
 | Controls | Template name, a `CreateFrame` call using it, the template it inherits |
 | Fonts | Font object, `fontString:SetFontObject(...)`, `parent:CreateFontString(nil, "OVERLAY", ...)` |
+| Models | Display ID, a `PlayerModel` with `SetDisplayInfo(...)`, `actor:SetModelByCreatureDisplayID(...)`, the model file ID |
 
 Prefer the atlas or the `SOUNDKIT` name over a raw path or ID when one exists:
-they survive patches that move files.
+they survive patches that move files. For models, use the display ID: the bare
+model file renders without the display's skin.
 
 ## Things to know while you build
 
@@ -43,6 +68,10 @@ they survive patches that move files.
 - **Templates.** **Build preview** runs the template's own scripts, once per
   session (WoW cannot delete frames). A template that needs a parent or data
   may raise a Lua error; that tells you what it expects from your code too.
+- **NPC names.** The client's files describe models, not NPCs; the server
+  sends NPC names. Target an NPC and press **Target** to learn which display
+  it uses. If the display cannot be read, the lab searches its model file so
+  you can pick the matching skin.
 - **Clipboard.** WoW does not let addons write to the clipboard, so every
   copy is select, then **Ctrl+C**.
 
@@ -60,9 +89,12 @@ One file per kind, each with its source version and commit:
 | `sounds.json` | `{"name": "ACCOUNT_STORE_CATEGORY_SELECT", "id": 274968}` |
 | `templates.json` | `{"name": ..., "type": "Frame", "inherits": ..., "source": ...}` |
 | `fonts.json` | `{"name": ..., "type": "Font", "inherits": ..., "source": ...}` |
+| `models.json` | `{"id": 188, "name": "murloc sahaugin blue", "type": "Creature", "family": "murloc", "skins": [...], "model": 125024}` |
 | `icons-meta.json` | `{"id": 132089, "name": "ability_ambush", "colors": [...], "subject": ..., "tags": [...], "description": ...}` |
 
-It covers what the UI source references, plus the icon metadata. The client's
+It covers what the UI source references, plus the icon metadata and the
+creature models. Releases also ship `MediaLab-data-<version>.sqlite`, the
+[game database](data.md): the models, and what uses each icon. The client's
 own lists (every icon file ID, atlas sizes and coordinates) can be added with
 the live export below.
 
@@ -134,6 +166,18 @@ read only). `vision` needs [LM Studio](https://lmstudio.ai) serving a vision
 model on the local network (default `qwen/qwen3.5-9b`; `--model`, `--url` or
 `LMSTUDIO_URL` to change). Each stage caches its results in `.cache/icons/`,
 so it can stop and resume.
+
+### Creature models and the game database
+
+`MediaLab_Models` lists every creature display the client ships (about
+14,000): mobs, humanoid NPCs, objects and effects, named from their model and
+skin files in the community listfile. It is generated, with
+`catalog/models.json`, from the [game database](data.md), which is built from
+the data tables in your local game files:
+
+```sh
+.venv/bin/python scripts/game-data.py   # seconds
+```
 
 ### Live client lists
 

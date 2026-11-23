@@ -16,8 +16,16 @@ end
 
 local function searchText(entry)
     local parts = {entry.name, tostring(entry.value), entry.id and tostring(entry.id) or "", entry.tag or "",
-        entry.inherits or "", entry.tags or "", entry.subject or "", table.concat(entry.facets, " ")}
+        entry.inherits or "", entry.tags or "", entry.subject or "", entry.keywords or "", table.concat(entry.facets, " ")}
     return table.concat(parts, " "):lower()
+end
+
+-- After a provider changes an entry's facets or words (a new NPC name).
+function Catalog:Touch(entry)
+    entry.facetSet = {}
+    for _, facet in ipairs(entry.facets) do entry.facetSet[facet] = true end
+    entry.search = searchText(entry)
+    return entry
 end
 
 function Catalog:Add(kind, data)
@@ -92,46 +100,57 @@ end
 
 function Catalog:Count(kind) return #(self.byKind[kind] or {}) end
 
--- Saved favorites that exist in this client, without scanning every entry.
-function Catalog:FavoriteCount()
+-- Saved entries that exist in this client, without scanning every entry.
+-- With a list, only that list's; without, those in any list.
+function Catalog:SavedCount(list)
     local count = 0
-    for key in pairs(ML.db.favorites) do
-        if self.byKey[key] then count = count + 1 end
+    if list then
+        for key in pairs(list.keys) do if self.byKey[key] then count = count + 1 end end
+        return count
+    end
+    local seen = {}
+    for _, saved in ipairs(ML.Lists:All()) do
+        for key in pairs(saved.keys) do
+            if not seen[key] and self.byKey[key] then seen[key] = true; count = count + 1 end
+        end
     end
     return count
 end
 
 function Catalog:TabCount(tabId)
-    return tabId == "favorites" and self:FavoriteCount() or self:Count(tabId)
+    return tabId == ML.ListsTab and self:SavedCount() or self:Count(tabId)
 end
 
-function Catalog:IsFavorite(entry) return ML.db.favorites[entry.key] == true end
-
-function Catalog:ToggleFavorite(entry)
-    ML.db.favorites[entry.key] = not ML.db.favorites[entry.key] or nil
-end
+function Catalog:IsFavorite(entry) return ML.Lists:IsFavorite(entry.key) end
 
 -- The entries a tab shows before search and facet filtering.
 function Catalog:List(tabId)
-    if tabId ~= "favorites" then return self.byKind[tabId] or {} end
+    if tabId ~= ML.ListsTab then return self.byKind[tabId] or {} end
     local result = {}
     for _, kind in ipairs(ML.Kinds) do
         for _, entry in ipairs(self.byKind[kind.id] or {}) do
-            if ML.db.favorites[entry.key] then result[#result + 1] = entry end
+            if ML.Lists:InAny(entry.key) then result[#result + 1] = entry end
         end
     end
     return result
 end
 
-function Catalog:FacetOf(tabId, entry)
-    return tabId == "favorites" and ML.KindById[entry.kind].label or nil
+-- On the Lists tab the facets are the lists themselves, in the order made,
+-- including empty ones so they can be picked and filled.
+function Catalog:ListFacets()
+    local result = {}
+    for _, list in ipairs(ML.Lists:All()) do
+        result[#result + 1] = {name = ML.Lists.Facet(list), label = list.name, count = self:SavedCount(list)}
+    end
+    return result
 end
 
 -- Facet counts for a tab, most common first; "Common" always leads when present.
 function Catalog:Facets(tabId)
+    if tabId == ML.ListsTab then return self:ListFacets() end
     local counts, order = {}, {}
     for _, entry in ipairs(self:List(tabId)) do
-        local facets = tabId == "favorites" and {self:FacetOf(tabId, entry)} or entry.facets
+        local facets = entry.facets
         for _, facet in ipairs(facets) do
             if not counts[facet] then counts[facet] = 0; order[#order + 1] = facet end
             counts[facet] = counts[facet] + 1
@@ -159,8 +178,8 @@ function Catalog:Filter(tabId, facet, query)
     local result = {}
     for _, entry in ipairs(self:List(tabId)) do
         local include = not facet
-            or (tabId == "favorites" and self:FacetOf(tabId, entry) == facet)
-            or (tabId ~= "favorites" and entry.facetSet[facet])
+            or (tabId == ML.ListsTab and ML.Lists:Has(ML.Lists:FromFacet(facet), entry.key))
+            or (tabId ~= ML.ListsTab and entry.facetSet[facet])
         if include then
             for _, term in ipairs(terms) do
                 if not entry.search:find(term, 1, true) then include = false; break end

@@ -1,13 +1,29 @@
 """Minimal read-only reader for a local CASC store (WoW game files): file data ID -> bytes.
 
 Reads .build.info, the local .idx indices, the encoding table and the TSFM root.
-BLTE chunks N (raw), Z (zlib) and F (nested) are supported; encrypted chunks raise.
+BLTE chunks N (raw), Z (zlib) and F (nested) are supported. Encrypted chunks
+raise, or with skip_encrypted=True come back zero-filled at their real size
+(DB2 tables keep their unencrypted sections readable that way).
 It never writes to the game folder.
 """
 
+import os
 import struct
+import sys
 import zlib
 from pathlib import Path
+
+
+def game_root(repo):
+    """The game folder, found from WOW_ADDONS_DIR or the repo's .deploy-target
+    (both name its Interface/AddOns folder)."""
+    addons = os.environ.get("WOW_ADDONS_DIR")
+    target = Path(repo) / ".deploy-target"
+    if not addons and target.is_file():
+        addons = target.read_text().splitlines()[0].strip()
+    if not addons:
+        sys.exit("Set WOW_ADDONS_DIR or .deploy-target (the game's Interface/AddOns folder).")
+    return Path(addons).parents[2]
 
 
 class Casc:
@@ -18,6 +34,7 @@ class Casc:
         names = [column.split("!")[0] for column in info[0].split("|")]
         rows = [dict(zip(names, line.split("|"))) for line in info[1:] if line.strip()]
         row = next(r for r in rows if r.get("Product") == product)
+        self.version = row.get("Version")
         self.build = self.config(row["Build Key"])
         self.index = self.load_indices()
         encoding_ekey = bytes.fromhex(self.build["encoding"].split()[1])
@@ -55,11 +72,11 @@ class Casc:
                 index.setdefault(key, (packed >> offset_bits, packed & mask, size))
         return index
 
-    def read_ekey(self, ekey):
+    def read_ekey(self, ekey, skip_encrypted=False):
         archive, offset, size = self.index[ekey[:9]]
         with open(self.data / "data" / f"data.{archive:03d}", "rb") as handle:
             handle.seek(offset + 30)
-            return blte(handle.read(size - 30))
+            return blte(handle.read(size - 30), skip_encrypted)
 
     def load_encoding(self, raw):
         assert raw[:2] == b"EN", raw[:2]
@@ -80,8 +97,8 @@ class Casc:
                 p += 6 + ckey_size + count * ekey_size
         return result
 
-    def read_ckey(self, ckey):
-        return self.read_ekey(self.encoding[ckey])
+    def read_ckey(self, ckey, skip_encrypted=False):
+        return self.read_ekey(self.encoding[ckey], skip_encrypted)
 
     def load_root(self, raw):
         assert raw[:4] == b"TSFM", raw[:4]
@@ -113,11 +130,11 @@ class Casc:
                     files[fdid] = raw[ckeys + 16 * i:ckeys + 16 * i + 16]
         return files
 
-    def read(self, fdid):
-        return self.read_ckey(self.files[fdid])
+    def read(self, fdid, skip_encrypted=False):
+        return self.read_ckey(self.files[fdid], skip_encrypted)
 
 
-def blte(raw):
+def blte(raw, skip_encrypted=False):
     assert raw[:4] == b"BLTE", raw[:4]
     header, = struct.unpack_from(">I", raw, 4)
     if header == 0:
@@ -125,8 +142,9 @@ def blte(raw):
     count = int.from_bytes(raw[9:12], "big")
     at, out = header, []
     for i in range(count):
-        size, = struct.unpack_from(">I", raw, 12 + i * 24)
-        out.append(chunk(raw[at:at + size]))
+        size, plain = struct.unpack_from(">II", raw, 12 + i * 24)
+        data = raw[at:at + size]
+        out.append(b"\0" * plain if skip_encrypted and data[:1] == b"E" else chunk(data))
         at += size
     return b"".join(out)
 

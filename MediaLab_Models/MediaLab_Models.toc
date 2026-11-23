@@ -1,0 +1,13 @@
+## Interface: 16001
+## Title: MediaLab Models
+## Notes: Creature display names, families and skins for MediaLab. Loaded only when the lab indexes models.
+## Author: Wizwonk
+## Version: 0.1.0
+## X-License: MIT
+## AllowLoadGameType: forever
+## ExcludeLoadGameType: standard, classic
+## Category: Development Tools
+## LoadOnDemand: 1
+## Dependencies: MediaLab
+
+data.lua

@@ -12,7 +12,7 @@ local GAP, ROW = 6, 22
 -- The scrollbar's width plus its gap from the cells.
 local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
--- handlers: onSelect(entry), onFavorite(entry), onPlay(entry), onChanged()
+-- handlers: onSelect(entry), onFavorite(entry) (right-click), onPlay(entry), onChanged()
 function Browser.New(parent, handlers)
     local self = setmetatable({handlers = handlers, offset = 0, results = {}, cells = {}, rows = {}}, Browser)
     local frame = CreateFrame("Frame", nil, parent)
@@ -165,7 +165,8 @@ local function onCellEnter(cell)
     if entry.description then GameTooltip:AddLine(entry.description, 1, 1, 1, true) end
     if entry.tags then GameTooltip:AddLine(entry.tags, 0.62, 0.78, 0.91, true) end
     GameTooltip:AddLine(table.concat(entry.facets, ", "), unpack(T.muted))
-    GameTooltip:AddLine("Click to inspect  /  Right-click to favorite", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine("Click to inspect  /  Right-click to " .. (ML.Lists:IsFavorite(entry.key) and "unfavorite" or "favorite"),
+        0.6, 0.6, 0.6)
     GameTooltip:Show()
 end
 
@@ -226,7 +227,7 @@ end
 
 local function detailText(entry, mixed)
     if mixed then return ML.KindById[entry.kind].label end
-    if entry.kind == "sound" then return "ID " .. tostring(entry.id) end
+    if ML.KindById[entry.kind].detail == "id" then return "ID " .. tostring(entry.id) end
     if entry.kind == "control" then return entry.tag or "" end
     return entry.facets[1] or ""
 end

@@ -76,7 +76,7 @@ function UI:SetMinimized(minimized)
         local saved = ML.db.window
         frame:SetHeight(W.Clamp(saved and tonumber(saved.height) or DEFAULT.height, BOUNDS.minHeight, BOUNDS.maxHeight))
         self:Refresh()
-        if self.tabId and not self.selected[self.tabId] and self.results[1] and self.tabId ~= "favorites" then
+        if self.tabId and not self.selected[self.tabId] and self.results[1] and self.tabId ~= ML.ListsTab then
             self:Select(self.results[1])
         end
     end
@@ -92,7 +92,7 @@ function UI:SelectTab(id)
     self.browser:ResetScroll()
     self:Refresh()
     local selected = self.selected[id]
-    if not selected and self.results[1] and id ~= "favorites" then selected = self.results[1] end
+    if not selected and self.results[1] and id ~= ML.ListsTab then selected = self.results[1] end
     self:Select(selected)
     return true
 end
@@ -100,7 +100,9 @@ end
 function UI:SelectTabByName(name)
     name = tostring(name or ""):lower()
     for _, tab in ipairs(ML.Tabs) do
-        if tab.id == name or tab.label:lower() == name or tab.noun == name then return self:SelectTab(tab.id) end
+        local match = tab.id == name or tab.label:lower() == name or tab.noun == name
+        for _, alias in ipairs(tab.aliases or {}) do match = match or alias == name end
+        if match then return self:SelectTab(tab.id) end
     end
     return false
 end
@@ -140,7 +142,11 @@ function UI:RenderFacets()
         self.facetCache[self.tabId] = facets
     end
     local active = view().facets[self.tabId]
-    local items = {{name = "All", count = C:TabCount(self.tabId)}}
+    local onLists = self.tabId == ML.ListsTab
+    if onLists and active and not ML.Lists:FromFacet(active) then active = nil; view().facets[self.tabId] = nil end
+    self.facetHeading:SetText(onLists and "LISTS" or "FILTER")
+    self:RenderListActions(onLists and ML.Lists:FromFacet(active))
+    local items = {{name = "All", label = onLists and "All saved" or "All", count = C:TabCount(self.tabId)}}
     for _, facet in ipairs(facets) do items[#items + 1] = facet end
     local visible = math.max(1, math.floor(self.facetList:GetHeight() / FACET_ROW))
     self.facetOffset = W.Clamp(self.facetOffset or 0, 0, math.max(0, #items - visible))
@@ -153,7 +159,7 @@ function UI:RenderFacets()
             item:SetPoint("TOPRIGHT", 0, -(index - 1) * FACET_ROW)
             item.facet = data.name ~= "All" and data.name or nil
             local selected = item.facet == active
-            item.name:SetText(data.name)
+            item.name:SetText(data.label or data.name)
             item.name:SetTextColor(unpack(selected and T.accent or T.text))
             item.count:SetText(tostring(data.count))
             item.marker:SetShown(selected)
@@ -171,15 +177,18 @@ function UI:Layout()
     local tab = self:Tab(self.tabId)
     local thumb = ML.ThumbScales[view().thumb or 2] or 1
     local emptyText
-    if tab.id == "favorites" then
-        emptyText = (self.query ~= "" or view().facets.favorites) and "No favorites match."
-            or "Right-click anything in another tab to save it here."
+    if tab.id == ML.ListsTab then
+        local list = ML.Lists:FromFacet(view().facets[tab.id])
+        emptyText = self.query ~= "" and "Nothing saved matches."
+            or (ML.Lists.IsBuiltIn(list) and "Right-click anything in another tab to favorite it.")
+            or (list and (list.name .. " is empty. Use Add to list in the inspector to fill it."))
+            or "Right-click anything to favorite it, or use Add to list in the inspector."
     elseif not C.indexed[tab.id] then
         emptyText = "Indexing " .. tab.noun .. "..."
     else
         emptyText = "No " .. tab.noun .. " match. Try fewer words or the All filter."
     end
-    return {mode = tab.layout, cell = tab.cell, scale = thumb, caption = tab.caption, mixed = tab.id == "favorites",
+    return {mode = tab.layout, cell = tab.cell, scale = thumb, caption = tab.caption, mixed = tab.id == ML.ListsTab,
         emptyText = emptyText}
 end
 
@@ -211,11 +220,51 @@ function UI:Select(entry)
     self.browser:SetSelected(entry and entry.key)
 end
 
+-- Right-click and the star: in or out of Favorites.
 function UI:ToggleFavorite(entry)
-    C:ToggleFavorite(entry)
-    self.facetCache.favorites = nil
-    self.inspector:RefreshFavorite()
+    ML.Lists:ToggleFavorite(entry.key)
+    self:RefreshSaved()
+end
+
+-- After any list change: counts, the Lists tab, the inspector's button.
+function UI:RefreshSaved()
+    self.facetCache[ML.ListsTab] = nil
+    self.inspector:RefreshLists()
+    if ML.ListMenu.frame and ML.ListMenu.frame:IsShown() then ML.ListMenu.Render() end
     self:Refresh()
+end
+
+-- The Target button and /mlab target: find the target's creature display,
+-- remember the NPC's name on it, and select it on the Models tab. When only
+-- the model file can be read, search for it so the skins can be compared.
+function UI:FromTarget()
+    ML.Npcs:CaptureTarget(function(npc, detail)
+        local function report(text)
+            ML.Print(text)
+            local preview = self.inspector.previews.model
+            if preview and self.tabId == "model" then preview:SetStatus(text) end
+        end
+        if not npc then return report(detail) end
+        if not C.indexed.model then return report("Models are still indexing. Try again when the lab says Ready.") end
+        local label = npc.name .. " (creature " .. detail .. ")"
+        local entry = npc.display and C.byKey[C:Key("model", npc.display)]
+        view().facets.model = nil
+        self.facetCache.model = nil
+        if entry then
+            C:Touch(ML.Sources.ApplyNpcs(entry))
+            self:SelectTab("model")
+            self:Search("")
+            self:Select(entry)
+            self.browser:Reveal(entry)
+            return report(label .. " uses display " .. npc.display .. ".")
+        end
+        self:SelectTab("model")
+        if npc.model then
+            self:Search(tostring(npc.model))
+            return report(label .. " uses model file " .. npc.model .. "; its display is not readable, so pick the matching skin.")
+        end
+        report(label .. " uses display " .. tostring(npc.display) .. ", which this catalog does not list.")
+    end)
 end
 
 function UI:Search(text)
@@ -227,10 +276,10 @@ end
 
 function UI:OnIndexed(kind)
     if kind then self.facetCache[kind] = nil end
-    self.facetCache.favorites = nil
+    self.facetCache[ML.ListsTab] = nil
     if not self.frame then return end
     self:Refresh()
-    if (kind == self.tabId or kind == nil) and not self.selected[self.tabId] and self.results[1] and self.tabId ~= "favorites" then
+    if (kind == self.tabId or kind == nil) and not self.selected[self.tabId] and self.results[1] and self.tabId ~= ML.ListsTab then
         self:Select(self.results[1])
     end
     self:UpdatePager()
@@ -265,7 +314,7 @@ function UI:CreateToolbar(body)
     self.tabButtons = {}
     local previous
     for _, tab in ipairs(ML.Tabs) do
-        local button = W.Button(body, tab.label, 104, function() self:SelectTab(tab.id) end, 24)
+        local button = W.Button(body, tab.label, 96, function() self:SelectTab(tab.id) end, 24)
         button.tab = tab
         if previous then button:SetPoint("LEFT", previous, "RIGHT", 4, 0) else button:SetPoint("TOPLEFT", 12, -(TITLE + 8)) end
         self.tabButtons[#self.tabButtons + 1] = button
@@ -293,14 +342,104 @@ function UI:CreateToolbar(body)
     end, 24)
     self.thumbButton:SetPoint("LEFT", clear, "RIGHT", 4, 0)
     W.Tip(self.thumbButton, "Thumbnail size", "Cycle the grid's thumbnail zoom.")
-    local csv = W.Button(body, "CSV", 48, function() self:CopyCsv() end, 24)
-    csv:SetPoint("LEFT", self.thumbButton, "RIGHT", 4, 0)
-    W.Tip(csv, "Copy as CSV", "The current results as CSV (first " .. ML.Export.CSV_LIMIT
-        .. "). /mlab export saves the whole catalog.")
+    local copy = W.Button(body, "Copy", 48, function() self:CopyResults() end, 24)
+    copy:SetPoint("LEFT", self.thumbButton, "RIGHT", 4, 0)
+    W.Tip(copy, "Copy results", "The current results (a list, on the Lists tab) as a Lua table or CSV, first "
+        .. ML.Export.CSV_LIMIT .. ". /mlab export saves the whole catalog.")
 end
 
-function UI:CopyCsv()
-    return ML.CsvDialog.Show(self.frame, self.results)
+-- What the results are called in the Copy dialog and its Lua table: the
+-- picked list, else the tab and its filter.
+function UI:ResultsName()
+    local facet = view().facets[self.tabId]
+    if self.tabId == ML.ListsTab then
+        local list = ML.Lists:FromFacet(facet)
+        return list and list.name or "Saved media"
+    end
+    local label = self:Tab(self.tabId).label
+    return facet and (label .. " " .. facet:gsub("^[^:]+: ", "")) or label
+end
+
+function UI:CopyResults(format)
+    return ML.CopyDialog.Show(self.frame, {entries = self.results, name = self:ResultsName(), format = format})
+end
+
+---------------------------------------------------------------------------
+-- List actions, under the Lists tab's filter column
+---------------------------------------------------------------------------
+function UI:NewList()
+    ML.Prompt.Show(self.frame, {title = "New list", button = "Create",
+        hint = "Right-click media to add it.", onAccept = function(name)
+            local list, problem = ML.Lists:Create(name)
+            if not list then return problem end
+            self:SelectTab(ML.ListsTab)
+            self:SetFacet(ML.Lists.Facet(list))
+            self:RefreshSaved()
+        end})
+end
+
+function UI:RenameList(list)
+    ML.Prompt.Show(self.frame, {title = "Rename list", button = "Rename", text = list.name,
+        onAccept = function(name)
+            local renamed, problem = ML.Lists:Rename(list.id, name)
+            if not renamed then return problem end
+            self:RefreshSaved()
+        end})
+end
+
+-- Deleting asks twice: the first click arms the button for a few seconds.
+function UI:DeleteList(list)
+    local button = self.listActions.delete
+    if button.armed ~= list.id then
+        button.armed = list.id
+        button:SetLabel("Sure?")
+        if button.timer then button.timer:Cancel() end
+        button.timer = C_Timer.NewTimer(3, function()
+            button.armed = nil
+            button:SetLabel("Delete")
+        end)
+        return
+    end
+    if button.timer then button.timer:Cancel() end
+    button.armed = nil
+    button:SetLabel("Delete")
+    ML.Lists:Delete(list.id)
+    view().facets[ML.ListsTab] = nil
+    self:RefreshSaved()
+end
+
+function UI:CreateListActions(column)
+    local bar = CreateFrame("Frame", nil, column)
+    bar:SetPoint("BOTTOMLEFT", 4, 20)
+    bar:SetPoint("BOTTOMRIGHT", -4, 20)
+    bar:SetHeight(22)
+    local width = math.floor((FACET_WIDTH - 16) / 3)
+    local function button(label, onClick, title, body)
+        local item = W.Button(bar, label, width, onClick, 20)
+        W.Tip(item, title, body)
+        return item
+    end
+    bar.new = button("New", function() self:NewList() end, "New list", "Make a list and pick it.")
+    bar.new:SetPoint("LEFT")
+    bar.rename = button("Rename", function() if bar.list then self:RenameList(bar.list) end end,
+        "Rename list", "Rename the picked list.")
+    bar.rename:SetPoint("LEFT", bar.new, "RIGHT", 4, 0)
+    bar.delete = button("Delete", function() if bar.list then self:DeleteList(bar.list) end end,
+        "Delete list", "Click twice. The media stays in your other lists.")
+    bar.delete:SetPoint("LEFT", bar.rename, "RIGHT", 4, 0)
+    self.listActions = bar
+end
+
+-- Shown on the Lists tab only; Rename and Delete act on the picked list.
+function UI:RenderListActions(list)
+    local bar = self.listActions
+    local shown = self.tabId == ML.ListsTab
+    bar:SetShown(shown)
+    bar.list = list or nil
+    local editable = list and not ML.Lists.IsBuiltIn(list)
+    bar.rename:SetEnabled(editable and true or false)
+    bar.delete:SetEnabled(editable and true or false)
+    self.facetList:SetPoint("BOTTOMRIGHT", -2, shown and 46 or 22)
 end
 
 function UI:CreateFacetColumn(body)
@@ -308,8 +447,8 @@ function UI:CreateFacetColumn(body)
     column:SetPoint("TOPLEFT", 12, -(TITLE + 72))
     column:SetPoint("BOTTOMLEFT", 12, 12)
     column:SetWidth(FACET_WIDTH)
-    local heading = W.Label(column, "FILTER", 10, T.muted)
-    heading:SetPoint("TOPLEFT", 8, -8)
+    self.facetHeading = W.Label(column, "FILTER", 10, T.muted)
+    self.facetHeading:SetPoint("TOPLEFT", 8, -8)
     self.facetList = CreateFrame("Frame", nil, column)
     self.facetList:SetPoint("TOPLEFT", 2, -24)
     self.facetList:SetPoint("BOTTOMRIGHT", -2, 22)
@@ -322,6 +461,7 @@ function UI:CreateFacetColumn(body)
     self.facetMore = W.Label(column, "", 9, T.muted)
     self.facetMore:SetPoint("BOTTOMLEFT", 8, 7)
     self.facetButtons = {}
+    self:CreateListActions(column)
     return column
 end
 
@@ -346,7 +486,13 @@ function UI:Create()
     self:CreateToolbar(body)
     local facets = self:CreateFacetColumn(body)
 
-    self.inspector = ML.Inspector.New(body, {onFavorite = function(entry) self:ToggleFavorite(entry) end})
+    self.inspector = ML.Inspector.New(body, {
+        onFavorite = function(entry) self:ToggleFavorite(entry) end,
+        onLists = function(entry, button)
+            ML.ListMenu.Toggle(self.frame, button, entry, function() self:RefreshSaved() end)
+        end,
+        onTarget = function() self:FromTarget() end,
+    })
     self.inspector.frame:SetPoint("TOPRIGHT", -12, -(TITLE + 40))
     self.inspector.frame:SetPoint("BOTTOMRIGHT", -12, 12)
     self.inspector.frame:SetWidth(INSPECTOR_WIDTH)
@@ -382,6 +528,7 @@ function UI:Create()
 
     frame:SetScript("OnHide", function()
         self.search.box:ClearFocus()
+        ML.ListMenu.Hide()
         local sound = self.inspector.previews.sound
         if sound then sound:Stop() end
         GameTooltip:Hide()

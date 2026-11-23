@@ -3,13 +3,14 @@
 
 from pathlib import Path
 import re
+import shutil
 from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 # Addon folders shipped in the release zip, each with its own .toc manifest.
-ADDONS = ["MediaLab", "MediaLab_Export", "MediaLab_Icons"]
+ADDONS = ["MediaLab", "MediaLab_Export", "MediaLab_Icons", "MediaLab_Models"]
 
 
 def manifest_files(name):
@@ -58,7 +59,23 @@ def package_catalog():
     return output
 
 
+def package_data():
+    """The game database (catalog/wow-data.sqlite, built by scripts/game-data.py
+    from the local client) as a release download. Not in git: it is binary and
+    changes every patch."""
+    source = ROOT / "catalog" / "wow-data.sqlite"
+    if not source.is_file():
+        print("no catalog/wow-data.sqlite (run scripts/game-data.py); release ships without it")
+        return None
+    output = ROOT / "dist" / f"MediaLab-data-{version()}.sqlite"
+    output.parent.mkdir(exist_ok=True)
+    shutil.copyfile(source, output)
+    print(output)
+    return output
+
+
 if __name__ == "__main__":
     package()
     package_catalog()
+    package_data()
 

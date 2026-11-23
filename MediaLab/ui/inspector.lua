@@ -9,22 +9,30 @@ ML.Inspector = Inspector
 
 local MAX_FIELDS = 4
 
--- handlers: onFavorite(entry)
+-- handlers: onFavorite(entry), onLists(entry, button) opens the list menu for
+-- the entry, onTarget() loads the player's target (the model preview's button)
 function Inspector.New(parent, handlers)
     local self = setmetatable({handlers = handlers, previews = {}, fields = {}}, Inspector)
     local frame = W.Panel(parent)
     self.frame = frame
     self.title = W.Label(frame, "Nothing selected", 14, T.accent)
     self.title:SetPoint("TOPLEFT", 12, -12)
-    self.title:SetPoint("TOPRIGHT", -84, -12)
+    self.title:SetPoint("TOPRIGHT", -126, -12)
     self.subtitle = W.Label(frame, "Pick something from the list.", 10, T.muted)
     self.subtitle:SetPoint("TOPLEFT", 12, -32)
     self.subtitle:SetPoint("TOPRIGHT", -12, -32)
     self.subtitle:SetWordWrap(false)
-    self.favorite = W.Button(frame, "Favorite", 68, function()
+    self.lists = W.Button(frame, "Add to list", 84, function(button)
+        if self.entry then handlers.onLists(self.entry, button) end
+    end, 20)
+    self.lists:SetPoint("TOPRIGHT", -10, -10)
+    W.Tip(self.lists, "Lists", "Add this to any of your lists, or start a new one.")
+    self.lists:Disable()
+    self.favorite = W.Button(frame, "*", 22, function()
         if self.entry then handlers.onFavorite(self.entry) end
     end, 20)
-    self.favorite:SetPoint("TOPRIGHT", -10, -10)
+    self.favorite:SetPoint("RIGHT", self.lists, "LEFT", -4, 0)
+    W.Tip(self.favorite, "Favorite", "Add to or remove from Favorites. Right-click in the results does the same.")
     self.favorite:Disable()
     self.previewArea = CreateFrame("Frame", nil, frame)
     self.previewArea:SetPoint("TOPLEFT", 12, -52)
@@ -84,6 +92,7 @@ function Inspector:Show(entry)
     if not entry then
         self.title:SetText("Nothing selected")
         self.subtitle:SetText("Pick something from the list.")
+        self.lists:Disable()
         self.favorite:Disable()
         for _, field in ipairs(self.fields) do field:Hide(); field.caption:Hide() end
         return
@@ -91,21 +100,24 @@ function Inspector:Show(entry)
     self.title:SetText(entry.name)
     self.subtitle:SetText(entry.description
         or (kind.label .. "  /  " .. table.concat(entry.facets, ", ") .. "  /  " .. (entry.origin or "")))
+    self.lists:Enable()
     self.favorite:Enable()
-    self:RefreshFavorite()
+    self:RefreshLists()
     local preview = self:Preview(kind.preview)
     if preview then
         preview.onOptions = function() self:RefreshFields() end
+        preview.onTarget = self.handlers.onTarget
         preview:Show(entry)
     end
     self:RefreshFields()
 end
 
-function Inspector:RefreshFavorite()
+function Inspector:RefreshLists()
     if not self.entry then return end
-    local saved = ML.Catalog:IsFavorite(self.entry)
-    self.favorite:SetLabel(saved and "Saved" or "Favorite")
-    self.favorite:SetActive(saved)
+    local count = #ML.Lists:Of(self.entry.key)
+    self.lists:SetLabel(count == 0 and "Add to list" or count == 1 and "In 1 list" or ("In " .. count .. " lists"))
+    self.lists:SetActive(count > 0)
+    self.favorite:SetActive(ML.Lists:IsFavorite(self.entry.key))
 end
 
 function Inspector:Layout()

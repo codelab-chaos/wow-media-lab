@@ -15,7 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TOC = ROOT / "MediaLab" / "MediaLab.toc"
-TOCS = [TOC, ROOT / "MediaLab_Export" / "MediaLab_Export.toc", ROOT / "MediaLab_Icons" / "MediaLab_Icons.toc"]
+TOCS = [TOC, ROOT / "MediaLab_Export" / "MediaLab_Export.toc", ROOT / "MediaLab_Icons" / "MediaLab_Icons.toc",
+        ROOT / "MediaLab_Models" / "MediaLab_Models.toc"]
 README = ROOT / "README.md"
 CATALOG_DOC = ROOT / "docs" / "addon-dev.md"  # quotes the catalog counts
 # A wow-ui-source checkout: WOW_UI_SOURCE, or ../../hub/wow-ui-source.
