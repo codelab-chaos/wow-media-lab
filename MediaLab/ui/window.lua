@@ -159,7 +159,14 @@ function UI:RenderFacets()
     self.facetHeading:SetText(onLists and "LISTS" or "FILTER")
     self:RenderListActions(onLists and ML.Lists:FromFacet(active))
     local items = {{name = "All", label = onLists and "All saved" or "All", count = C:TabCount(self.tabId)}}
-    for _, facet in ipairs(facets) do items[#items + 1] = facet end
+    local group
+    for _, facet in ipairs(facets) do
+        local nextGroup = not onLists and C.FacetGroup(facet.name) or nil
+        if nextGroup and nextGroup ~= group then items[#items + 1] = {heading = nextGroup:upper()} end
+        group = nextGroup or group
+        items[#items + 1] = {name = facet.name, label = onLists and facet.label or C.FacetLabel(facet.name),
+            count = facet.count}
+    end
     local visible = math.max(1, math.floor(self.facetList:GetHeight() / FACET_ROW))
     self.facetOffset = W.Clamp(self.facetOffset or 0, 0, math.max(0, #items - visible))
     for index = 1, visible do
@@ -170,10 +177,11 @@ function UI:RenderFacets()
             item:SetPoint("TOPLEFT", 0, -(index - 1) * FACET_ROW)
             item:SetPoint("TOPRIGHT", 0, -(index - 1) * FACET_ROW)
             item.facet = data.name ~= "All" and data.name or nil
-            local selected = item.facet == active
-            item.name:SetText(data.label or data.name)
-            item.name:SetTextColor(unpack(selected and T.accent or T.text))
-            item.count:SetText(tostring(data.count))
+            local selected = not data.heading and item.facet == active
+            item:EnableMouse(not data.heading)
+            item.name:SetText(data.heading or data.label or data.name)
+            item.name:SetTextColor(unpack(data.heading and T.muted or selected and T.accent or T.text))
+            item.count:SetText(data.heading and "" or tostring(data.count))
             item.marker:SetShown(selected)
         end
     end

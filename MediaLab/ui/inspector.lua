@@ -102,7 +102,7 @@ function Inspector:Show(entry)
     end
     self.title:SetText(entry.name)
     self.subtitle:SetText(entry.description
-        or (kind.label .. "  /  " .. table.concat(entry.facets, ", ") .. "  /  " .. (entry.origin or "")))
+        or (kind.label .. "  /  " .. ML.Catalog.FacetLabels(entry.facets) .. "  /  " .. (entry.origin or "")))
     self.lists:Enable()
     self.favorite:Enable()
     self:RefreshLists()

@@ -146,6 +146,17 @@ function Catalog:ListFacets()
 end
 
 -- Facet counts for a tab, most common first; "Common" always leads when present.
+-- Grouped facets are stored as "Group: Value" so groups sort and never clash
+-- (a type and a family can share a name); people see only the value, under a
+-- group heading.
+function Catalog.FacetGroup(facet) return facet:match("^([^:]+): ") end
+function Catalog.FacetLabel(facet) return facet:match("^[^:]+: (.+)$") or facet end
+function Catalog.FacetLabels(facets)
+    local labels = {}
+    for index, facet in ipairs(facets) do labels[index] = Catalog.FacetLabel(facet) end
+    return table.concat(labels, ", ")
+end
+
 function Catalog:Facets(tabId)
     if tabId == ML.ListsTab then return self:ListFacets() end
     local counts, order = {}, {}

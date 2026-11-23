@@ -164,7 +164,7 @@ local function onCellEnter(cell)
     if entry.id and entry.id ~= entry.value then GameTooltip:AddLine("ID " .. entry.id, 0.85, 0.88, 0.93) end
     if entry.description then GameTooltip:AddLine(entry.description, 1, 1, 1, true) end
     if entry.tags then GameTooltip:AddLine(entry.tags, 0.62, 0.78, 0.91, true) end
-    GameTooltip:AddLine(table.concat(entry.facets, ", "), unpack(T.muted))
+    GameTooltip:AddLine(ML.Catalog.FacetLabels(entry.facets), unpack(T.muted))
     GameTooltip:AddLine("Click to inspect  /  Right-click to " .. (ML.Lists:IsFavorite(entry.key) and "unfavorite" or "favorite"),
         0.6, 0.6, 0.6)
     GameTooltip:Show()
@@ -229,7 +229,7 @@ local function detailText(entry, mixed)
     if mixed then return ML.KindById[entry.kind].label end
     if ML.KindById[entry.kind].detail == "id" then return "ID " .. tostring(entry.id) end
     if entry.kind == "control" then return entry.tag or "" end
-    return entry.facets[1] or ""
+    return entry.facets[1] and ML.Catalog.FacetLabel(entry.facets[1]) or ""
 end
 
 function Browser:RenderGrid(first, size)

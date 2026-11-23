@@ -722,4 +722,23 @@ test("the preview column widens by dragging its edge, within bounds, and remembe
     equal(ML.db.view.inspectorWidth, nil, "the default is not saved")
 end)
 
+test("grouped filters show bare names under a heading", function()
+    local ML = open()
+    ML.UI:SelectTab("model")
+    local rows = {}
+    for _, item in ipairs(ML.UI.facetButtons) do
+        if item.shown then rows[#rows + 1] = {text = item.name:GetText(), facet = item.facet, heading = item.mouse == false} end
+    end
+    local heading, murloc
+    for index, row in ipairs(rows) do
+        if row.text == "FAMILY" then heading = index end
+        if row.text == "Murloc" then murloc = row end
+    end
+    assert(heading and rows[heading].heading, "a FAMILY heading that cannot be clicked")
+    assert(murloc and murloc.facet == "Family: Murloc", "Murloc filters by its family")
+    for _, row in ipairs(rows) do assert(not row.text:find("Family:", 1, true), row.text) end
+    local blue = find(ML, "model", 1693)
+    equal(ML.Catalog.FacetLabels(blue.facets), "Creature, Murloc")
+end)
+
 print(string.format("%d integration tests passed (mocked WoW APIs; in-game rendering needs a client smoke test).", passed))

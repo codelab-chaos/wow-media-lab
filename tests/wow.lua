@@ -141,6 +141,7 @@ function methods:SetFacing(value) self.facing = value end
 function methods:SetCamDistanceScale(value) self.camDistance = value end
 function methods:SetAnimation(value) self.animationId = value end
 function methods:HasAnimation(id) return id == 0 or id == 4 or id == 1 end
+function methods:EnableMouse(value) self.mouse = value and true or false end
 
 for _, name in ipairs({
     "SetFont", "SetTextColor", "SetJustifyH", "SetJustifyV", "SetWordWrap", "SetBackdropColor",
