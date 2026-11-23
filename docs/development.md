@@ -89,7 +89,7 @@ and packages the zip. It never commits or deploys.
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
 Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
 every tab, search and filter, switch Textures between **Files** and
-**Atlases**, zoom and pan both, play and stop a sound, change its channel,
+**Atlases**, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom), zoom and pan both, play and stop a sound, change its channel,
 build `UIPanelButtonTemplate` from Controls > Common, turn and zoom a model
 and cycle its animations, target an NPC and press **Target**, save something
 to two lists. Shift+click and Ctrl+click a few entries on two tabs, check the

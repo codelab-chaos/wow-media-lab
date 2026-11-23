@@ -13,13 +13,20 @@ local GAP, ROW = 6, 22
 local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
 -- handlers: onSelect(entry, modifiers) ({ctrl, shift}), onMenu(entry, cell)
--- (right-click), onPlay(entry), onChanged(), isSelected(entry)
+-- (right-click), onPlay(entry), onChanged(), isSelected(entry), onZoom(delta)
+-- (Ctrl+wheel on a grid)
 function Browser.New(parent, handlers)
     local self = setmetatable({handlers = handlers, offset = 0, results = {}, cells = {}, rows = {}}, Browser)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetClipsChildren(true)
     frame:EnableMouseWheel(true)
-    frame:SetScript("OnMouseWheel", function(_, delta) self:Scroll(-delta * self:Step()) end)
+    -- Ctrl+wheel zooms a thumbnail grid; the wheel alone scrolls.
+    frame:SetScript("OnMouseWheel", function(_, delta)
+        if IsControlKeyDown() and self.layout and self.layout.mode == "grid" and self.handlers.onZoom then
+            return self.handlers.onZoom(delta)
+        end
+        self:Scroll(-delta * self:Step())
+    end)
     frame:SetScript("OnSizeChanged", function() self:Render() end)
     self.frame = frame
     self.empty = W.Label(frame, "", 12, T.muted)
@@ -115,6 +122,16 @@ function Browser:SetSelected(key)
 end
 
 function Browser:ResetScroll() self.offset = 0 end
+
+-- A new thumbnail scale that keeps the first visible entry on screen.
+function Browser:SetScale(scale)
+    if not self.layout then return end
+    local first = self.offset
+    self.layout.scale = scale
+    local columns = self:Geometry()
+    self.offset = math.floor(first / columns) * columns
+    self:Render()
+end
 
 function Browser:Geometry()
     -- The scrollbar's lane is always reserved so the layout never jumps.

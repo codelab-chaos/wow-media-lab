@@ -64,8 +64,9 @@ ML.CopyFormats = {
 -- Build order: small, fast lists first so their tabs are usable immediately.
 ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
 
--- Grid thumbnail zoom steps (multipliers of a kind's base cell size).
-ML.ThumbScales = {0.75, 1, 1.5, 2}
+-- Grid thumbnail zoom, per tab: a multiple of the kind's base cell size, from
+-- min to max; each wheel notch or - / + press multiplies or divides by step.
+ML.ThumbZoom = {min = 0.5, max = 4, step = 1.15}
 
 -- Preview zoom limits for image previews.
 ML.Zoom = {min = 0.125, max = 16, step = 1.25}

@@ -62,6 +62,10 @@ full name.
 Search by what an icon shows (sword, potion, wolf) or by color (blue, gold).
 Filter by subject or color in the left column. Hover an icon to read what it
 shows.
+Hold Ctrl and scroll over the grid to make the thumbnails bigger or smaller.
+The **-**, **100%** and **+** buttons above the results do the same (click
+the percentage to reset it). Icons, texture files and atlases each remember
+their own zoom.
 
 ### Textures
 

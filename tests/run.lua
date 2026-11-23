@@ -210,7 +210,7 @@ end)
 test("saved variables of any shape load and the whole lab still works", function()
     -- A hand-edited or foreign MediaLabDB: every setting gets each wrong type.
     local junk = {42, "junk", true, {1, 2, {x = 1}}, -1}
-    local viewKeys = {"tab", "thumb", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
+    local viewKeys = {"tab", "thumb", "thumbScales", "canvas", "channel", "copyFormat", "sample", "autoplay", "modelAnimation",
         "inspectorWidth", "facetWidth", "facets", "views"}
     for _, value in ipairs(junk) do
         local view = {facets = {icon = value, [5] = value}, views = {texture = value, [value] = "atlas"}}
@@ -238,7 +238,7 @@ test("saved variables of any shape load and the whole lab still works", function
                 ML.ListMenu.Hide()
             end
         end
-        ML.UI.thumbButton.scripts.OnClick(ML.UI.thumbButton)
+        ML.UI.zoomControl.into.scripts.OnClick(ML.UI.zoomControl.into)
         ML.UI:SelectTab("texture")
         local image = ML.UI.inspector.previews.image
         if image then image.canvasButton.scripts.OnClick(image.canvasButton) end
@@ -639,13 +639,32 @@ test("maximize fills the screen and restores the size and place it had", functio
     equal(ML.UI.frame:GetWidth(), 1120)
 end)
 
-test("grid thumbnails zoom and paging stays in range", function()
+test("grid thumbnails zoom smoothly, per tab, and paging stays in range", function()
     local ML = open()
     ML.UI:SelectTab("texture")
-    local browser = ML.UI.browser
+    local browser, control = ML.UI.browser, ML.UI.zoomControl
+    assert(control.shown, "grid tabs show the zoom control")
+    equal(control.label.text:GetText(), "100%")
     local small = browser:PageSize()
-    ML.UI.thumbButton.scripts.OnClick()
+    control.into.scripts.OnClick(control.into)
     assert(browser:PageSize() < small, "bigger thumbnails show fewer per page")
+    equal(control.label.text:GetText(), "115%")
+    -- Ctrl+wheel over the grid zooms; the wheel alone scrolls.
+    Mock.ctrl = true
+    browser.frame.scripts.OnMouseWheel(browser.frame, 1)
+    Mock.ctrl = false
+    equal(control.label.text:GetText(), "132%")
+    for _ = 1, 40 do control.into.scripts.OnClick(control.into) end
+    equal(control.label.text:GetText(), "400%", "stops at the largest")
+    control.label.scripts.OnClick(control.label)
+    equal(control.label.text:GetText(), "100%", "the percentage resets it")
+    equal(ML.db.view.thumbScales.texture, nil, "100% is not saved")
+    for _ = 1, 3 do control.out.scripts.OnClick(control.out) end
+    ML.UI:SelectTab("icon")
+    equal(control.label.text:GetText(), "100%", "each tab keeps its own zoom")
+    ML.UI:SelectTab("sound")
+    assert(not control.shown, "lists have no zoom")
+    ML.UI:SelectTab("texture")
     browser:Page(1)
     local first = browser:Range()
     assert(first > 1)
@@ -654,6 +673,11 @@ test("grid thumbnails zoom and paging stays in range", function()
     equal(last, count)
     browser:Page(-1000)
     equal((browser:Range()), 1)
+    local saved = ML.db
+    ML = Mock.load(saved)
+    SlashCmdList.MEDIALAB(""); Mock.flush()
+    ML.UI:SelectTab("texture")
+    equal(ML.UI.zoomControl.label.text:GetText(), "66%", "zoom survives a reload")
 end)
 
 test("icon metadata names, tags, describes and groups icons, merging paths into file IDs", function()

@@ -17,6 +17,7 @@ ML.Help = {
         icon = {
             "Search by what an icon shows (sword, potion, wolf) or by color (blue, gold).",
             "Filter by subject or color in the left column.",
+            "Hold Ctrl and scroll over the grid to make the thumbnails bigger or smaller.",
         },
         texture = {
             "Files are the game's images; Atlases are the pieces its interface is drawn from.",

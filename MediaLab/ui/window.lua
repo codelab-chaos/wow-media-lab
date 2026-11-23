@@ -219,7 +219,7 @@ end
 ---------------------------------------------------------------------------
 function UI:Layout()
     local tab = self:Tab(self.tabId)
-    local thumb = ML.ThumbScales[view().thumb or 2] or 1
+    local thumb = self:ThumbScale()
     local emptyText
     if tab.id == ML.ListsTab then
         local list = ML.Lists:FromFacet(view().facets[tab.id])
@@ -241,9 +241,9 @@ function UI:Refresh()
     local facet = view().facets[self.tabId]
     self.results = C:Filter(self.tabId, facet, self.query)
     local tab = self:Tab(self.tabId)
-    self.thumbButton:SetShown(tab.layout == "grid")
+    self.zoomControl:SetShown(tab.layout == "grid")
+    self.zoomControl.label:SetLabel(math.floor(self:ThumbScale() * 100 + 0.5) .. "%")
     self.copyButton:SetShown(ML.db.developer and true or false)
-    self.thumbButton:SetLabel("Size: " .. math.floor((ML.ThumbScales[view().thumb or 2] or 1) * 100) .. "%")
     local current = ML.TabButtonOf(self.tabId)
     for _, button in ipairs(self.tabButtons) do
         local count = 0
@@ -542,16 +542,49 @@ function UI:CreateToolbar(body)
             end
         end
     end
-    self.thumbButton = W.Button(body, "Size", 86, function()
-        view().thumb = (view().thumb or 2) % #ML.ThumbScales + 1
-        self:Refresh()
-    end, 24)
-    W.Tip(self.thumbButton, "Thumbnail size", "Cycle the grid's thumbnail zoom.")
-    self.toolbarItems[#self.toolbarItems + 1] = self.thumbButton
+    self:CreateZoomControl(body)
+    self.toolbarItems[#self.toolbarItems + 1] = self.zoomControl
     self.copyButton = W.Button(body, "Copy", 48, function() self:CopyResults() end, 24)
     W.Tip(self.copyButton, "Copy results", "The current results (a list, on the Lists tab) as a Lua table or CSV, first "
         .. ML.Export.CSV_LIMIT .. ".")
     self.toolbarItems[#self.toolbarItems + 1] = self.copyButton
+end
+
+---------------------------------------------------------------------------
+-- Thumbnail zoom: Ctrl+wheel over a grid, or - / 100% / + in the toolbar
+---------------------------------------------------------------------------
+function UI:ThumbScale(tabId)
+    local scales = view().thumbScales
+    return scales and scales[tabId or self.tabId] or 1
+end
+
+function UI:SetThumbScale(scale)
+    local zoom = ML.ThumbZoom
+    scale = W.Clamp(scale, zoom.min, zoom.max)
+    if math.abs(scale - 1) < 0.02 then scale = 1 end -- snap to 100% on the way through
+    view().thumbScales = view().thumbScales or {}
+    view().thumbScales[self.tabId] = scale ~= 1 and scale or nil
+    self.browser:SetScale(scale)
+    self.zoomControl.label:SetLabel(math.floor(scale * 100 + 0.5) .. "%")
+end
+
+function UI:ZoomBy(steps)
+    self:SetThumbScale(self:ThumbScale() * ML.ThumbZoom.step ^ steps)
+end
+
+function UI:CreateZoomControl(body)
+    local control = CreateFrame("Frame", nil, body)
+    control:SetSize(22 + 4 + 50 + 4 + 22, 24)
+    control.out = W.Button(control, "-", 22, function() self:ZoomBy(-1) end, 24)
+    control.out:SetPoint("LEFT")
+    control.label = W.Button(control, "100%", 50, function() self:SetThumbScale(1) end, 24)
+    control.label:SetPoint("LEFT", control.out, "RIGHT", 4, 0)
+    control.into = W.Button(control, "+", 22, function() self:ZoomBy(1) end, 24)
+    control.into:SetPoint("LEFT", control.label, "RIGHT", 4, 0)
+    W.Tip(control.out, "Smaller thumbnails", "Or hold Ctrl and scroll down over the grid.")
+    W.Tip(control.label, "Thumbnail zoom", "Click to go back to 100%. Hold Ctrl and scroll over the grid to zoom.")
+    W.Tip(control.into, "Bigger thumbnails", "Or hold Ctrl and scroll up over the grid.")
+    self.zoomControl = control
 end
 
 -- What the results are called in the Copy dialog and its Lua table: the
@@ -798,6 +831,7 @@ function UI:Create()
         onSelect = function(entry, modifiers) self:Select(entry, modifiers) end,
         onMenu = function(entry) self:ContextMenu(entry) end,
         isSelected = function(entry) return ML.Selection:Count() > 1 and ML.Selection:Has(entry) end,
+        onZoom = function(delta) self:ZoomBy(delta > 0 and 1 or -1) end,
         onPlay = function(entry)
             self:Select(entry)
             local preview = self.inspector:Preview("sound")

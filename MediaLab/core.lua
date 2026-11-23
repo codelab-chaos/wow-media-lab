@@ -22,7 +22,7 @@ end
 -- the default applies. Settings not listed here are left alone. Built when
 -- first needed: the allowed values come from kinds.lua, which loads later.
 local function viewRules() return {
-    tab = {type = "string"}, thumb = {type = "number"}, sample = {type = "string"},
+    tab = {type = "string"}, sample = {type = "string"}, thumbScales = {type = "table", numbers = true},
     autoplay = {type = "boolean"}, modelAnimation = {type = "number"},
     inspectorWidth = {type = "number"}, facetWidth = {type = "number"},
     canvas = {type = "string", values = ids(ML.Canvases, "id")},
@@ -37,13 +37,17 @@ local function cleanView(view)
         local value = view[key]
         if value ~= nil and (type(value) ~= rule.type or (rule.values and not rule.values[value])) then
             view[key] = nil
-        elseif rule.strings and value then
+        elseif (rule.strings or rule.numbers) and value then
+            local itemType = rule.strings and "string" or "number"
             for name, item in pairs(value) do
-                if type(name) ~= "string" or type(item) ~= "string" then value[name] = nil end
+                if type(name) ~= "string" or type(item) ~= itemType or item ~= item then value[name] = nil end
             end
         end
     end
-    if type(view.thumb) == "number" and not ML.ThumbScales[view.thumb] then view.thumb = nil end
+    view.thumb = nil -- the old four-step size, replaced by thumbScales
+    for tab, scale in pairs(view.thumbScales or {}) do
+        view.thumbScales[tab] = math.max(ML.ThumbZoom.min, math.min(ML.ThumbZoom.max, scale))
+    end
     return view
 end
 
