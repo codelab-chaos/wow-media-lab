@@ -1,4 +1,4 @@
-{"kind": "models", "source": {"client": "1.60.1.71037", "database": "wow-data.sqlite", "schema_version": 1, "names": "wowdev/wow-listfile", "columns": "wowdev/WoWDBDefs"}, "count": 14192, "items": [
+{"kind": "models", "source": {"client": "1.60.1.71037", "database": "codex-of-azeroth", "schema_version": 1, "names": "wowdev/wow-listfile", "columns": "wowdev/WoWDBDefs"}, "count": 14192, "items": [
 {"id":13,"name":"hufmcitizenlow","type":"Creature","family":"hufmcitizenlow","skins":[],"model":124437},
 {"id":14,"name":"hufmcitizenmid","type":"Creature","family":"hufmcitizenmid","skins":[],"model":124440},
 {"id":15,"name":"hufmmerchant","type":"Creature","family":"hufmmerchant","skins":[],"model":124442},

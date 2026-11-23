@@ -93,8 +93,8 @@ One file per kind, each with its source version and commit:
 | `icons-meta.json` | `{"id": 132089, "name": "ability_ambush", "colors": [...], "subject": ..., "tags": [...], "description": ...}` |
 
 It covers what the UI source references, plus the icon metadata and the
-creature models. Releases also ship `MediaLab-data-<version>.sqlite`, the
-[game database](data.md): the models, and what uses each icon. The client's
+creature models. For the game's data itself (spells, items, what uses each
+icon), query the [Codex of Azeroth](https://github.com/codelab-chaos/codex-of-azeroth) database. The client's
 own lists (every icon file ID, atlas sizes and coordinates) can be added with
 the live export below.
 
@@ -161,22 +161,22 @@ python3 -m venv .venv && .venv/bin/pip install pillow
 ```
 
 `names` downloads the listfile into `.cache/` (`--refresh-listfile` after a
-patch). `colors` reads the game's CASC storage directly (`scripts/casc.py`,
-read only). `vision` needs [LM Studio](https://lmstudio.ai) serving a vision
+patch). `colors` reads the game's CASC storage directly, read only, with the
+reader from the [Codex of Azeroth](https://github.com/codelab-chaos/codex-of-azeroth) (cloned next to this repo, or `CODEX_DIR`). `vision` needs [LM Studio](https://lmstudio.ai) serving a vision
 model on the local network (default `qwen/qwen3.5-9b`; `--model`, `--url` or
 `LMSTUDIO_URL` to change). Each stage caches its results in `.cache/icons/`,
 so it can stop and resume.
 
-### Creature models and the game database
+### Creature models
 
 `MediaLab_Models` lists every creature display the client ships (about
 14,000): mobs, humanoid NPCs, objects and effects, named from their model and
 skin files in the community listfile. It is generated, with
-`catalog/models.json`, from the [game database](data.md), which is built from
-the data tables in your local game files:
+`catalog/models.json`, from the [Codex of Azeroth](https://github.com/codelab-chaos/codex-of-azeroth) database, which reads
+the data tables in your local game files. Build the codex, then:
 
 ```sh
-.venv/bin/python scripts/game-data.py   # seconds
+python3 scripts/models-data.py   # seconds
 ```
 
 ### Live client lists

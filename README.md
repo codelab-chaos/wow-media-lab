@@ -23,8 +23,7 @@ WoW Media Lab targets **WoW Forever**, interface **16001**. Version **0.1.0**.
 - **Keep what you pick in lists.** Make lists for each addon or screen; one
   entry can be in any number of them. Copy a whole list as one Lua table.
 - **Take it outside the game.** Copy any results as Lua or CSV, or use the
-  [JSON catalog](docs/addon-dev.md#the-catalog-outside-the-game) and the
-  [game database](docs/data.md) (models, and what uses each icon) that ship
+  [JSON catalog](docs/addon-dev.md#the-catalog-outside-the-game) that ships
   with each release.
 
 ## Install
@@ -121,8 +120,9 @@ write to the clipboard).
   and preview settings are saved.
 
 More for addon developers (the copy fields, the JSON catalog and how it is
-built) is in [docs/addon-dev.md](docs/addon-dev.md), and the game database
-in [docs/data.md](docs/data.md). Working on WoW Media Lab
+built) is in [docs/addon-dev.md](docs/addon-dev.md). The game's data (models,
+spells, items, what uses each icon) comes from the sibling
+[Codex of Azeroth](https://github.com/codelab-chaos/codex-of-azeroth) project. Working on WoW Media Lab
 itself is in [docs/development.md](docs/development.md).
 
 ## License

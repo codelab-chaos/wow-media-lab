@@ -86,8 +86,8 @@ class Appender:
 
 def open_store():
     sys.path.insert(0, str(ROOT / "scripts"))
-    from casc import Casc, game_root
-    return Casc(game_root(ROOT))
+    import codex_source
+    return codex_source.store()
 
 
 def load_names():
