@@ -48,6 +48,11 @@ The first time it opens each session, the lab counts its libraries in (the
 sounds, models and icons take a moment); press **Browse now** to start on the
 tabs that are already done.
 
+Never use a tab? Press the **gear** in the title bar (or find **WoW Media
+Lab** in the game's Options, under AddOns) and untick it: it no longer loads,
+so the lab opens faster. Everything is on to start with. A tab you turned off
+says so, and **Load now** brings it in for that session.
+
 Drag the title bar to move the window and the corner to resize it. Want a
 bigger preview, or longer filter names? Drag the edge of the preview or the
 filter column (double-click an edge to reset it). Hover a filter to see its
@@ -142,6 +147,7 @@ Something can be in as many lists as you like.
 | `/mlab target` | Finds your target's model and remembers its name |
 | `/mlab reset` | Puts the window back in the middle at its normal size |
 | `/mlab dock <edge>` | Where it minimizes to: left, right, top or bottom |
+| `/mlab options` | Picks what loads when the lab opens |
 | `/mlab dev` | Turns developer mode on or off |
 | `/mlab help` | Lists these in chat |
 

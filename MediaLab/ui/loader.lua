@@ -83,20 +83,28 @@ function Loader.Line(kindId)
     return lines[math.floor(Loader.clock / 2.2) % #lines + 1]
 end
 
--- counts: {kind = entries so far}; current: the kind being indexed (nil when done).
-function Loader.Render(counts, current, done)
+-- counts: {kind = entries so far}; current: the kind being indexed (nil when
+-- done); done: {kind = true} once in; disabled: {kind = true} for kinds turned
+-- off in Options and not loaded, which say Disabled instead of a bar.
+function Loader.Render(counts, current, done, disabled)
     local frame = Loader.frame
     if not frame then return end
     local width, total = frame.rows[1]:GetWidth() or 0, 0
     for _, row in ipairs(frame.rows) do
         local count, expected = counts[row.kind] or 0, ML.db.counts and ML.db.counts[row.kind]
         total = total + count
-        local finished = done[row.kind]
-        local fraction = finished and 1 or (expected and expected > 0 and math.min(0.98, count / expected)) or nil
+        local finished, off = done[row.kind], disabled and disabled[row.kind]
+        local fraction = finished and 1
+            or (not off and expected and expected > 0 and math.min(0.98, count / expected)) or nil
         row.fraction = fraction
-        row.count:SetText(finished and (CHECK .. " " .. format(count))
-            or expected and (format(count) .. " / " .. format(expected)) or format(count))
-        row.name:SetTextColor(unpack((finished or row.kind == current) and T.accent or T.text))
+        row.track:SetShown(not off)
+        if off then
+            row.count:SetText("Disabled")
+        else
+            row.count:SetText(finished and (CHECK .. " " .. format(count))
+                or expected and (format(count) .. " / " .. format(expected)) or format(count))
+        end
+        row.name:SetTextColor(unpack((finished or row.kind == current) and T.accent or off and T.muted or T.text))
         if fraction then
             row.bar:SetWidth(math.max(1, width * fraction))
             row.bar:SetAlpha(1)

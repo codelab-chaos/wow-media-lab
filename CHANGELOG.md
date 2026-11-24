@@ -47,6 +47,10 @@ sound in the game and a proper sound player.
   on the tabs that are ready.
 - **Help.** A welcome card, and **?** in the title bar for tips about the tab
   you are on.
+- **Options.** The gear in the title bar, `/mlab options`, or **WoW Media
+  Lab** in the game's Options under AddOns: untick a tab you never use and it
+  no longer loads, so the lab opens faster. The loading card shows it as
+  Disabled, and the tab offers **Load now** for the session.
 
 ### Changed
 

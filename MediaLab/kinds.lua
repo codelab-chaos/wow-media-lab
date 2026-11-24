@@ -87,6 +87,10 @@ ML.LoaderLines = {
 -- Build order: small, fast lists first so their tabs are usable immediately.
 ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
 
+-- A kind loads when the lab opens unless it is turned off in Options
+-- (ML.db.disabled). Everything is on by default.
+function ML.IsEnabled(kind) return not (ML.db and ML.db.disabled[kind]) end
+
 -- Image preview repeats, to check that tiling art lines up: copies across
 -- and down. Cycled by the preview's Repeat button.
 ML.RepeatModes = {

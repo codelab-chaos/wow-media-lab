@@ -40,6 +40,8 @@ Code layout (one job per file):
 | `ui/prompt.lua` | The one-line name prompt |
 | `ui/listmenu.lua` | The lists menu (right-click and Add to list), for one entry or a selection |
 | `ui/helppanel.lua` | The welcome and tips card |
+| `ui/options.lua` | The Options card: what loads when the lab opens (`ML.db.disabled`) |
+| `ui/gamesettings.lua` | The lab's page in the game's Options > AddOns, opening the Options card |
 | `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |
 | `ui/rangeslider.lua` | The two-handle size range that snaps to popular sizes |
 | `ui/loader.lua` | The loading card: a bar and count per library while the catalog fills |
@@ -121,6 +123,9 @@ filter and preview columns wider, maximize and restore (button and
 title-bar double-click), minimize to the dock, drag the dock icon to another
 edge and click it, resize, `/reload` and confirm the lists, the NPC name, developer mode,
 placement, the preview width, and that the welcome card stays away.
+Options: find **WoW Media Lab** under the game's Options > AddOns and press
+its button; untick Models, `/reload`, and check the card says Disabled, the
+Models tab offers Load now, and Load now brings them in.
 The tests cannot verify the game's renderer or that every listed image
 exists, so run this before each release.
 

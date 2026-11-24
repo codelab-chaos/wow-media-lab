@@ -232,6 +232,8 @@ function UI:Layout()
             or (ML.Lists.IsBuiltIn(list) and "Right-click anything in another tab to favorite it.")
             or (list and (list.name .. " is empty. Use Add to list in the inspector to fill it."))
             or "Right-click anything to favorite it, or use Add to list in the inspector."
+    elseif self:IsOff(tab.id) then
+        emptyText = "" -- the turned-off note says it
     elseif not C.indexed[tab.id] then
         emptyText = "Indexing " .. tab.noun .. "..."
     else
@@ -260,8 +262,10 @@ function UI:Refresh()
     for _, button in ipairs(self.tabButtons) do
         local count = 0
         for _, kind in ipairs(button.tab.kinds) do count = count + C:TabCount(kind) end
+        local off = true
+        for _, kind in ipairs(button.tab.kinds) do off = off and self:IsOff(kind) end
         if button.tab.id == ML.ListsTab then count = C:ListsBadge() end
-        button:SetLabel(button.tab.label .. "  " .. count)
+        button:SetLabel(off and button.tab.label or (button.tab.label .. "  " .. count))
         button:SetActive(button.tab == current)
     end
     for _, button in ipairs(self.viewButtons) do
@@ -272,6 +276,7 @@ function UI:Refresh()
     local selected = self.selected[self.tabId]
     self.browser:SetData(self.results, self:Layout(), selected and selected.key)
     self:RenderFacets()
+    self:RenderOffNote()
 end
 
 function UI:UpdatePager()
@@ -408,6 +413,7 @@ function UI:FromTarget()
             if preview and self.tabId == "model" then preview:SetStatus(text) end
         end
         if not npc then return report(detail) end
+        if self:IsOff("model") then return report("Models are turned off. Turn them on in Options (/mlab options).") end
         if not C.indexed.model then return report("Models are still indexing. Try again when the lab says Ready.") end
         local label = npc.name .. " (creature " .. detail .. ")"
         local entry = npc.display and C.byKey[C:Key("model", npc.display)]
@@ -440,12 +446,13 @@ end
 -- The loading card shows each kind's count, from the catalog, as it grows.
 function UI:RenderLoader()
     if not ML.Loader.IsShown() then return end
-    local counts, done = {}, {}
+    local counts, done, disabled = {}, {}, {}
     for _, kind in ipairs(ML.IndexOrder) do
         counts[kind] = C:Count(kind)
         done[kind] = C.indexed[kind] == true
+        disabled[kind] = self:IsOff(kind)
     end
-    ML.Loader.Render(counts, C.current, done)
+    ML.Loader.Render(counts, C.current, done, disabled)
 end
 
 function UI:OnIndexed(kind)
@@ -505,8 +512,16 @@ function UI:CreateTitleBar(frame)
     self.helpButton = W.Button(bar, "?", 22, function() self:ToggleHelp() end, 20)
     self.helpButton:SetPoint("RIGHT", self.minimize, "LEFT", -4, 0)
     W.Tip(self.helpButton, "Help", "Tips for the tab you are on.")
+    self.optionsButton = W.Button(bar, "", 22, function() self:ToggleOptions() end, 20)
+    self.optionsButton:SetPoint("RIGHT", self.helpButton, "LEFT", -4, 0)
+    local gear = self.optionsButton:CreateTexture(nil, "ARTWORK")
+    gear:SetTexture([[Interface\Icons\INV_Misc_Gear_01]])
+    gear:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    gear:SetSize(14, 14)
+    gear:SetPoint("CENTER")
+    W.Tip(self.optionsButton, "Options", "Pick what loads when the lab opens.")
     self.devButton = W.Button(bar, "Dev", 40, function() self:SetDeveloper(not ML.db.developer) end, 20)
-    self.devButton:SetPoint("RIGHT", self.helpButton, "LEFT", -4, 0)
+    self.devButton:SetPoint("RIGHT", self.optionsButton, "LEFT", -4, 0)
     W.Tip(self.devButton, "Developer mode", "Show the code behind each entry, and Copy. For addon makers.")
 end
 
@@ -524,6 +539,7 @@ function UI:SetDeveloper(on)
 end
 
 function UI:ShowHelp()
+    if ML.Options.IsShown() then self:HideOptions() end
     ML.HelpPanel.Show(self.tabId, ML.db.developer)
     self.helpButton:SetActive(true)
 end
@@ -536,6 +552,70 @@ end
 
 function UI:ToggleHelp()
     if ML.HelpPanel.IsShown() then self:HideHelp() else self:ShowHelp() end
+end
+
+---------------------------------------------------------------------------
+-- Options: what loads when the lab opens
+---------------------------------------------------------------------------
+function UI:ShowOptions()
+    if ML.HelpPanel.IsShown() then self:HideHelp() end
+    ML.Options.Show()
+    self.optionsButton:SetActive(true)
+end
+
+function UI:HideOptions()
+    ML.Options.Hide()
+    self.optionsButton:SetActive(false)
+end
+
+function UI:ToggleOptions()
+    if ML.Options.IsShown() then self:HideOptions() else self:ShowOptions() end
+end
+
+-- A kind turned off in Options that this session has not loaded.
+function UI:IsOff(kind)
+    return ML.KindById[kind] ~= nil and not ML.IsEnabled(kind) and not C.indexed[kind] and not C:IsQueued(kind)
+end
+
+-- Loads one kind now, with the loading card: Load now on a disabled tab, or
+-- a kind just turned on in Options.
+function UI:LoadKind(kind)
+    if C.indexed[kind] then return end
+    C:Queue(kind)
+    ML.Loader.Show()
+    self:RenderLoader()
+    self:Refresh()
+end
+
+-- Over the results of a tab turned off in Options: what to do about it.
+function UI:CreateOffNote()
+    local note = CreateFrame("Frame", nil, self.browser.frame)
+    note:SetSize(320, 90)
+    note:SetPoint("CENTER")
+    note.text = W.Label(note, "", 13, T.text)
+    note.text:SetPoint("TOP")
+    note.hint = W.Label(note, "", 11, T.muted)
+    note.hint:SetPoint("TOP", note.text, "BOTTOM", 0, -6)
+    note.load = W.Button(note, "Load now", 90, function() self:LoadKind(self.tabId) end, 24)
+    note.load:SetPoint("TOPRIGHT", note, "TOP", -4, -46)
+    W.Tip(note.load, "Load now", "Load it for this session. It stays off next time.")
+    note.options = W.Button(note, "Options", 90, function() self:ShowOptions() end, 24)
+    note.options:SetPoint("TOPLEFT", note, "TOP", 4, -46)
+    note:Hide()
+    self.offNote = note
+end
+
+function UI:RenderOffNote()
+    local off = self:IsOff(self.tabId)
+    self.offNote:SetShown(off)
+    if not off then return end
+    local kind = ML.KindById[self.tabId]
+    self.offNote.text:SetText(kind.label .. " are turned off.")
+    self.offNote.hint:SetText("Load them now, or turn them on in Options.")
+end
+
+function UI:OnOptionChanged(kind, on)
+    if on then self:LoadKind(kind) else self:Refresh() end
 end
 
 -- The tab buttons in order, skipping the ones developer mode hides.
@@ -989,6 +1069,8 @@ function UI:Create()
 
     ML.HelpPanel.Create(body, function() self:HideHelp() end)
     ML.Loader.Create(body, function() ML.Loader.Hide() end)
+    ML.Options.Create(body, function(kind, on) self:OnOptionChanged(kind, on) end, function() self:HideOptions() end)
+    self:CreateOffNote()
     self:WireSounds()
 
     frame:SetScript("OnHide", function()

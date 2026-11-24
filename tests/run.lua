@@ -21,10 +21,63 @@ test("manifest loads lazily: no window or indexing until opened", function()
     local ML = Mock.load()
     assert(not ML.UI.frame and not ML.Catalog.started)
     SlashCmdList.MEDIALAB("help")
-    equal(#Mock.messages, 6)
-    assert(Mock.messages[6]:find("github.com/codelab-chaos/wow-media-lab/issues", 1, true), "help ends with the feedback link")
-    SlashCmdList.MEDIALAB("bogus")
     equal(#Mock.messages, 7)
+    assert(Mock.messages[7]:find("github.com/codelab-chaos/wow-media-lab/issues", 1, true), "help ends with the feedback link")
+    SlashCmdList.MEDIALAB("bogus")
+    equal(#Mock.messages, 8)
+end)
+
+test("Options picks what loads at open; a turned-off tab says Disabled and can load now", function()
+    local ML = Mock.load({disabled = {model = true, bogus = true, sound = "yes"}})
+    equal(Mock.settings and Mock.settings.name, "WoW Media Lab", "listed in the game's Options > AddOns")
+    assert(ML.db.disabled.model and not ML.db.disabled.bogus and not ML.db.disabled.sound, "only real kinds, set to true")
+    -- The game's page opens the lab's Options card.
+    local open = Mock.settings.frame.open
+    open.scripts.OnClick(open)
+    assert(ML.UI.frame.shown and ML.Options.IsShown())
+    local C = ML.Catalog
+    local card, model = ML.Loader.frame
+    for _, row in ipairs(card.rows) do if row.kind == "model" then model = row end end
+    ML.UI:RenderLoader()
+    equal(model.count:GetText(), "Disabled", "the same card says Disabled instead of a bar")
+    Mock.flush()
+    assert(C.ready and C.indexed.icon and C.indexed.sound, "everything else loads at open")
+    assert(not C.indexed.model and not Mock.loaded.MediaLab_Models, "Models never load")
+    local models
+    for _, button in ipairs(ML.UI.tabButtons) do if button.tab.id == "model" then models = button end end
+    equal(models.text:GetText(), "Models", "a turned-off tab has no count")
+    Mock.target = {name = "Murloc Raider", guid = "Creature-0-1-2-3-515-0000ABCD", display = 1693, model = 123456}
+    SlashCmdList.MEDIALAB("target")
+    Mock.flush()
+    assert(Mock.messages[#Mock.messages]:find("Models are turned off", 1, true))
+    -- The tab offers Load now, for this session only.
+    ML.UI:SelectTab("model")
+    assert(ML.UI.offNote.shown)
+    equal(ML.UI.offNote.text:GetText(), "Models are turned off.")
+    ML.UI.offNote.load.scripts.OnClick(ML.UI.offNote.load)
+    assert(card.shown and not ML.UI.offNote.shown, "the loading card brings it in")
+    Mock.flush()
+    assert(C.indexed.model and C:Count("model") > 0)
+    assert(ML.db.disabled.model, "still off next time")
+    -- Turning a kind on in Options loads it; turning one off waits for a reload.
+    local function row(kind)
+        for _, item in ipairs(ML.Options.frame.rows) do if item.kind == kind then return item end end
+    end
+    row("model").scripts.OnClick(row("model"))
+    assert(not ML.db.disabled.model)
+    row("sound").scripts.OnClick(row("sound"))
+    assert(ML.db.disabled.sound and C.indexed.sound)
+    assert(ML.Options.frame.footer:GetText():find("/reload", 1, true), "says when it takes effect")
+    -- Next session with Models off and Sounds on: turning Models on loads it now.
+    ML = Mock.load({disabled = {model = true}})
+    SlashCmdList.MEDIALAB("options")
+    Mock.flush()
+    assert(not ML.Catalog.indexed.model)
+    local on
+    for _, item in ipairs(ML.Options.frame.rows) do if item.kind == "model" then on = item end end
+    on.scripts.OnClick(on)
+    Mock.flush()
+    assert(ML.Catalog.indexed.model and not ML.db.disabled.model)
 end)
 
 test("opening indexes every kind in batches and reuses a bounded cell pool", function()

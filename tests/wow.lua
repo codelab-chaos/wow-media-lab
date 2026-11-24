@@ -258,6 +258,12 @@ function Mock.install()
         end,
         GetAddOnMetadata = function(_, field) return field == "Version" and "0.1.0" or nil end,
     }
+    -- The game's Options > AddOns registry.
+    Mock.settings = nil
+    Settings = {
+        RegisterCanvasLayoutCategory = function(frame, name) return {frame = frame, name = name} end,
+        RegisterAddOnCategory = function(category) Mock.settings = category end,
+    }
     MediaLabDB = nil
 end
 

@@ -93,6 +93,12 @@ function ML.Initialize(saved)
         if type(kind) == "string" and type(count) == "number" and count >= 0 and count == count then counts[kind] = count end
     end
     saved.counts = counts
+    -- Kinds turned off in Options: [kind id] = true. Unknown kinds are dropped.
+    local disabled = {}
+    for kind, off in pairs(type(saved.disabled) == "table" and saved.disabled or {}) do
+        if type(kind) == "string" and off == true and (not ML.KindById or ML.KindById[kind]) then disabled[kind] = true end
+    end
+    saved.disabled = disabled
     ML.db = saved
     return saved
 end
@@ -113,7 +119,12 @@ local commands = {
         ML.Print("/mlab target finds your target's model and remembers the NPC's name.")
         ML.Print("/mlab reset restores the window's size and position. /mlab dock <left|right|top|bottom> picks where it minimizes to.")
         ML.Print("/mlab dev turns developer mode on or off: code to copy, /mlab copy and /mlab csv.")
+        ML.Print("/mlab options picks what loads when the lab opens.")
         ML.Print("Ideas or bugs? " .. ML.SITE .. "/issues")
+    end,
+    options = function()
+        ML.UI:Show()
+        ML.UI:ShowOptions()
     end,
     dev = function()
         ML.UI:Show()
@@ -176,4 +187,5 @@ events:SetScript("OnEvent", function(self, _, name)
     SLASH_MEDIALAB1 = "/mlab"
     SLASH_MEDIALAB2 = "/medialab"
     SlashCmdList.MEDIALAB = ML.HandleSlash
+    ML.GameSettings.Register()
 end)
