@@ -20,7 +20,7 @@ Code layout (one job per file):
 | --- | --- |
 | `core.lua` | Saved variables, slash commands, load event |
 | `kinds.lua` | Tab registry and option lists, as data (which tab a kind lives under, developer-only kinds) |
-| `help/` | The help, as data: `info.lua` (the i card), `tabs.lua` (tips per tab), `switches.lua` (every button and switch, for the ? card). The README uses the same words; a test checks it |
+| `help/` | The help, as data: `info.lua` (the i card), `tabs.lua` (tips per tab), `switches.lua` (every button and switch, for the ? card). `docs/guide.md` uses the same words; a test checks it |
 | `data/*.lua` | Generated references and the curated Common lists |
 | `sources.lua` | One provider per kind: client APIs first, generated data as fallback |
 | `catalog.lua` | Entry store, batched indexing, search, filters |

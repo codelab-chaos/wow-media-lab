@@ -57,8 +57,8 @@ It is remembered, so it stays on until you turn it off.
 
 | Tab | Fields |
 | --- | --- |
-| Icons, Textures (Files) | File ID or path, `texture:SetTexture(...)`, `CreateSimpleTextureMarkup(..., 16, 16)`, tags |
-| Textures (Atlases) | Atlas name, `texture:SetAtlas(..., true)`, `CreateAtlasMarkup(..., 16, 16)` |
+| Icons, Textures | File ID or path, `texture:SetTexture(...)`, `CreateSimpleTextureMarkup(..., 16, 16)`, tags |
+| Atlases | Atlas name, `texture:SetAtlas(..., true)`, `CreateAtlasMarkup(..., 16, 16)` |
 | Sounds | `SOUNDKIT` name (when it has one), sound kit ID, `PlaySound(SOUNDKIT... or ID, channel)` |
 | Controls | Template name, a `CreateFrame` call using it, the template it inherits |
 | Fonts | Font object, `fontString:SetFontObject(...)`, `parent:CreateFontString(nil, "OVERLAY", ...)` |
