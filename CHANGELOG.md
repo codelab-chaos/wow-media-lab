@@ -16,6 +16,8 @@ heading and uses it for the release notes.
 
 - Turn a model any way you like: drag across to spin it, up and down to tilt
   it, and Shift+drag to roll it. Reset stands it upright again.
+- The ID column in Models and Sounds is only as wide as the IDs it shows, so
+  names have room.
 
 ## 0.2.0 (2026-11-23)
 

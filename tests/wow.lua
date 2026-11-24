@@ -95,6 +95,8 @@ function methods:Type(value)
     if self.scripts.OnTextChanged then self.scripts.OnTextChanged(self, true) end
 end
 function methods:GetText() return self.text end
+-- About 6 units per character at the lab's small sizes.
+function methods:GetStringWidth() return #(self.text or "") * 6 end
 function methods:GetStringHeight()
     local _, lines = tostring(self.text or ""):gsub("\n", "")
     return (lines + 1) * 14

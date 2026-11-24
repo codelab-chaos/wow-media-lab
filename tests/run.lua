@@ -1019,6 +1019,13 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     preview:NextAnimation(); equal(preview.model.animationId, 4)
     preview:NextAnimation(); equal(preview.model.animationId, 1)
     preview:NextAnimation(); equal(preview.model.animationId, 0)
+    -- The ID column is only as wide as the widest ID shown.
+    ML.UI:SelectTab("model")
+    local widest = 0
+    for _, row in ipairs(ML.UI.browser.rows) do
+        if row.shown then widest = math.max(widest, #row.detail:GetText() * 6) end
+    end
+    equal(ML.UI.browser.detailWidth, widest + 2, "fits the IDs, not a fixed 170")
     -- Drag turns, the wheel zooms within limits, a new selection resets the view.
     Mock.cursorX = 100
     preview.model.scripts.OnMouseDown(preview.model)

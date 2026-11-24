@@ -9,6 +9,9 @@ Browser.__index = Browser
 ML.Browser = Browser
 
 local ROW = 22
+-- The right-hand column (an ID, a type) fits the widest value on the page,
+-- up to DETAIL_MAX, so names get the rest of the row.
+local DETAIL_MIN, DETAIL_MAX = 24, 170
 -- The scrollbar's width plus its gap from the cells.
 local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
@@ -252,7 +255,7 @@ function Browser:Row(index)
     row.detail = W.Label(row, "", 10, T.muted)
     row.detail:SetPoint("RIGHT", -18, 0)
     row.detail:SetJustifyH("RIGHT")
-    row.detail:SetWidth(170)
+    row.detail:SetWidth(DETAIL_MAX)
     row.name:SetPoint("RIGHT", row.detail, "LEFT", -8, 0)
     row.star = W.Label(row, "*", 13, T.accent)
     row.star:SetPoint("RIGHT", -5, 0)
@@ -388,8 +391,23 @@ function Browser:RenderRows(first, size)
             row.star:SetShown(ML.Catalog:IsFavorite(entry))
         end
     end
+    self:FitDetail(size)
     for index = size + 1, #self.rows do self.rows[index]:Hide() end
     for _, cell in ipairs(self.cells) do cell:Hide() end
+end
+
+-- Narrows the detail column to the widest value among the rows shown.
+function Browser:FitDetail(size)
+    local widest = 0
+    for index = 1, size do
+        local row = self.rows[index]
+        if row and row:IsShown() then widest = math.max(widest, row.detail:GetStringWidth() or 0) end
+    end
+    local width = W.Clamp(math.ceil(widest) + 2, DETAIL_MIN, DETAIL_MAX)
+    for index = 1, size do
+        if self.rows[index] then self.rows[index].detail:SetWidth(width) end
+    end
+    self.detailWidth = width
 end
 
 function Browser:Render()
