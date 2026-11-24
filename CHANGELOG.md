@@ -6,6 +6,12 @@ heading and uses it for the release notes.
 
 ## Unreleased
 
+### Fixed
+
+- The model preview turns and zooms again. Panning had locked the camera at
+  one angle; it now moves the model only once you pan, with the middle
+  button. Drag with the left or right button to turn.
+
 ## 0.2.0 (2026-11-23)
 
 The lab is now for everyone, not just addon makers, with creature models, every

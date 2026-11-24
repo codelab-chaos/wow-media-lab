@@ -1,7 +1,7 @@
 local _, ML = ...
 
--- The 3D preview for creature displays: drag to turn, right-drag to pan,
--- wheel to zoom, cycle
+-- The 3D preview for creature displays: drag (left or right button) to turn,
+-- middle-drag to pan, wheel to zoom, cycle
 -- animations and the canvas, or load your current target. Registered as
 -- ML.Previews.model; built lazily inside the inspector like the others.
 local W = ML.Widgets
@@ -35,7 +35,7 @@ function Model.New(parent)
     end)
     self.model:SetScript("OnMouseDown", function(_, button)
         local x, y = GetCursorPosition()
-        self.drag = {x = x, y = y, facing = self.facing, panX = self.panX, panY = self.panY, pan = button == "RightButton"}
+        self.drag = {x = x, y = y, facing = self.facing, panX = self.panX, panY = self.panY, pan = button == "MiddleButton"}
         self.model:SetScript("OnUpdate", function() self:Drag() end)
     end)
     self.model:SetScript("OnMouseUp", function()
@@ -53,7 +53,7 @@ function Model.New(parent)
     W.Tip(self.animation, "Animation", "Cycle the animations this model has.")
     local reset = W.Button(bar, "Reset", 46, function() self:ResetView(); self:Apply() end, 22)
     reset:SetPoint("LEFT", self.animation, "RIGHT", 4, 0)
-    W.Tip(reset, "Reset view", "Face forward, centered, at the default distance. Drag turns, right-drag moves, the wheel zooms.")
+    W.Tip(reset, "Reset view", "Face forward, centered, at the default distance. Drag turns, middle-drag moves, the wheel zooms.")
     self.canvasButton = W.Button(bar, "Dark", 62, function()
         view().canvas = P.nextIn(ML.Canvases, view().canvas or "Dark", "id")
         self:Layout()
@@ -77,16 +77,18 @@ function Model:ResetView()
     view().modelDistance = nil
 end
 
--- Drag turns the model; right-drag moves it with the pointer (in UI units,
--- so it follows the cursor whatever the model's size).
+-- Drag turns the model; middle-drag moves it, the way the game's dressing
+-- room does (SetPosition, in model units: ML.ModelCamera.pan per UI unit at
+-- the default distance, more when zoomed out).
 function Model:Drag()
     local drag = self.drag
     if not drag then return end
     local x, y = GetCursorPosition()
     local scale = self.stage:GetEffectiveScale()
     if drag.pan then
-        self.panX = drag.panX + (x - drag.x) / scale
-        self.panY = drag.panY + (y - drag.y) / scale
+        local units = ML.ModelCamera.pan * self.distance / scale
+        self.panX = drag.panX + (x - drag.x) * units
+        self.panY = drag.panY + (y - drag.y) * units
         self:ApplyPan()
     else
         self.facing = drag.facing + (x - drag.x) / scale * ML.ModelCamera.turn
@@ -94,8 +96,12 @@ function Model:Drag()
     end
 end
 
+-- Only once something has been panned: an untouched model keeps the game's
+-- own framing, and turning and zooming work as they always did.
 function Model:ApplyPan()
-    if self.model.SetViewTranslation then self.model:SetViewTranslation(self.panX, self.panY) end
+    if self.panX == 0 and self.panY == 0 and not self.panned then return end
+    self.panned = self.panX ~= 0 or self.panY ~= 0
+    self.model:SetPosition(0, self.panX, self.panY)
 end
 
 -- Animations this model has; every listed one when the client cannot say.

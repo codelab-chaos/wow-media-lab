@@ -95,7 +95,7 @@ Filter by shape or size the same way as textures, and zoom the preview to see th
 
 ### Models
 
-Drag a model to turn it, right-drag to move it, scroll to zoom, and press the animation button to see it move.
+Drag a model to turn it, middle-drag to move it, scroll to zoom, and press the animation button to see it move.
 Stand, walk, run, attack, roar, dance: you get the ones that model has.
 The zoom stays as you move between models; **Reset** brings it back.
 Target any NPC and press Target to jump to its model; the lab remembers the name.
@@ -174,7 +174,7 @@ the tab you are on.
 
 ### Model preview
 
-- **Drag and right-drag**: Drag to turn the model, right-drag to move it, and scroll to zoom.
+- **Drag and middle-drag**: Drag to turn the model (with either button), middle-drag to move it, and scroll to zoom.
 - **Animation**: Step through the moves this model has: stand, walk, attack, dance.
 - **Reset**: Put the turn, zoom and position back.
 - **Canvas**: Change the background behind the model.

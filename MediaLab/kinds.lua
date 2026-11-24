@@ -137,8 +137,9 @@ ML.ModelAnimations = {
 }
 
 -- Model preview camera: distance scale limits and step for the wheel, and
--- how fast dragging turns the model (radians per UI unit).
-ML.ModelCamera = {min = 0.4, max = 4, step = 1.15, turn = 0.012}
+-- how fast dragging turns the model (radians per UI unit) and middle-drag
+-- moves it (model units per UI unit at the default distance).
+ML.ModelCamera = {min = 0.4, max = 4, step = 1.15, turn = 0.012, pan = 0.02}
 
 -- Font preview text, top to bottom. The headline is replaced by the user's own
 -- sample when they type one; the rest always follows.

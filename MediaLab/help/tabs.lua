@@ -33,7 +33,7 @@ ML.Help.tabs = {
         "Type your own sample text to see it in any of the game's fonts.",
     },
     model = {
-        "Drag a model to turn it, right-drag to move it, scroll to zoom, and press the animation button to see it move.",
+        "Drag a model to turn it, middle-drag to move it, scroll to zoom, and press the animation button to see it move.",
         "Target any NPC and press Target to jump to its model; the lab remembers the name.",
     },
     lists = {

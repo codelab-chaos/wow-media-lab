@@ -48,7 +48,7 @@ ML.Help.switches = {
     model = {
         title = "Model preview",
         items = {
-            {"Drag and right-drag", "Drag to turn the model, right-drag to move it, and scroll to zoom."},
+            {"Drag and middle-drag", "Drag to turn the model (with either button), middle-drag to move it, and scroll to zoom."},
             {"Animation", "Step through the moves this model has: stand, walk, attack, dance."},
             {"Reset", "Put the turn, zoom and position back."},
             {"Canvas", "Change the background behind the model."},

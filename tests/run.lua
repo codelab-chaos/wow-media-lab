@@ -1026,21 +1026,30 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     preview.model.scripts.OnUpdate(preview.model)
     assert(preview.model.facing > 1, "dragging turns the model")
     preview.model.scripts.OnMouseUp(preview.model)
-    -- Right-drag moves it with the pointer, without turning it.
-    local facing = preview.model.facing
-    Mock.cursorX, Mock.cursorY = 100, 100
+    assert(not preview.model.position, "an untouched model is never moved, so turning and zooming keep working")
+    -- Right-drag turns too; middle-drag moves it, without turning it.
+    Mock.cursorX = 100
     preview.model.scripts.OnMouseDown(preview.model, "RightButton")
-    Mock.cursorX, Mock.cursorY = 130, 80
+    Mock.cursorX = 150
     preview.model.scripts.OnUpdate(preview.model)
     preview.model.scripts.OnMouseUp(preview.model, "RightButton")
-    equal(preview.model.translation[1] .. "," .. preview.model.translation[2], "30,-20", "right-drag pans")
-    equal(preview.model.facing, facing)
+    local facing = preview.model.facing
+    assert(facing > 1.5, "right-drag turns")
+    assert(not preview.model.position)
+    Mock.cursorX, Mock.cursorY = 100, 100
+    preview.model.scripts.OnMouseDown(preview.model, "MiddleButton")
+    Mock.cursorX, Mock.cursorY = 150, 50
+    preview.model.scripts.OnUpdate(preview.model)
+    preview.model.scripts.OnMouseUp(preview.model, "MiddleButton")
+    local position = preview.model.position
+    assert(position[1] == 0 and position[2] > 0 and position[3] < 0, "middle-drag moves it right and down")
+    equal(preview.model.facing, facing, "without turning")
     Mock.cursorY = nil
     for _ = 1, 40 do preview.model.scripts.OnMouseWheel(preview.model, -1) end
     equal(preview.model.camDistance, ML.ModelCamera.max)
     ML.UI:Select(find(ML, "model", 1694))
     equal(preview.model.facing, 0, "the next model faces forward")
-    equal(preview.model.translation[1] .. "," .. preview.model.translation[2], "0,0", "centered again")
+    equal(table.concat(preview.model.position, ","), "0,0,0", "centered again")
     equal(preview.model.camDistance, ML.ModelCamera.max, "and keeps the camera distance")
     equal(ML.db.view.modelDistance, ML.ModelCamera.max)
     local reset
