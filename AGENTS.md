@@ -43,7 +43,7 @@ python3 scripts/package.py
 
 Releases: `python3 scripts/release.py <version> [--interface N] [--sync]`.
 A new button or switch gets a line in `MediaLab/help/switches.lua` and the
-`docs/switches.md` (a test checks they match).
+`docs/guide.md` (a test checks they match).
 Note every player-visible change under `## Unreleased` in `CHANGELOG.md`; the
 store text is `docs/listing.md`.
 
