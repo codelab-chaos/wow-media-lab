@@ -23,7 +23,7 @@ Code layout (one job per file):
 | `help.lua` | The welcome card and tips, as data; the README uses the same words |
 | `data/*.lua` | Generated references and the curated Common lists |
 | `sources.lua` | One provider per kind: client APIs first, generated data as fallback |
-| `catalog.lua` | Entry store, batched indexing, search, filters |
+| `catalog.lua` | Entry store, on-demand batched indexing (`Load`), search, filters |
 | `lists.lua` | Named lists of entry keys; one entry in any number of lists |
 | `selection.lua` | The picked entries: click, Ctrl+click, Shift+click |
 | `soundplayer.lua` | Plays one sound at a time, tracks its progress and when it ends |
@@ -104,11 +104,12 @@ Two files hold the public text, so it lives in the repo with the code:
   the lab does.
 
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
-Watch the loading card count each library in (it fades when done; Browse
-now hides it early), then on a second open check the bars show "so far / last
-time". Read the welcome card and press **Got it**; press **?** on a few tabs. Visit
-every tab, search and filter, switch Textures between **Files** and
-**Atlases**, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom),
+Watch the loading card count the icons in (it fades when done; Browse now
+hides it early). Open Models and Sounds: the card comes back for just that
+library, and never a second time. Reload and check the bars show "so far / last
+time", and the tabs show last session's counts before they load. Read the
+welcome card and press **Got it**; press **?** on a few tabs. Visit every tab,
+search and filter, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom),
 filter Textures by Wide and drag the size handles to 64 and 256 (the size
 range sits at the top of the column), type in Find a filter on Sounds, cycle
 Repeat on a "!" atlas, zoom and pan both, play and stop a sound, change its channel,

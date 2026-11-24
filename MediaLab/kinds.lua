@@ -14,10 +14,13 @@ local _, ML = ...
 --            size range under the filter column
 --   groupsFirst  grouped filters (SHAPE) come before the plain ones
 --   holds    what the loading card says it brings in
+--   library  the load-on-demand data addon it reads; such a kind is indexed
+--            only when a tab needs it, behind the loading card. Other kinds
+--            read data already loaded with the lab and index in the background
 --   rowHeight  taller list rows (sounds show a waveform under the name)
 ML.Kinds = {
     {id = "icon", label = "Icons", noun = "icons", layout = "grid", cell = 48, visual = true, preview = "image",
-        holds = "names, colors and descriptions  /  MediaLab_Icons",
+        library = "MediaLab_Icons", holds = "names, colors and descriptions  /  MediaLab_Icons",
         facetGroups = {"Subject", "Color"}},
     {id = "texture", label = "Textures", noun = "textures", layout = "grid", cell = 112, visual = true, caption = true,
         preview = "image", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
@@ -26,9 +29,10 @@ ML.Kinds = {
         preview = "image", sized = true, facetGroups = {"Shape"}, groupsFirst = true,
         holds = "interface art, cut and sized  /  the game's atlas list"},
     {id = "model", label = "Models", noun = "models", layout = "rows", preview = "model", detail = "id",
-        facetGroups = {"Family"}, holds = "creatures, NPCs and objects  /  MediaLab_Models"},
+        facetGroups = {"Family"}, library = "MediaLab_Models", holds = "creatures, NPCs and objects  /  MediaLab_Models"},
     {id = "sound", label = "Sounds", noun = "sounds", layout = "rows", preview = "sound", detail = "id", rowHeight = 40,
-        facetGroups = {"Folder", "Prefix"}, holds = "creatures, spells, music, ambience  /  MediaLab_Sounds"},
+        facetGroups = {"Folder", "Prefix"}, library = "MediaLab_Sounds",
+        holds = "creatures, spells, music, ambience  /  MediaLab_Sounds"},
     {id = "control", label = "Controls", noun = "templates", layout = "rows", preview = "control",
         holds = "buttons, frames and sliders  /  UI source"},
     {id = "font", label = "Fonts", noun = "fonts", layout = "rows", preview = "font",

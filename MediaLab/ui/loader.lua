@@ -1,6 +1,7 @@
 local _, ML = ...
 
--- The loading card: while the catalog indexes, one row per library with a
+-- The loading card: whenever a tab has to load a library (icons, models,
+-- sounds), one row per library on its way in, with a
 -- bar and a count ticking up, a check when it is done, a pulsing beaker and a
 -- line of what the lab is doing. Totals come from the last session (ML.db.counts),
 -- so bars show real progress from the second open; the first, a moving stripe.
@@ -44,8 +45,6 @@ function Loader.Create(parent, onBrowse)
         local kind = ML.KindById[kindId]
         local row = CreateFrame("Frame", nil, frame)
         row:SetHeight(ROW)
-        row:SetPoint("TOPLEFT", 16, -72 - (index - 1) * ROW)
-        row:SetPoint("TOPRIGHT", -16, -72 - (index - 1) * ROW)
         row.name = W.Label(row, kind.label, 12, T.text)
         row.name:SetPoint("TOPLEFT", 0, 0)
         row.count = W.Label(row, "", 11, T.muted)
@@ -66,7 +65,7 @@ function Loader.Create(parent, onBrowse)
         row.kind = kindId
         frame.rows[index] = row
     end
-    frame:SetHeight(72 + #ML.IndexOrder * ROW + 52)
+    frame.kinds = {}
     frame.browse = W.Button(frame, "Browse now", 96, onBrowse, 22)
     frame.browse:SetPoint("BOTTOMRIGHT", -16, 14)
     W.Tip(frame.browse, "Browse now", "Hide this; tabs fill in as they finish.")
@@ -136,9 +135,40 @@ function Loader.Animate(elapsed)
     end
 end
 
+-- The kinds on the card, in ML.IndexOrder.
+function Loader.Kinds() return Loader.frame and Loader.frame.kinds or {} end
+
+-- Stacks the rows of the kinds on the card and sizes the card to fit.
+function Loader.Layout()
+    local frame, shown = Loader.frame, {}
+    for _, kind in ipairs(frame.kinds) do shown[kind] = true end
+    local index = 0
+    for _, row in ipairs(frame.rows) do
+        row:SetShown(shown[row.kind] == true)
+        if shown[row.kind] then
+            local y = -72 - index * ROW
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", 16, y)
+            row:SetPoint("TOPRIGHT", -16, y)
+            index = index + 1
+        end
+    end
+    frame:SetHeight(72 + index * ROW + 52)
+end
+
+-- Shows the card for these kinds (every kind when none are given). While it
+-- is up, more kinds join it; once it has faded, it starts over with the new ones.
 -- The animation runs only while the card is up.
-function Loader.Show()
+function Loader.Show(kinds)
     local frame = Loader.frame
+    local fresh = not frame:IsShown() or frame.fading
+    if fresh then frame.kinds = {} end
+    local wanted = {}
+    for _, kind in ipairs(frame.kinds) do wanted[kind] = true end
+    for _, kind in ipairs(kinds or ML.IndexOrder) do wanted[kind] = true end
+    frame.kinds = {}
+    for _, kind in ipairs(ML.IndexOrder) do if wanted[kind] then frame.kinds[#frame.kinds + 1] = kind end end
+    Loader.Layout()
     frame.fading = nil
     frame:SetAlpha(1)
     frame:Show()

@@ -9,9 +9,12 @@ end
 local function equal(actual, expected, message)
     assert(actual == expected, (message or "") .. " " .. tostring(actual) .. " ~= " .. tostring(expected))
 end
+-- Opens the lab with every kind indexed (the lab itself loads each library
+-- only when a tab needs it; see the on-demand tests).
 local function open()
     local ML = Mock.load()
     SlashCmdList.MEDIALAB("")
+    ML.Catalog:Load(ML.IndexOrder)
     Mock.flush()
     return ML
 end
@@ -27,21 +30,51 @@ test("manifest loads lazily: no window or indexing until opened", function()
     equal(#Mock.messages, 7)
 end)
 
-test("opening indexes every kind in batches and reuses a bounded cell pool", function()
+test("libraries load on demand: a tab indexes what it shows, the rest wait", function()
     local ML = Mock.load()
     SlashCmdList.MEDIALAB("")
-    assert(ML.UI.frame:IsShown() and not ML.Catalog.ready, "indexing should be incremental")
-    Mock.flush()
     local C = ML.Catalog
+    assert(ML.UI.frame:IsShown() and not C.ready, "indexing should be incremental")
+    Mock.flush()
     assert(C.ready and not C.error)
+    assert(C.indexed.icon, "the tab you land on")
+    assert(C.indexed.texture and C.indexed.control and C.indexed.font, "built-in kinds index in the background")
+    assert(not C.indexed.sound and not C.indexed.model, "libraries nobody asked for stay unloaded")
+    assert(not Mock.loaded.MediaLab_Sounds and not Mock.loaded.MediaLab_Models, "their data addons are not loaded")
+    local models
+    for _, button in ipairs(ML.UI.tabButtons) do if button.tab.id == "model" then models = button end end
+    equal(models.text:GetText(), "Models", "no count before the first load")
+    ML.UI:SelectTab("model")
+    assert(ML.Loader.IsShown(), "the loading card comes back for a library")
+    equal(table.concat(ML.Loader.Kinds(), ","), "model", "just the library on its way in")
+    Mock.flush()
+    assert(C.indexed.model and not ML.Loader.IsShown())
+    assert(ML.UI.inspector.entry and ML.UI.inspector.entry.kind == "model", "its first model shows once loaded")
+    assert(models.text:GetText():find("Models  %d"), "counted once loaded")
+    ML.UI:SelectTab("model")
+    assert(not ML.Loader.IsShown(), "a loaded library never shows the card again")
+    local done
+    C:Load({"model"}, function() done = true end)
+    assert(done, "Load calls back at once when already indexed")
+    -- The Lists tab loads the libraries its lists hold entries of.
+    ML.Lists:Set(ML.Lists:Favorites(), "sound:417", true)
+    ML.UI:Refresh()
+    equal(ML.UI.tabButtons[#ML.UI.tabButtons].text:GetText(), "Lists  1:1", "a saved sound counts before sounds load")
+    ML.UI:SelectTab(ML.ListsTab)
+    equal(table.concat(ML.Loader.Kinds(), ","), "sound")
+    Mock.flush()
+    assert(C.indexed.sound)
+    equal(#ML.UI.results, 1, "and shows it once loaded")
+    C:Load(ML.IndexOrder)
+    Mock.flush()
     assert(not C.worker.scripts.OnUpdate, "indexer stops when done")
     for _, kind in ipairs(ML.Kinds) do assert(C:Count(kind.id) > 0, kind.id .. " is empty") end
     assert(C:Count("texture") > 900, "non-icon UI source textures")
     assert(C:Count("sound") > 800, "generated sound kits merge with runtime SOUNDKIT")
     assert(find(ML, "sound", "UI_TEST_ONLY_RUNTIME"), "runtime-only sound kit present")
     equal(UISpecialFrames[1], "MediaLabFrame")
-    assert(ML.UI.inspector.entry, "first result selected")
     ML.UI:SelectTab("icon")
+    assert(ML.UI.inspector.entry, "first result selected")
     assert(#ML.UI.browser.cells <= 400)
     SlashCmdList.MEDIALAB("")
     assert(not ML.UI.frame:IsShown())
@@ -62,7 +95,7 @@ end)
 test("fallback data is used and validated when native APIs are missing", function()
     local ML = Mock.load()
     C_Texture.GetAtlasElements, C_XMLUtil, SOUNDKIT, GetFonts = nil, nil, nil, nil
-    SlashCmdList.MEDIALAB(""); Mock.flush()
+    SlashCmdList.MEDIALAB(""); ML.Catalog:Load(ML.IndexOrder); Mock.flush()
     local C = ML.Catalog
     assert(C.ready and not C.error)
     equal(C:Count("atlas"), 1, "only atlases the client knows survive")
@@ -338,9 +371,11 @@ end)
 test("the loading card counts every library in, then fades out", function()
     local ML = Mock.load()
     SlashCmdList.MEDIALAB("")
+    ML.UI:SelectTab("sound")
     local card = ML.Loader.frame
     assert(card.shown, "shows while the lab fills")
-    equal(#card.rows, #ML.IndexOrder)
+    equal(table.concat(ML.Loader.Kinds(), ","), "sound,icon", "the libraries on their way in, in order")
+    assert(card.rows[1].shown and not card.rows[2].shown, "rows for just those")
     equal(card.rows[1].name:GetText(), "Sounds")
     assert(card.rows[1].source:GetText():find("MediaLab_Sounds", 1, true), "says where it comes from")
     local worker = ML.Catalog.worker
@@ -351,9 +386,13 @@ test("the loading card counts every library in, then fades out", function()
     Mock.flush()
     assert(not card.shown, "fades out once everything is in")
     assert(ML.db.counts.icon > 0 and ML.db.counts.sound > 0, "remembers how many of each for next time")
-    -- Next session: the bars know the totals.
+    -- Next session: the bars know the totals, and the tabs show them before loading.
     ML = Mock.load(ML.db)
     SlashCmdList.MEDIALAB("")
+    for _, button in ipairs(ML.UI.tabButtons) do
+        if button.tab.id == "sound" then assert(button.text:GetText():find("Sounds  %d"), "last session's count") end
+    end
+    ML.UI:SelectTab("sound")
     card = ML.Loader.frame
     local worker2 = ML.Catalog.worker
     for _ = 1, 3 do worker2.scripts.OnUpdate(worker2) end
@@ -983,6 +1022,18 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     equal(ML.db.view.modelDistance, nil)
     local lua = ML.Export.Lua({blue}, "Mobs")
     assert(lua:find("models = {\n        1693, -- murloc blue", 1, true), lua)
+end)
+
+test("Target loads the models first when they are not loaded yet", function()
+    local ML = Mock.load()
+    SlashCmdList.MEDIALAB("")
+    Mock.flush()
+    assert(not ML.Catalog.indexed.model)
+    Mock.target = {name = "Murloc Raider", guid = "Creature-0-1-2-3-515-0000ABCD", display = 1693, model = 123456}
+    SlashCmdList.MEDIALAB("target")
+    Mock.flush()
+    equal(ML.UI.tabId, "model")
+    equal(ML.UI.inspector.entry, find(ML, "model", 1693), "selected once the models are in")
 end)
 
 test("targeting an NPC names its display, which search and the Seen facet then find", function()

@@ -116,6 +116,7 @@ function UI:SelectTab(id)
     end
     self.tabId = id
     view().tab = id
+    self:LoadFor(id)
     local button = ML.TabButtonOf(id)
     view().views = type(view().views) == "table" and view().views or {}
     view().views[button.id] = id
@@ -125,6 +126,36 @@ function UI:SelectTab(id)
     if not selected and self.results[1] and id ~= ML.ListsTab then selected = self.results[1] end
     self:Select(selected)
     return true
+end
+
+-- The kinds a tab shows: its own, or on the Lists tab those its lists hold.
+function UI:KindsFor(id)
+    if id == ML.ListsTab then return C:SavedKinds() end
+    return {id}
+end
+
+-- Indexes what a tab needs. A library still to load brings up the loading
+-- card, for just the libraries on their way in; done() runs once they are.
+function UI:LoadFor(id, done)
+    local pending = C:Load(self:KindsFor(id), done)
+    local libraries = {}
+    for _, kind in ipairs(pending) do
+        if ML.KindById[kind].library then libraries[#libraries + 1] = kind end
+    end
+    if #libraries > 0 and self.frame then
+        ML.Loader.Show(libraries)
+        self:RenderLoader()
+    end
+    return pending
+end
+
+-- Kinds whose data loads with the lab itself, indexed in the background.
+function UI:BuiltInKinds()
+    local kinds = {}
+    for _, kind in ipairs(ML.IndexOrder) do
+        if not ML.KindById[kind].library then kinds[#kinds + 1] = kind end
+    end
+    return kinds
 end
 
 function UI:SelectTabByName(name)
@@ -233,7 +264,7 @@ function UI:Layout()
             or (list and (list.name .. " is empty. Use Add to list in the inspector to fill it."))
             or "Right-click anything to favorite it, or use Add to list in the inspector."
     elseif not C.indexed[tab.id] then
-        emptyText = "Indexing " .. tab.noun .. "..."
+        emptyText = (tab.library and "Loading " or "Indexing ") .. tab.noun .. "..."
     else
         emptyText = "No " .. tab.noun .. " match. Try fewer words or the All filter."
     end
@@ -259,9 +290,14 @@ function UI:Refresh()
     local current = ML.TabButtonOf(self.tabId)
     for _, button in ipairs(self.tabButtons) do
         local count = 0
-        for _, kind in ipairs(button.tab.kinds) do count = count + C:TabCount(kind) end
-        if button.tab.id == ML.ListsTab then count = C:ListsBadge() end
-        button:SetLabel(button.tab.label .. "  " .. count)
+        local known = true
+        for _, kind in ipairs(button.tab.kinds) do
+            -- Before a kind is indexed, last session's total stands in, if any.
+            local counted = C.indexed[kind] and C:Count(kind) or ML.db.counts[kind]
+            if counted then count = count + counted else known = false end
+        end
+        if button.tab.id == ML.ListsTab then count, known = C:ListsBadge(), true end
+        button:SetLabel(known and (button.tab.label .. "  " .. count) or button.tab.label)
         button:SetActive(button.tab == current)
     end
     for _, button in ipairs(self.viewButtons) do
@@ -408,7 +444,10 @@ function UI:FromTarget()
             if preview and self.tabId == "model" then preview:SetStatus(text) end
         end
         if not npc then return report(detail) end
-        if not C.indexed.model then return report("Models are still indexing. Try again when the lab says Ready.") end
+        if not C.indexed.model then
+            self:SelectTab("model")
+            return self:LoadFor("model", function() self:FromTarget() end)
+        end
         local label = npc.name .. " (creature " .. detail .. ")"
         local entry = npc.display and C.byKey[C:Key("model", npc.display)]
         view().facets.model = nil
@@ -441,7 +480,7 @@ end
 function UI:RenderLoader()
     if not ML.Loader.IsShown() then return end
     local counts, done = {}, {}
-    for _, kind in ipairs(ML.IndexOrder) do
+    for _, kind in ipairs(ML.Loader.Kinds()) do
         counts[kind] = C:Count(kind)
         done[kind] = C.indexed[kind] == true
     end
@@ -453,7 +492,11 @@ function UI:OnIndexed(kind)
         ML.db.counts[kind] = C:Count(kind) -- next session's totals for the loading card
     end
     self:RenderLoader()
-    if kind == nil then ML.Loader.Finish() end
+    if ML.Loader.IsShown() then
+        local all = true
+        for _, shown in ipairs(ML.Loader.Kinds()) do all = all and C.indexed[shown] == true end
+        if all then ML.Loader.Finish() end
+    end
     if kind then self.facetCache[kind] = nil end
     self.facetCache[ML.ListsTab] = nil
     if not self.frame then return end
@@ -1003,9 +1046,9 @@ function UI:Create()
     self.tabId = self:Tab(saved) and self:Available(saved) and saved or ML.Tabs[1].id
     self.devButton:SetActive(ML.db.developer and true or false)
     self:UpdateMaximize()
-    if not C.ready then ML.Loader.Show() end
     C:Start(function(kind) self:OnIndexed(kind) end, function() self:RenderLoader() end)
     self:SelectTab(self.tabId)
+    C:Load(self:BuiltInKinds())
     if not ML.db.welcomed then self:ShowHelp() end
 end
 
