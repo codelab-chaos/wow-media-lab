@@ -70,9 +70,9 @@ class HelpTests(unittest.TestCase):
         # Every quoted line, but not the group ids and keys the data uses.
         lines = [line for line in re.findall(r'"((?:[^"\\]|\\.)*)"', help_text) if " " in line or len(line) > 12]
         self.assertGreater(len(lines), 20)
-        readme = " ".join((ROOT / "README.md").read_text().split())
-        missing = [line for line in lines if line not in readme]
-        self.assertEqual(missing, [], "help/ lines missing from README.md")
+        docs = " ".join((ROOT / "README.md").read_text().split() + (ROOT / "docs" / "switches.md").read_text().split())
+        missing = [line for line in lines if line not in docs]
+        self.assertEqual(missing, [], "help/ lines missing from README.md and docs/switches.md")
 
 
 class SyncCodexTests(unittest.TestCase):
@@ -155,5 +155,5 @@ class ChangelogTests(unittest.TestCase):
             release.release_changelog(released, "0.3.0", "2026-11-24")
 
     def test_public_text_has_no_em_dashes(self):
-        for path in ("CHANGELOG.md", "docs/listing.md", "README.md"):
+        for path in ("CHANGELOG.md", "docs/listing.md", "README.md", "docs/switches.md"):
             self.assertNotIn("\u2014", (ROOT / path).read_text(), path)

@@ -3,10 +3,12 @@
 **Look through the game's icons, textures, sounds and creature models, all in one window.**
 
 Hunting for the perfect icon for a macro? Want to hear what that sound is
-called, or watch a murloc dance? WoW Media Lab lets you search, preview and
-collect everything the game draws and plays, without leaving the game.
+called, or watch a murloc dance? Search, preview and collect everything the
+game draws and plays, without leaving the game.
 
 Made for **WoW Forever** (interface **16001**). Version **0.2.1**.
+
+![Browsing thousands of icons](docs/images/loading.gif)
 
 ## What you can do
 
@@ -14,28 +16,31 @@ Made for **WoW Forever** (interface **16001**). Version **0.2.1**.
   what they show and by color: `sword`, `wolf`, `potion green`.
 - **Meet the whole bestiary.** Turn, zoom and animate over 14,000 creature
   models, and target any NPC to see which model it uses.
-- **Hear the game's sounds.** Over 23,000 of them: creatures, spells, music,
-  ambience and the interface, one click each.
+- **Hear the game's sounds.** Over 23,000 of them, with waveforms and play on
+  hover: creatures, spells, music, ambience and the interface.
 - **Browse the game's art.** Its textures and the pieces its windows are
-  drawn from, zoomed and on any background.
+  drawn from, zoomed, tiled and on any background.
 - **Keep what you like.** Right-click anything to favorite it or put it in
   your own lists, one at a time or a whole selection at once.
 
 ## Install
 
-Install **WoW Media Lab** from CurseForge, or download the zip from
-[Releases](https://github.com/codelab-chaos/wow-media-lab/releases) and
-extract it into `World of Warcraft/_forever_/Interface/AddOns/`. It brings
-four folders: `MediaLab`, and three data folders (`MediaLab_Icons`,
-`MediaLab_Models`, `MediaLab_Sounds`) that load only when you open the lab.
+**With CurseForge (recommended, keeps it up to date):** install
+[WoW Media Lab from CurseForge](https://www.curseforge.com/wow/addons/wow-media-lab)
+in the CurseForge app, and it updates itself whenever a new version comes out.
 
-Restart the game after installing, and make sure **WoW Media Lab** is
-enabled in the AddOns list.
+**Offline, by hand:** download the zip from
+[Releases](https://github.com/codelab-chaos/wow-media-lab/releases) and extract
+it into `World of Warcraft/_forever_/Interface/AddOns/` (four folders:
+`MediaLab` and its three data folders). Come back to Releases for new versions.
+
+Either way, restart the game and make sure **WoW Media Lab** is enabled in the
+AddOns list.
 
 ## Open it
 
-Type **`/mlab`** (or `/medialab`), or click it in the addon menu by the
-minimap. The first time, a welcome card says hello:
+Type **`/mlab`**, or click it in the addon menu by the minimap. The first time,
+a welcome card says hello:
 
 > **Welcome to WoW Media Lab**
 >
@@ -44,170 +49,77 @@ minimap. The first time, a welcome card says hello:
 > - Right-click anything to add it to your Favorites or one of your lists.
 > - Press ? in the title bar any time for help with the tab you are on and its switches.
 
-The first time it opens each session, the lab counts its libraries in (the
-sounds, models and icons take a moment); press **Browse now** to start on the
-tabs that are already done.
+Each session, a card counts the libraries in while the lab fills up:
 
-Never use a tab? Press the **gear** in the title bar (or find **WoW Media
-Lab** in the game's Options, under AddOns) and untick it: it no longer loads,
-so the lab opens faster. Everything is on to start with. A tab you turned off
-says so, and **Load now** brings it in for that session.
+![The lab stocking its libraries](docs/images/startup-indexing.gif)
 
-Drag the title bar to move the window and the corner to resize it. Want a
-bigger preview, or longer filter names? Drag the edge of the preview or the
-filter column (double-click an edge to reset it). Hover a filter to see its
-full name.
-
-- **_** minimizes the lab to a small icon docked at the edge of your screen.
-  Click the icon to bring it back, or drag it along the edge, or to another
-  edge, where it snaps.
-- **The square** maximizes it to fill the screen; click it again (or
-  double-click the title bar) to go back.
-- **x** or Escape closes it.
+Drag the title bar to move it, the corner to resize it, and the edges of the
+side columns to widen them. **_** docks it as an icon at the screen's edge,
+the square fills the screen, and Escape closes it. Never use a tab? Untick it
+under the **gear** (or in the game's Options, under AddOns) and it no longer
+loads.
 
 ## A quick tour
 
 ### Icons
 
-Search by what an icon shows (sword, potion, wolf) or by color (blue, gold).
-Filter by subject or color in the left column. Hover an icon to read what it
-shows.
-Hold Ctrl and scroll over the grid to scale the thumbnails up or down.
-The **-**, **100%** and **+** buttons above the results do the same (click
-the percentage to reset it). Icons, texture files and atlases each remember
-their own zoom.
+- Search by what an icon shows (sword, potion, wolf) or by color (blue, gold).
+- Filter by subject or color in the left column.
+- Hold Ctrl and scroll over the grid to scale the thumbnails up or down.
+
+![Scaling the icon grid](docs/images/zoom-grid.gif)
 
 ### Textures and Atlases
 
-Texture files are whole images the game draws from: frames, backgrounds, borders.
-Atlases are the pieces the game's interface is drawn from, each cut to an exact size.
-Each has its own tab.
-Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.
-**Repeat** shows copies side by side, stacked, or tiled 3 by 3, to check
-that a border or background lines up with itself.
-Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.
-Type in **Find a filter...** at the top of the filter column to narrow a
-long list of filters. The handles snap to the usual sizes (16, 32, 64 up to 4096 pixels, on the
-longer side); click the size shown above them to go back to any size.
-The preview keeps your zoom as you go from one image to the next (icons,
-texture files and atlases each remember their own).
-Filter by shape or size the same way as textures, and zoom the preview to see the detail.
+- Texture files are whole images the game draws from: frames, backgrounds, borders.
+- Atlases are the pieces the game's interface is drawn from, each cut to an exact size.
+- Scroll the preview to zoom, drag it to pan, and press Canvas to check it on light or dark.
+- Filter by shape (square, wide, tall), or drag the size handles to the sizes you want.
+- Filter by shape or size the same way as textures, and zoom the preview to see the detail.
+
+![The Textures tab](docs/images/tab-textures.gif)
+![The Atlases tab](docs/images/tab-atlases.gif)
+![Zooming into a preview](docs/images/zoom-preview.gif)
 
 ### Models
 
-Drag a model to turn it any way, middle-drag to move it, scroll to zoom, and press the animation button to see it move.
-Stand, walk, run, attack, roar, dance: you get the ones that model has.
-The zoom stays as you move between models; **Reset** brings it back.
-Target any NPC and press Target to jump to its model; the lab remembers the name.
-After that you can search Models by the NPC's name, or filter to **Seen in
-game**.
+- Drag a model to turn it any way, middle-drag to move it, scroll to zoom, and press the animation button to see it move.
+- Target any NPC and press Target to jump to its model; the lab remembers the name.
+
+![The Models tab](docs/images/tab-models.gif)
+![Turning a model](docs/images/bird-3d.gif)
+![A model up close](docs/images/bird-3d-closeup.gif)
 
 ### Sounds
 
-Rest the pointer on a sound to hear it, or press Play; Play through moves on to the next one when it ends.
-The waveform shows how loud a sound is over time, and a playhead follows it while it plays.
-The right panel shows it large, with **<** and **>** to step through the
-results, its length, how many variations it has (the game picks one at random),
-and what plays it: a creature's aggro, attack or death, or a zone's music.
-**Hover play**, **Auto-play** (play what you select) and **Play through** each
-switch on and off there.
-Pick the channel it plays on, so the game's volume sliders apply.
-Filter by Creature, Spell, Music or Ambience in the left column, or search for a creature by name.
-The game doesn't name most of its sounds, so each one is named after its
-sound files, like `mmurlocattack`.
+- Rest the pointer on a sound to hear it, or press Play; Play through moves on to the next one when it ends.
+- The waveform shows how loud a sound is over time, and a playhead follows it while it plays.
+- Pick the channel it plays on, so the game's volume sliders apply.
+- Filter by Creature, Spell, Music or Ambience in the left column, or search for a creature by name.
+
+![The Sounds tab](docs/images/tab-sounds.gif)
 
 ### Fonts
 
-Type your own sample text to see it in any of the game's fonts.
-Each font shows its file, size and outline, and your sample is remembered.
+- Type your own sample text to see it in any of the game's fonts.
+
+![The Fonts tab](docs/images/tab-fonts.gif)
 
 ### Controls (a bonus)
 
-These are the building blocks of the game's windows: buttons, frames, sliders.
-Press Build preview to see a live copy of one.
+- These are the building blocks of the game's windows: buttons, frames, sliders.
+- Press Build preview to see a live copy of one.
 
-### Favorites and lists
-
-Favorites and your own lists, with any kind of media in them.
-Right-click anything for the lists menu: Favorites, then your lists by name
-(a check when it is in one), then **+ New list...** and **Manage lists...**
-Ctrl+click or Shift+click to pick several things, then right-click to add them all at once.
-Like in a file browser, Ctrl+click adds or removes one and Shift+click picks
-everything between two clicks; a strip under the results shows what you
-picked. Press New to start a list, and Add to list in the right panel to fill it.
-Something can be in as many lists as you like.
-
-## Every switch
-
-What each button and switch does. In the lab, press **?** for the ones on
-the tab you are on.
-
-### Everywhere
-
-- **Search**: Type a name, a color, a subject or an ID; every word has to match. The box glows while a search is on; Clear empties it.
-- **Filters**: The left column narrows the tab; the filter in use is named at the top, and x clears it. Find a filter shortens a long list, and dragging its edge widens it.
-- **Click, Ctrl+click, Shift+click**: Pick one, add or remove one, or pick everything between two clicks.
-- **Right-click**: Favorite anything or put it in a list, one at a time or the whole selection.
-- **< and >**: Page through the results, or scroll the mouse wheel.
-- **Dev**: Developer mode: the code behind each entry, and Copy.
-- **Gear**: Options: pick what loads when the lab opens.
-- **?**: This help, for the tab you are on.
-- **i**: About the lab: the welcome, developer mode and where to send ideas.
-- **_ and the square**: Minimize to an icon at the edge of the screen, or fill the screen.
-
-### Thumbnails
-
-- **- 100% +**: Scale the thumbnails down or up; click the percentage to go back to 100%. Or Ctrl+scroll the grid.
-
-### Shape and size
-
-- **Square, Wide, Tall**: Keep only images of that shape.
-- **Size handles**: Drag them to the sizes you want; they snap to 16, 32, 64 and up. Click the size above them for any size.
-
-### Image preview
-
-- **- + and the wheel**: Zoom in and out; drag the image to pan.
-- **1:1**: Show it at the size the game draws it.
-- **Fit**: Fit the whole image in the preview.
-- **Canvas**: Change the background (dark, checkered or light) to see transparent edges.
-- **Repeat**: Show copies side by side, stacked, or tiled 3 by 3, to check that the edges line up.
-
-### Model preview
-
-- **Drag**: Turn the model with either button: across spins it, up and down tilts it, Shift+drag rolls it.
-- **Middle-drag and the wheel**: Move the model, and zoom.
-- **Animation**: Step through the moves this model has: stand, walk, attack, dance.
-- **Reset**: Put the turn, zoom and position back.
-- **Canvas**: Change the background behind the model.
-- **Target**: Find your target's model and remember the NPC's name.
-
-### Sound player
-
-- **Play and Stop**: Play the sound, or stop it. Clicking a row's waveform plays it too.
-- **< and > in the preview**: Play the previous or next sound in the results.
-- **Channel**: Which of the game's volume sliders it obeys. A muted channel plays nothing.
-- **Hover play**: Play a sound when the pointer rests on its row; it stops when you move off.
-- **Auto-play**: Play each sound as soon as you select it.
-- **Play through**: When a sound ends, play the next one in the results.
-
-### Controls
-
-- **Build preview**: Make a live copy of the control. Each one is built once per session.
-
-### Fonts
-
-- **Sample text**: Type your own text to see it in every font; it is remembered.
+![The Controls tab](docs/images/tab-controls.gif)
 
 ### Lists
 
-- **New, Rename, Delete**: Make a list, or rename or delete the one picked; deleting takes two clicks.
-- **Add to list and ***: In the right panel: put what you are looking at in a list, or favorite it.
-- **Manage lists**: The right-click menu's last line jumps here.
+- Favorites and your own lists, with any kind of media in them.
+- Ctrl+click or Shift+click to pick several things, then right-click to add them all at once.
+- Press New to start a list, and Add to list in the right panel to fill it.
 
-### Options
-
-- **A checkbox per tab**: Untick a tab you never use and it no longer loads, so the lab opens faster. Everything is on to start with.
-- **Load now**: On a tab you turned off: load it for this session only.
+What every button and switch does is in [Every switch](docs/switches.md), and
+in the lab under **?**.
 
 ## Commands
 
@@ -227,41 +139,33 @@ the tab you are on.
 
 Making an addon? Press Dev in the title bar for the code behind each entry.
 
-Developer mode adds the code for each entry: SetTexture, SetAtlas, PlaySound, CreateFrame and more.
-It also adds a Copy button that copies a whole list or the results as a Lua table.
+- Developer mode adds the code for each entry: SetTexture, SetAtlas, PlaySound, CreateFrame and more.
+- It also adds a Copy button that copies a whole list or the results as a Lua table.
 
-The [developer guide](docs/addon-dev.md) has the details: every field you can
-copy, building a list for your addon, and what to watch out for.
+The [developer guide](docs/addon-dev.md) covers every field you can copy and
+what to watch out for.
 
 ## Good to know
 
-- **Nothing from Blizzard is bundled.** The pictures and sounds come from
-  your own game; the addon only knows their names and numbers.
-- **It stays out of the way.** Nothing loads until you open the lab, so it
-  costs nothing while you play.
-- **It saves very little:** your lists, the NPC names you capture, where the
-  window sits, and your settings.
-- **Some art may be missing.** The lab lists what the game's interface files
-  mention, plus everything the game itself can list. A texture the game
-  doesn't have shows as **?**, blank or green.
+- **The game's own art and sounds are not bundled.** The lab shows them from
+  your own game; it only ships their names and numbers.
+- **It stays out of the way.** Nothing loads until you open the lab, and it
+  saves only your lists, captured NPC names and settings.
+- **Some art may be missing.** A texture the game doesn't have shows as **?**,
+  blank or green.
 
 ## Feedback
 
 Ideas or bugs? Tell us on the project page: github.com/codelab-chaos/wow-media-lab/issues
 
-That's the [issue tracker](https://github.com/codelab-chaos/wow-media-lab/issues) on
-GitHub. Screenshots and the tab you were on help a lot. The same link is in
-the lab's **i** card and in `/mlab help`.
+Screenshots and the tab you were on help a lot.
 
-## Thanks
+## Thanks and license
 
 Icon and model names come from the community
 [wow-listfile](https://github.com/wowdev/wow-listfile), and the game's data
-tables are read with layouts from
-[WoWDBDefs](https://github.com/wowdev/WoWDBDefs). Working on the addon itself
-is in [docs/development.md](docs/development.md).
-
-## License
+tables are read with layouts from [WoWDBDefs](https://github.com/wowdev/WoWDBDefs).
+Working on the addon itself is in [docs/development.md](docs/development.md).
 
 [MIT](LICENSE). The game's artwork and audio belong to Blizzard Entertainment
 and are not covered by this license.
