@@ -6,6 +6,8 @@ heading and uses it for the release notes.
 
 ## Unreleased
 
+## 0.2.1 (2026-11-23)
+
 ### Fixed
 
 - The model preview turns and zooms again. Panning had locked the camera at

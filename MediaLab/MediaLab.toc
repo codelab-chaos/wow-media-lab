@@ -2,7 +2,7 @@
 ## Title: WoW Media Lab
 ## Notes: Look through the game's icons, textures, sounds and creature models in one window. Favorite what you like, make lists, and copy the code if you make addons. /mlab
 ## Author: Wizwonk
-## Version: 0.2.0
+## Version: 0.2.1
 ## X-License: MIT
 ## X-Website: https://github.com/codelab-chaos/wow-media-lab
 ## AllowLoadGameType: forever

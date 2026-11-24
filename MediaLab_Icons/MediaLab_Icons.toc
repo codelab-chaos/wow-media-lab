@@ -2,7 +2,7 @@
 ## Title: WoW Media Lab: Icons
 ## Notes: Icon names, colors, tags and descriptions for WoW Media Lab. Loaded only when the lab shows icons.
 ## Author: Wizwonk
-## Version: 0.2.0
+## Version: 0.2.1
 ## X-License: MIT
 ## AllowLoadGameType: forever
 ## ExcludeLoadGameType: standard, classic
