@@ -121,6 +121,7 @@ function UI:SelectTab(id)
     view().views[button.id] = id
     self.browser:ResetScroll()
     self:Refresh()
+    self:RenderHelp()
     local selected = self.selected[id]
     if not selected and self.results[1] and id ~= ML.ListsTab then selected = self.results[1] end
     self:Select(selected)
@@ -509,11 +510,14 @@ function UI:CreateTitleBar(frame)
     self.minimize = W.Button(bar, "_", 22, function() self:SetMinimized(true) end, 20)
     self.minimize:SetPoint("RIGHT", self.maximize, "LEFT", -4, 0)
     W.Tip(self.minimize, "Minimize", "Dock to an icon at the edge of the screen. Click the icon to bring it back.")
-    self.helpButton = W.Button(bar, "?", 22, function() self:ToggleHelp() end, 20)
+    self.helpButton = W.Button(bar, "?", 22, function() self:ToggleHelp("help") end, 20)
     self.helpButton:SetPoint("RIGHT", self.minimize, "LEFT", -4, 0)
-    W.Tip(self.helpButton, "Help", "Tips for the tab you are on.")
+    W.Tip(self.helpButton, "Help", "The tab you are on and what each of its buttons and switches does.")
+    self.infoButton = W.Button(bar, "i", 22, function() self:ToggleHelp("info") end, 20)
+    self.infoButton:SetPoint("RIGHT", self.helpButton, "LEFT", -4, 0)
+    W.Tip(self.infoButton, "About", "The welcome, developer mode, and where to send ideas or bugs.")
     self.optionsButton = W.Button(bar, "", 22, function() self:ToggleOptions() end, 20)
-    self.optionsButton:SetPoint("RIGHT", self.helpButton, "LEFT", -4, 0)
+    self.optionsButton:SetPoint("RIGHT", self.infoButton, "LEFT", -4, 0)
     local gear = self.optionsButton:CreateTexture(nil, "ARTWORK")
     gear:SetTexture([[Interface\Icons\INV_Misc_Gear_01]])
     gear:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -535,23 +539,35 @@ function UI:SetDeveloper(on)
     self:LayoutTabs()
     self.inspector:RefreshFields()
     self:Refresh()
-    if ML.HelpPanel.IsShown() then ML.HelpPanel.Render(self.tabId, ML.db.developer) end
+    self:RenderHelp()
 end
 
-function UI:ShowHelp()
+-- The help card: mode "help" (the ? button: the tab and its switches) or
+-- "info" (the i button, and the welcome on first open).
+function UI:ShowHelp(mode)
+    mode = mode or "help"
     if ML.Options.IsShown() then self:HideOptions() end
-    ML.HelpPanel.Show(self.tabId, ML.db.developer)
-    self.helpButton:SetActive(true)
+    ML.HelpPanel.Show(mode, self.tabId, ML.db.developer)
+    self.helpButton:SetActive(mode == "help")
+    self.infoButton:SetActive(mode == "info")
+end
+
+-- Keeps an open card in step with the tab and developer mode.
+function UI:RenderHelp()
+    if not ML.HelpPanel.IsShown() then return end
+    ML.HelpPanel.Render(ML.HelpPanel.frame.mode, self.tabId, ML.db.developer)
 end
 
 function UI:HideHelp()
     ML.HelpPanel.Hide()
     self.helpButton:SetActive(false)
+    self.infoButton:SetActive(false)
     ML.db.welcomed = true
 end
 
-function UI:ToggleHelp()
-    if ML.HelpPanel.IsShown() then self:HideHelp() else self:ShowHelp() end
+function UI:ToggleHelp(mode)
+    mode = mode or "help"
+    if ML.HelpPanel.IsShown(mode) then self:HideHelp() else self:ShowHelp(mode) end
 end
 
 ---------------------------------------------------------------------------
@@ -1088,7 +1104,7 @@ function UI:Create()
     if not C.ready then ML.Loader.Show() end
     C:Start(function(kind) self:OnIndexed(kind) end, function() self:RenderLoader() end)
     self:SelectTab(self.tabId)
-    if not ML.db.welcomed then self:ShowHelp() end
+    if not ML.db.welcomed then self:ShowHelp("info") end
 end
 
 function UI:Show()

@@ -20,7 +20,7 @@ Code layout (one job per file):
 | --- | --- |
 | `core.lua` | Saved variables, slash commands, load event |
 | `kinds.lua` | Tab registry and option lists, as data (which tab a kind lives under, developer-only kinds) |
-| `help.lua` | The welcome card and tips, as data; the README uses the same words |
+| `help/` | The help, as data: `info.lua` (the i card), `tabs.lua` (tips per tab), `switches.lua` (every button and switch, for the ? card). The README uses the same words; a test checks it |
 | `data/*.lua` | Generated references and the curated Common lists |
 | `sources.lua` | One provider per kind: client APIs first, generated data as fallback |
 | `catalog.lua` | Entry store, batched indexing, search, filters |
@@ -39,7 +39,7 @@ Code layout (one job per file):
 | `ui/copydialog.lua` | The Copy popup, Lua or CSV |
 | `ui/prompt.lua` | The one-line name prompt |
 | `ui/listmenu.lua` | The lists menu (right-click and Add to list), for one entry or a selection |
-| `ui/helppanel.lua` | The welcome and tips card |
+| `ui/helppanel.lua` | The help card: the i card (welcome, developer mode, feedback) and the ? card (the tab, its switches, Options, Everywhere) |
 | `ui/options.lua` | The Options card: what loads when the lab opens (`ML.db.disabled`) |
 | `ui/gamesettings.lua` | The lab's page in the game's Options > AddOns, opening the Options card |
 | `ui/dock.lua` | The minimized lab: an icon docked at a screen edge |

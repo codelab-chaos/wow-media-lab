@@ -1,6 +1,7 @@
 local _, ML = ...
 
--- The 3D preview for creature displays: drag to turn, wheel to zoom, cycle
+-- The 3D preview for creature displays: drag to turn, right-drag to pan,
+-- wheel to zoom, cycle
 -- animations and the canvas, or load your current target. Registered as
 -- ML.Previews.model; built lazily inside the inspector like the others.
 local W = ML.Widgets
@@ -18,7 +19,7 @@ local function animationById(id)
 end
 
 function Model.New(parent)
-    local self = setmetatable({facing = 0, distance = 1}, Model)
+    local self = setmetatable({facing = 0, distance = 1, panX = 0, panY = 0}, Model)
     self.frame = P.baseFrame(parent)
     self.stage = P.stageFrame(self.frame, 54)
     self.model = CreateFrame("PlayerModel", nil, self.stage)
@@ -32,8 +33,9 @@ function Model.New(parent)
         view().modelDistance = self.distance ~= 1 and self.distance or nil
         self:Apply()
     end)
-    self.model:SetScript("OnMouseDown", function()
-        self.drag = {x = GetCursorPosition(), facing = self.facing}
+    self.model:SetScript("OnMouseDown", function(_, button)
+        local x, y = GetCursorPosition()
+        self.drag = {x = x, y = y, facing = self.facing, panX = self.panX, panY = self.panY, pan = button == "RightButton"}
         self.model:SetScript("OnUpdate", function() self:Drag() end)
     end)
     self.model:SetScript("OnMouseUp", function()
@@ -51,7 +53,7 @@ function Model.New(parent)
     W.Tip(self.animation, "Animation", "Cycle the animations this model has.")
     local reset = W.Button(bar, "Reset", 46, function() self:ResetView(); self:Apply() end, 22)
     reset:SetPoint("LEFT", self.animation, "RIGHT", 4, 0)
-    W.Tip(reset, "Reset view", "Face forward at the default distance. Drag turns, the wheel zooms.")
+    W.Tip(reset, "Reset view", "Face forward, centered, at the default distance. Drag turns, right-drag moves, the wheel zooms.")
     self.canvasButton = W.Button(bar, "Dark", 62, function()
         view().canvas = P.nextIn(ML.Canvases, view().canvas or "Dark", "id")
         self:Layout()
@@ -71,15 +73,29 @@ end
 -- Reset faces the model forward at the default distance, and forgets the
 -- remembered distance; a new model only turns to face forward.
 function Model:ResetView()
-    self.facing, self.distance = 0, 1
+    self.facing, self.distance, self.panX, self.panY = 0, 1, 0, 0
     view().modelDistance = nil
 end
 
+-- Drag turns the model; right-drag moves it with the pointer (in UI units,
+-- so it follows the cursor whatever the model's size).
 function Model:Drag()
-    if not self.drag then return end
-    local x = GetCursorPosition()
-    self.facing = self.drag.facing + (x - self.drag.x) / self.stage:GetEffectiveScale() * ML.ModelCamera.turn
-    self.model:SetFacing(self.facing)
+    local drag = self.drag
+    if not drag then return end
+    local x, y = GetCursorPosition()
+    local scale = self.stage:GetEffectiveScale()
+    if drag.pan then
+        self.panX = drag.panX + (x - drag.x) / scale
+        self.panY = drag.panY + (y - drag.y) / scale
+        self:ApplyPan()
+    else
+        self.facing = drag.facing + (x - drag.x) / scale * ML.ModelCamera.turn
+        self.model:SetFacing(self.facing)
+    end
+end
+
+function Model:ApplyPan()
+    if self.model.SetViewTranslation then self.model:SetViewTranslation(self.panX, self.panY) end
 end
 
 -- Animations this model has; every listed one when the client cannot say.
@@ -112,13 +128,14 @@ function Model:Apply()
     end
     self.model:SetCamDistanceScale(self.distance)
     self.model:SetFacing(self.facing)
+    self:ApplyPan()
     self.model:SetAnimation(animation.id)
     self.animation:SetLabel(animation.label)
 end
 
 function Model:Show(entry)
     if not self.entry or self.entry.key ~= entry.key then
-        self.facing, self.status = 0, nil
+        self.facing, self.panX, self.panY, self.status = 0, 0, 0, nil
         self.distance = W.Clamp(tonumber(view().modelDistance) or 1, ML.ModelCamera.min, ML.ModelCamera.max)
     end
     self.entry = entry

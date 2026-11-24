@@ -14,7 +14,9 @@
 
 core.lua
 kinds.lua
-help.lua
+help\info.lua
+help\tabs.lua
+help\switches.lua
 data\featured.lua
 data\art.lua
 data\sounds.lua

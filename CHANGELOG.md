@@ -13,7 +13,7 @@ sound in the game and a proper sound player.
 
 ### New
 
-- **Models tab.** Turn, zoom and animate over 14,000 creature models. Target
+- **Models tab.** Turn, move, zoom and animate over 14,000 creature models. Target
   an NPC and press **Target** to find its model; the lab remembers the name so
   you can search for it later, or filter to **Seen in game**.
 - **Every sound.** Over 23,000 sounds instead of about 900, sorted into
@@ -45,8 +45,9 @@ sound in the game and a proper sound player.
   click to reset it.
 - **A loading card** that counts each library in, with **Browse now** to start
   on the tabs that are ready.
-- **Help.** A welcome card, and **?** in the title bar for tips about the tab
-  you are on.
+- **Help.** **?** in the title bar explains the tab you are on and every
+  button and switch on it; **i** shows the welcome, developer mode and where
+  to send ideas. The README's new "Every switch" section has the same words.
 - **Options.** The gear in the title bar, `/mlab options`, or **WoW Media
   Lab** in the game's Options under AddOns: untick a tab you never use and it
   no longer loads, so the lab opens faster. The loading card shows it as

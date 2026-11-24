@@ -1026,10 +1026,21 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     preview.model.scripts.OnUpdate(preview.model)
     assert(preview.model.facing > 1, "dragging turns the model")
     preview.model.scripts.OnMouseUp(preview.model)
+    -- Right-drag moves it with the pointer, without turning it.
+    local facing = preview.model.facing
+    Mock.cursorX, Mock.cursorY = 100, 100
+    preview.model.scripts.OnMouseDown(preview.model, "RightButton")
+    Mock.cursorX, Mock.cursorY = 130, 80
+    preview.model.scripts.OnUpdate(preview.model)
+    preview.model.scripts.OnMouseUp(preview.model, "RightButton")
+    equal(preview.model.translation[1] .. "," .. preview.model.translation[2], "30,-20", "right-drag pans")
+    equal(preview.model.facing, facing)
+    Mock.cursorY = nil
     for _ = 1, 40 do preview.model.scripts.OnMouseWheel(preview.model, -1) end
     equal(preview.model.camDistance, ML.ModelCamera.max)
     ML.UI:Select(find(ML, "model", 1694))
     equal(preview.model.facing, 0, "the next model faces forward")
+    equal(preview.model.translation[1] .. "," .. preview.model.translation[2], "0,0", "centered again")
     equal(preview.model.camDistance, ML.ModelCamera.max, "and keeps the camera distance")
     equal(ML.db.view.modelDistance, ML.ModelCamera.max)
     local reset
@@ -1159,12 +1170,13 @@ test("atlases have their own tab, and Find a filter narrows a long filter list",
     assert(#all > 0)
 end)
 
-test("the welcome card shows once, and ? shows tips for the tab", function()
+test("the welcome card shows once, i shows it again, and ? shows the tab and its switches", function()
     local ML = open()
     local card = ML.HelpPanel.frame
-    assert(card.shown, "welcome on first open")
+    assert(card.shown and ML.HelpPanel.IsShown("info"), "welcome on first open, as the info card")
     equal(card.blocks[1].heading:GetText(), ML.Help.welcome.title)
-    assert(card.blocks[3].body:GetText():find(ML.Help.developer.hint, 1, true), "players get the hint")
+    assert(card.blocks[2].body:GetText():find(ML.Help.developer.hint, 1, true), "players get the hint")
+    assert(card.blocks[3].body:GetText():find("wow-media-lab/issues", 1, true), "and where to send ideas")
     card.dismiss.scripts.OnClick(card.dismiss)
     assert(not card.shown and ML.db.welcomed)
     ML = Mock.load(ML.db)
@@ -1174,10 +1186,22 @@ test("the welcome card shows once, and ? shows tips for the tab", function()
     ML.UI:SelectTab("atlas")
     ML.UI.helpButton.scripts.OnClick(ML.UI.helpButton)
     local blocks = ML.HelpPanel.frame.blocks
-    equal(blocks[2].heading:GetText(), "Atlases")
-    assert(blocks[2].body:GetText():find(ML.Help.tabs.atlas[1], 1, true), "tips of the tab")
+    equal(blocks[1].heading:GetText(), "Atlases")
+    assert(blocks[1].body:GetText():find(ML.Help.tabs.atlas[1], 1, true), "tips of the tab")
+    local headings = {}
+    for _, block in ipairs(blocks) do if block.heading.shown then headings[#headings + 1] = block.heading:GetText() end end
+    equal(table.concat(headings, ","), "Atlases,Thumbnails,Shape and size,Image preview,Options,Everywhere",
+        "the tab's switches, then Options and Everywhere")
+    assert(blocks[4].body:GetText():find("Repeat:  Show copies", 1, true), "each switch and what it does")
+    ML.UI:SelectTab("sound")
+    equal(blocks[2].heading:GetText(), "Sound player", "follows the tab")
+    assert(blocks[2].body:GetText():find("Hover play:", 1, true))
+    ML.UI.infoButton.scripts.OnClick(ML.UI.infoButton)
+    assert(ML.HelpPanel.IsShown("info") and ML.UI.infoButton.active and not ML.UI.helpButton.active)
     ML.UI:SetDeveloper(true)
-    assert(blocks[3].body:GetText():find(ML.Help.developer.lines[1], 1, true), "developer tips when on")
+    assert(blocks[2].body:GetText():find(ML.Help.developer.lines[1], 1, true), "developer tips when on")
+    ML.UI.infoButton.scripts.OnClick(ML.UI.infoButton)
+    assert(not card.shown, "i again closes it")
 end)
 
 test("both side columns widen by dragging their inner edge, within bounds, and remember it", function()
