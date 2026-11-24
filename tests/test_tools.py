@@ -135,3 +135,24 @@ class ReleaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ChangelogTests(unittest.TestCase):
+    def test_the_current_version_has_notes(self):
+        version = packaging.version()
+        text = (ROOT / "CHANGELOG.md").read_text()
+        self.assertTrue(release.section(text, version), f"CHANGELOG.md needs a ## {version} section")
+
+    def test_release_moves_unreleased_notes_under_the_version(self):
+        text = "# Changelog\n\n## Unreleased\n\n- New thing.\n\n## 0.1.0\n\nFirst.\n"
+        released = release.release_changelog(text, "0.2.0", "2026-11-23")
+        self.assertIn("## Unreleased\n\n## 0.2.0 (2026-11-23)\n", released)
+        self.assertEqual(release.section(released, "0.2.0"), "- New thing.")
+        self.assertEqual(release.section(released, "Unreleased"), "")
+        self.assertEqual(release.release_changelog(released, "0.2.0", "2026-11-24"), released)
+        with self.assertRaises(ValueError):
+            release.release_changelog(released, "0.3.0", "2026-11-24")
+
+    def test_public_text_has_no_em_dashes(self):
+        for path in ("CHANGELOG.md", "docs/listing.md", "README.md"):
+            self.assertNotIn("\u2014", (ROOT / path).read_text(), path)

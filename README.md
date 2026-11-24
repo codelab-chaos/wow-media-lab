@@ -6,7 +6,7 @@ Hunting for the perfect icon for a macro? Want to hear what that sound is
 called, or watch a murloc dance? WoW Media Lab lets you search, preview and
 collect everything the game draws and plays, without leaving the game.
 
-Made for **WoW Forever** (interface **16001**). Version **0.1.0**.
+Made for **WoW Forever** (interface **16001**). Version **0.2.0**.
 
 ## What you can do
 

@@ -42,6 +42,8 @@ python3 scripts/package.py
 ```
 
 Releases: `python3 scripts/release.py <version> [--interface N] [--sync]`.
+Note every player-visible change under `## Unreleased` in `CHANGELOG.md`; the
+store text is `docs/listing.md`.
 
 The Lua tests load the real TOC against a strict mock in `tests/wow.lua`; add
 any new widget method there when the addon starts using it.

@@ -92,6 +92,17 @@ To cut a release, run `python3 scripts/release.py <version>`. Add
 data from the codex first. It bumps the `.toc` and README, runs every check
 and packages the zip. It never commits or deploys.
 
+Two files hold the public text, so it lives in the repo with the code:
+
+- [CHANGELOG.md](../CHANGELOG.md): add each change under **Unreleased** as
+  you go, in the player's words. The release script moves those notes under
+  the new version (it stops if there are none), ships the changelog in the
+  zip, and writes `dist/MediaLab-<version>-notes.md` for the GitHub release
+  and the CurseForge changelog.
+- [docs/listing.md](listing.md): the summary and description for the GitHub
+  About box and the CurseForge page. Update it when a release changes what
+  the lab does.
+
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
 Watch the loading card count each library in (it fades when done; Browse
 now hides it early), then on a second open check the bars show "so far / last

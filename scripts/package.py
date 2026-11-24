@@ -37,6 +37,7 @@ def package():
             for path in manifest_files(name):
                 archive.write(path, path.relative_to(ROOT))
             archive.write(ROOT / "LICENSE", f"{name}/LICENSE")
+        archive.write(ROOT / "CHANGELOG.md", "MediaLab/CHANGELOG.md")
     print(output)
     return output
 
