@@ -63,141 +63,62 @@ local function byName(a, b)
     return left < right
 end
 
--- Kinds are indexed on demand: Load(kinds) queues the ones not yet indexed,
--- and one worker builds them, in ML.IndexOrder, inside a coroutine that yields
--- every BATCH references. Start(onKind, onProgress) sets the listeners:
--- onKind(kind) as each kind finishes and onKind(nil) when the queue is empty;
--- onProgress(kind) after every batch, for the loading card. `ready` is true
--- while nothing is queued; `current` is the kind being built.
+-- Builds every kind in ML.IndexOrder inside one coroutine, yielding every
+-- BATCH references. onKind(kind) fires as each kind finishes.
+-- onProgress(kind) fires after every batch, for the loading card.
 function Catalog:Start(onKind, onProgress)
+    if self.started then return end
     self.started = true
-    self.onKind, self.onProgress = onKind, onProgress
-    self.queue, self.waiting = self.queue or {}, self.waiting or {}
-    self.ready = #self.queue == 0 and not self.current
-end
-
-function Catalog:IsQueued(kind)
-    if self.current == kind then return true end
-    for _, queued in ipairs(self.queue or {}) do if queued == kind then return true end end
-    return false
-end
-
--- Queues the kinds not yet indexed; done() runs once they all are (at once
--- when they already are). Returns the kinds that still have to be built.
-function Catalog:Load(kinds, done)
-    self.queue, self.waiting = self.queue or {}, self.waiting or {}
-    local pending = {}
-    for _, kind in ipairs(kinds) do
-        if not self.indexed[kind] then
-            pending[#pending + 1] = kind
-            if not self:IsQueued(kind) then self.queue[#self.queue + 1] = kind end
-        end
-    end
-    if #pending == 0 then
-        if done then done() end
-        return pending
-    end
-    if done then self.waiting[#self.waiting + 1] = {kinds = pending, done = done} end
-    local order = {}
-    for index, kind in ipairs(ML.IndexOrder) do order[kind] = index end
-    table.sort(self.queue, function(a, b) return (order[a] or 99) < (order[b] or 99) end)
-    self.ready = false
-    self:Run()
-    return pending
-end
-
-function Catalog:Notify(kind)
-    if self.onKind then self.onKind(kind) end
-    local still = {}
-    for _, wait in ipairs(self.waiting) do
-        local all = true
-        for _, wanted in ipairs(wait.kinds) do all = all and self.indexed[wanted] == true end
-        if all then wait.done() else still[#still + 1] = wait end
-    end
-    self.waiting = still
-end
-
-function Catalog:Run()
-    if self.thread then return end
     local count = 0
     local function step()
         count = count + 1
         if count % BATCH == 0 then
-            if self.onProgress then self.onProgress(self.current) end
+            if onProgress then onProgress(self.current) end
             coroutine.yield()
         end
     end
-    self.thread = coroutine.create(function()
-        while #self.queue > 0 do
-            local kind = table.remove(self.queue, 1)
+    local thread = coroutine.create(function()
+        for _, kind in ipairs(ML.IndexOrder) do
             self.current = kind
-            if self.onProgress then self.onProgress(kind) end
+            if onProgress then onProgress(kind) end
             local source = ML.Sources[kind]
             if source then source(function(data) return self:Add(kind, data) end, step) end
             table.sort(self.byKind[kind] or {}, byName)
             self.indexed[kind] = true
-            self.current = nil
-            self:Notify(kind)
+            if onKind then onKind(kind) end
             coroutine.yield()
         end
+        self.current = nil
         self.ready = true
     end)
-    -- The worker's OnUpdate is attached only while there is work.
-    self.worker = self.worker or CreateFrame("Frame")
-    self.worker:Show()
+    self.worker = CreateFrame("Frame")
     self.worker:SetScript("OnUpdate", function(frame)
-        local ok, err = coroutine.resume(self.thread)
-        if ok and coroutine.status(self.thread) ~= "dead" then return end
-        self.thread = nil
+        local ok, err = coroutine.resume(thread)
+        if ok and coroutine.status(thread) ~= "dead" then return end
         frame:SetScript("OnUpdate", nil)
         frame:Hide()
         if not ok then
             self.error = tostring(err)
-            self.current, self.queue, self.ready = nil, {}, true
             ML.Print("Indexing stopped: " .. self.error)
         end
-        if #self.queue > 0 then return self:Run() end
-        self:Notify(nil)
+        if onKind then onKind(nil) end
     end)
 end
 
 function Catalog:Count(kind) return #(self.byKind[kind] or {}) end
-
--- A saved key's kind: "sound:417" is a sound.
-function Catalog.KindOf(key) return tostring(key):match("^([^:]+):") end
-
--- A saved entry exists in this client, or its kind is not indexed yet (and
--- it is taken on trust until it is).
-function Catalog:Known(key)
-    if self.byKey[key] then return true end
-    local kind = Catalog.KindOf(key)
-    return kind ~= nil and ML.KindById[kind] ~= nil and not self.indexed[kind]
-end
-
--- The kinds the saved lists hold entries of, to index for the Lists tab.
-function Catalog:SavedKinds()
-    local seen, kinds = {}, {}
-    for _, list in ipairs(ML.Lists:All()) do
-        for key in pairs(list.keys) do
-            local kind = Catalog.KindOf(key)
-            if kind and ML.KindById[kind] and not seen[kind] then seen[kind] = true; kinds[#kinds + 1] = kind end
-        end
-    end
-    return kinds
-end
 
 -- Saved entries that exist in this client, without scanning every entry.
 -- With a list, only that list's; without, those in any list.
 function Catalog:SavedCount(list)
     local count = 0
     if list then
-        for key in pairs(list.keys) do if self:Known(key) then count = count + 1 end end
+        for key in pairs(list.keys) do if self.byKey[key] then count = count + 1 end end
         return count
     end
     local seen = {}
     for _, saved in ipairs(ML.Lists:All()) do
         for key in pairs(saved.keys) do
-            if not seen[key] and self:Known(key) then seen[key] = true; count = count + 1 end
+            if not seen[key] and self.byKey[key] then seen[key] = true; count = count + 1 end
         end
     end
     return count

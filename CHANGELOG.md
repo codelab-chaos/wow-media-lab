@@ -43,10 +43,8 @@ sound in the game and a proper sound player.
   screen (`/mlab dock left|right|top|bottom`).
 - **Wider columns.** Drag the edge of the preview or the filter column; double
   click to reset it.
-- **Libraries load when you need them.** The icons, models and sounds load
-  the first time you visit their tab (or a list that holds them), so the lab
-  opens fast and never loads what you don't use. A loading card counts each
-  one in, with **Browse now** to hide it.
+- **A loading card** that counts each library in, with **Browse now** to start
+  on the tabs that are ready.
 - **Help.** A welcome card, and **?** in the title bar for tips about the tab
   you are on.
 

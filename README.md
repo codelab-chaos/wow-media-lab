@@ -44,9 +44,9 @@ minimap. The first time, a welcome card says hello:
 > - Right-click anything to add it to your Favorites or one of your lists.
 > - Press ? in the title bar any time for tips about the tab you are on.
 
-The icons, models and sounds are big libraries, so each one loads the first
-time you visit its tab in a session, and a loading card counts it in. Tabs you
-don't visit never load. Press **Browse now** to hide the card early.
+The first time it opens each session, the lab counts its libraries in (the
+sounds, models and icons take a moment); press **Browse now** to start on the
+tabs that are already done.
 
 Drag the title bar to move the window and the corner to resize it. Want a
 bigger preview, or longer filter names? Drag the edge of the preview or the
@@ -160,7 +160,7 @@ copy, building a list for your addon, and what to watch out for.
 - **Nothing from Blizzard is bundled.** The pictures and sounds come from
   your own game; the addon only knows their names and numbers.
 - **It stays out of the way.** Nothing loads until you open it, and the big
-  icon, model and sound lists load only when you visit those tabs.
+  icon and model lists load only when you visit those tabs.
 - **It saves very little:** your lists, the NPC names you capture, where the
   window sits, and your settings.
 - **Some art may be missing.** The lab lists what the game's interface files
