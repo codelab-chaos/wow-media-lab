@@ -61,6 +61,8 @@ sound in the game and a proper sound player.
 
 - Saved settings that were edited by hand, or that came from an older version,
   load without errors.
+- The Textures tab opens textures again for players who last used atlases
+  there in 0.1.
 
 ## 0.1.0
 

@@ -568,8 +568,12 @@ function UI:CreateToolbar(body)
     self.tabButtons, self.viewButtons, self.toolbarItems = {}, {}, {}
     for _, tab in ipairs(ML.TabBar) do
         local button = W.Button(body, tab.label, 96, function()
+            -- The view last used in this tab, if it still lives here (a kind
+            -- can move to its own tab, as atlases did).
             local remembered = type(view().views) == "table" and view().views[tab.id]
-            self:SelectTab(remembered or tab.kinds[1])
+            local here = false
+            for _, kind in ipairs(tab.kinds) do here = here or kind == remembered end
+            self:SelectTab(here and remembered or tab.kinds[1])
         end, 24)
         button.tab = tab
         self.tabButtons[#self.tabButtons + 1] = button

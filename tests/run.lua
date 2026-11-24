@@ -1074,6 +1074,12 @@ test("atlases have their own tab, and Find a filter narrows a long filter list",
     atlases.scripts.OnClick(atlases)
     equal(ML.UI.tabId, "atlas")
     for _, button in ipairs(ML.UI.viewButtons) do assert(not button.shown, "no Files / Atlases switch") end
+    -- Saved by 0.1, when atlases were a view inside Textures: Textures still opens textures.
+    ML.db.view.views = {texture = "atlas"}
+    local textures
+    for _, button in ipairs(ML.UI.tabButtons) do if button.tab.id == "texture" then textures = button end end
+    textures.scripts.OnClick(textures)
+    equal(ML.UI.tabId, "texture", "an old remembered view from another tab is ignored")
     SlashCmdList.MEDIALAB("tab atlases")
     equal(ML.UI.tabId, "atlas")
     -- Find a filter, on the sound folders.
