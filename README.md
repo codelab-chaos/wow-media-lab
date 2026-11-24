@@ -45,7 +45,8 @@ minimap. The first time, a welcome card says hello:
 > - Press ? in the title bar any time for tips about the tab you are on.
 
 The icons, models and sounds are big libraries, so each one loads the first
-time you visit its tab in a session, and a loading card counts it in. Tabs you
+time you visit its tab in a session. A loading card shows what is in, what is
+on its way and what waits for its tab. Tabs you
 don't visit never load. Press **Browse now** to hide the card early.
 
 Drag the title bar to move the window and the corner to resize it. Want a

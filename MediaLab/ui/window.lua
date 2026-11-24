@@ -134,16 +134,14 @@ function UI:KindsFor(id)
     return {id}
 end
 
--- Indexes what a tab needs. A library still to load brings up the loading
--- card, for just the libraries on their way in; done() runs once they are.
+-- Indexes what a tab needs, ahead of background work. A library still to
+-- load brings up the loading card; done() runs once everything is in.
 function UI:LoadFor(id, done)
-    local pending = C:Load(self:KindsFor(id), done)
-    local libraries = {}
-    for _, kind in ipairs(pending) do
-        if ML.KindById[kind].library then libraries[#libraries + 1] = kind end
-    end
-    if #libraries > 0 and self.frame then
-        ML.Loader.Show(libraries)
+    local pending = C:Load(self:KindsFor(id), done, true)
+    local library = false
+    for _, kind in ipairs(pending) do library = library or ML.KindById[kind].library ~= nil end
+    if library and self.frame then
+        ML.Loader.Show()
         self:RenderLoader()
     end
     return pending
@@ -479,12 +477,12 @@ end
 -- The loading card shows each kind's count, from the catalog, as it grows.
 function UI:RenderLoader()
     if not ML.Loader.IsShown() then return end
-    local counts, done = {}, {}
-    for _, kind in ipairs(ML.Loader.Kinds()) do
+    local counts, states = {}, {}
+    for _, kind in ipairs(ML.IndexOrder) do
         counts[kind] = C:Count(kind)
-        done[kind] = C.indexed[kind] == true
+        states[kind] = C.indexed[kind] and "done" or C:IsQueued(kind) and "loading" or "later"
     end
-    ML.Loader.Render(counts, C.current, done)
+    ML.Loader.Render(counts, C.current, states)
 end
 
 function UI:OnIndexed(kind)
@@ -492,11 +490,7 @@ function UI:OnIndexed(kind)
         ML.db.counts[kind] = C:Count(kind) -- next session's totals for the loading card
     end
     self:RenderLoader()
-    if ML.Loader.IsShown() then
-        local all = true
-        for _, shown in ipairs(ML.Loader.Kinds()) do all = all and C.indexed[shown] == true end
-        if all then ML.Loader.Finish() end
-    end
+    if kind == nil then ML.Loader.Finish() end
     if kind then self.facetCache[kind] = nil end
     self.facetCache[ML.ListsTab] = nil
     if not self.frame then return end
@@ -1047,6 +1041,7 @@ function UI:Create()
     self.devButton:SetActive(ML.db.developer and true or false)
     self:UpdateMaximize()
     C:Start(function(kind) self:OnIndexed(kind) end, function() self:RenderLoader() end)
+    ML.Loader.Show()
     self:SelectTab(self.tabId)
     C:Load(self:BuiltInKinds())
     if not ML.db.welcomed then self:ShowHelp() end

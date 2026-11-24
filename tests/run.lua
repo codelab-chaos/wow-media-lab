@@ -46,7 +46,13 @@ test("libraries load on demand: a tab indexes what it shows, the rest wait", fun
     equal(models.text:GetText(), "Models", "no count before the first load")
     ML.UI:SelectTab("model")
     assert(ML.Loader.IsShown(), "the loading card comes back for a library")
-    equal(table.concat(ML.Loader.Kinds(), ","), "model", "just the library on its way in")
+    equal(C.queue[1] or C.current, "model", "ahead of anything else")
+    local card, rows = ML.Loader.frame, {}
+    for _, row in ipairs(ML.Loader.frame.rows) do rows[row.kind] = row end
+    ML.UI:RenderLoader()
+    equal(#card.rows, #ML.IndexOrder, "the card shows every kind")
+    assert(rows.icon.count:GetText():find("^|T"), "what is in has a check")
+    equal(rows.sound.count:GetText(), "when you open Sounds", "a library nobody asked for says when it loads")
     Mock.flush()
     assert(C.indexed.model and not ML.Loader.IsShown())
     assert(ML.UI.inspector.entry and ML.UI.inspector.entry.kind == "model", "its first model shows once loaded")
@@ -61,7 +67,7 @@ test("libraries load on demand: a tab indexes what it shows, the rest wait", fun
     ML.UI:Refresh()
     equal(ML.UI.tabButtons[#ML.UI.tabButtons].text:GetText(), "Lists  1:1", "a saved sound counts before sounds load")
     ML.UI:SelectTab(ML.ListsTab)
-    equal(table.concat(ML.Loader.Kinds(), ","), "sound")
+    assert(ML.Loader.IsShown() and C:IsQueued("sound"))
     Mock.flush()
     assert(C.indexed.sound)
     equal(#ML.UI.results, 1, "and shows it once loaded")
@@ -371,21 +377,23 @@ end)
 test("the loading card counts every library in, then fades out", function()
     local ML = Mock.load()
     SlashCmdList.MEDIALAB("")
-    ML.UI:SelectTab("sound")
     local card = ML.Loader.frame
     assert(card.shown, "shows while the lab fills")
-    equal(table.concat(ML.Loader.Kinds(), ","), "sound,icon", "the libraries on their way in, in order")
-    assert(card.rows[1].shown and not card.rows[2].shown, "rows for just those")
-    equal(card.rows[1].name:GetText(), "Sounds")
-    assert(card.rows[1].source:GetText():find("MediaLab_Sounds", 1, true), "says where it comes from")
+    ML.UI:SelectTab("sound")
+    equal(ML.Catalog.queue[1], "sound", "the tab you are on goes first")
+    local sounds
+    for _, row in ipairs(card.rows) do if row.kind == "sound" then sounds = row end end
+    equal(sounds.name:GetText(), "Sounds")
+    assert(sounds.source:GetText():find("MediaLab_Sounds", 1, true), "says where it comes from")
     local worker = ML.Catalog.worker
     for _ = 1, 3 do worker.scripts.OnUpdate(worker) end
     card.scripts.OnUpdate(card, 0.1)
     assert(card.line:GetText() ~= "", "says what it is doing")
-    assert(card.total:GetText():find("entries so far", 1, true))
+    assert(card.total:GetText():find("entries loaded", 1, true))
     Mock.flush()
     assert(not card.shown, "fades out once everything is in")
     assert(ML.db.counts.icon > 0 and ML.db.counts.sound > 0, "remembers how many of each for next time")
+    assert(not ML.Catalog.indexed.model, "and still has not loaded the models")
     -- Next session: the bars know the totals, and the tabs show them before loading.
     ML = Mock.load(ML.db)
     SlashCmdList.MEDIALAB("")
@@ -397,7 +405,7 @@ test("the loading card counts every library in, then fades out", function()
     local worker2 = ML.Catalog.worker
     for _ = 1, 3 do worker2.scripts.OnUpdate(worker2) end
     ML.UI:RenderLoader()
-    local sounds = card.rows[1]
+    for _, row in ipairs(card.rows) do if row.kind == "sound" then sounds = row end end
     assert(sounds.count:GetText():find(" / " .. ML.Loader.Format(ML.db.counts.sound), 1, true) or sounds.fraction == 1,
         "counts read 'so far / last time'")
     card.browse.scripts.OnClick(card.browse)

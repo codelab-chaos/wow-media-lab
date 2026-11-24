@@ -88,8 +88,9 @@ ML.LoaderLines = {
     default = {"Stocking the shelves..."},
 }
 
--- Build order: small, fast lists first so their tabs are usable immediately.
-ML.IndexOrder = {"sound", "control", "font", "atlas", "texture", "model", "icon"}
+-- The kinds in tab order: the loading card's rows, and the order background
+-- indexing works through the built-in kinds. The tab you are on always goes first.
+ML.IndexOrder = {"icon", "texture", "atlas", "model", "sound", "control", "font"}
 
 -- Image preview repeats, to check that tiling art lines up: copies across
 -- and down. Cycled by the preview's Repeat button.

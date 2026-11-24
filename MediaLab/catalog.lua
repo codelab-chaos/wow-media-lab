@@ -83,14 +83,20 @@ function Catalog:IsQueued(kind)
 end
 
 -- Queues the kinds not yet indexed; done() runs once they all are (at once
--- when they already are). Returns the kinds that still have to be built.
-function Catalog:Load(kinds, done)
+-- when they already are). `first` puts them ahead of the queue (what you are
+-- looking at goes before background work). Returns the kinds still to build.
+function Catalog:Load(kinds, done, first)
     self.queue, self.waiting = self.queue or {}, self.waiting or {}
     local pending = {}
     for _, kind in ipairs(kinds) do
-        if not self.indexed[kind] then
-            pending[#pending + 1] = kind
-            if not self:IsQueued(kind) then self.queue[#self.queue + 1] = kind end
+        if not self.indexed[kind] then pending[#pending + 1] = kind end
+    end
+    for index, kind in ipairs(pending) do
+        if first then
+            for at = #self.queue, 1, -1 do if self.queue[at] == kind then table.remove(self.queue, at) end end
+            if self.current ~= kind then table.insert(self.queue, index, kind) end
+        elseif not self:IsQueued(kind) then
+            self.queue[#self.queue + 1] = kind
         end
     end
     if #pending == 0 then
@@ -98,9 +104,6 @@ function Catalog:Load(kinds, done)
         return pending
     end
     if done then self.waiting[#self.waiting + 1] = {kinds = pending, done = done} end
-    local order = {}
-    for index, kind in ipairs(ML.IndexOrder) do order[kind] = index end
-    table.sort(self.queue, function(a, b) return (order[a] or 99) < (order[b] or 99) end)
     self.ready = false
     self:Run()
     return pending
