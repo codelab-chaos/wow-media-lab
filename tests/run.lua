@@ -909,6 +909,11 @@ test("grid thumbnails zoom smoothly, per tab, and paging stays in range", functi
     for _ = 1, 3 do control.out.scripts.OnClick(control.out) end
     ML.UI:SelectTab("icon")
     equal(control.label.text:GetText(), "100%", "each tab keeps its own zoom")
+    -- Spacing scales with the thumbnails, within its limits.
+    local function spacing(cell) local gap, inset = ML.Browser.Spacing(cell); return gap .. "," .. inset end
+    equal(spacing(24), "2,1", "small thumbnails sit close together")
+    equal(spacing(48), "4,3")
+    equal(spacing(200), "6,4", "and stop growing apart")
     ML.UI:SelectTab("sound")
     assert(not control.shown, "lists have no zoom")
     ML.UI:SelectTab("texture")

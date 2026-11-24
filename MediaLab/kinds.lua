@@ -108,6 +108,11 @@ ML.HoverPlayDelay = 0.3
 ML.Shapes = {ratio = 1.2}
 ML.SizeStops = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096}
 
+-- Grid spacing grows and shrinks with the thumbnails, so the grid keeps its
+-- look at any scale: the gap between cells and the padding around the art,
+-- each a fraction of the cell size, between min and max pixels.
+ML.GridSpacing = {gap = {ratio = 0.08, min = 2, max = 6}, inset = {ratio = 0.06, min = 1, max = 4}}
+
 -- Grid thumbnail zoom, per tab: a multiple of the kind's base cell size, from
 -- min to max; each wheel notch or - / + press multiplies or divides by step.
 ML.ThumbZoom = {min = 0.5, max = 4, step = 1.15}

@@ -31,7 +31,8 @@ sound in the game and a proper sound player.
   under the results shows what you picked. The Lists tab counts your lists and
   everything in them.
 - **Scale the thumbnails.** Ctrl+scroll over the grid, or use **-**,
-  **100%** and **+**. Icons, textures and atlases each remember their own.
+  **100%** and **+**. Icons, textures and atlases each remember their own. The
+  spacing scales with them, so small thumbnails sit close together.
 - **Shape and size filters** for textures and atlases: square, wide or tall,
   and a size range that snaps to the usual sizes.
 - **Find a filter.** A box at the top of the filter column narrows a long

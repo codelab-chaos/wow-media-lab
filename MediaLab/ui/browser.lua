@@ -8,7 +8,7 @@ local Browser = {}
 Browser.__index = Browser
 ML.Browser = Browser
 
-local GAP, ROW = 6, 22
+local ROW = 22
 -- The scrollbar's width plus its gap from the cells.
 local BAR, BAR_GAP, MIN_THUMB = 8, 6, 24
 
@@ -134,6 +134,13 @@ function Browser:SetScale(scale)
     self:Render()
 end
 
+-- The gap between grid cells and the padding around their art, for a cell
+-- size, from ML.GridSpacing.
+function Browser.Spacing(cell)
+    local function part(rule) return W.Clamp(math.floor(cell * rule.ratio + 0.5), rule.min, rule.max) end
+    return part(ML.GridSpacing.gap), part(ML.GridSpacing.inset)
+end
+
 function Browser:Geometry()
     -- The scrollbar's lane is always reserved so the layout never jumps.
     local width, height = self.frame:GetWidth() - BAR - BAR_GAP, self.frame:GetHeight()
@@ -141,9 +148,10 @@ function Browser:Geometry()
     if layout.mode == "grid" then
         local cell = math.floor(layout.cell * (layout.scale or 1))
         local cellHeight = cell + (layout.caption and 16 or 0)
-        local columns = math.max(1, math.floor((width + GAP) / (cell + GAP)))
-        local rows = math.max(1, math.floor((height + GAP) / (cellHeight + GAP)))
-        return columns, rows, cell, cellHeight
+        local gap, inset = Browser.Spacing(cell)
+        local columns = math.max(1, math.floor((width + gap) / (cell + gap)))
+        local rows = math.max(1, math.floor((height + gap) / (cellHeight + gap)))
+        return columns, rows, cell, cellHeight, gap, inset
     end
     local rowHeight = layout.rowHeight or ROW
     return 1, math.max(1, math.floor(height / rowHeight)), width, rowHeight
@@ -269,7 +277,7 @@ local function detailText(entry, mixed)
 end
 
 function Browser:RenderGrid(first, size)
-    local columns, _, cell, cellHeight = self:Geometry()
+    local columns, _, cell, cellHeight, gap, inset = self:Geometry()
     for index = 1, size do
         local entry = self.results[first + index]
         local frame = self:Cell(index)
@@ -278,14 +286,14 @@ function Browser:RenderGrid(first, size)
         if entry then
             local column, line = (index - 1) % columns, math.floor((index - 1) / columns)
             frame:ClearAllPoints()
-            frame:SetPoint("TOPLEFT", column * (cell + GAP), -line * (cellHeight + GAP))
+            frame:SetPoint("TOPLEFT", column * (cell + gap), -line * (cellHeight + gap))
             frame:SetSize(cell, cellHeight)
             local picked = self.handlers.isSelected and self.handlers.isSelected(entry)
             frame:SetBackdropBorderColor(unpack((entry.key == self.selectedKey or picked) and T.selected or T.border))
             frame.picked:SetShown(picked and true or false)
             frame.art:ClearAllPoints()
             frame.art:SetPoint("CENTER", frame, "TOP", 0, -cell / 2)
-            local loaded = ML.Art.Fit(frame.art, entry, cell - 8, cell - 8, true)
+            local loaded = ML.Art.Fit(frame.art, entry, cell - 2 * inset, cell - 2 * inset, true)
             frame.missing:SetShown(not loaded)
             frame.caption:SetShown(self.layout.caption == true)
             frame.caption:SetText(entry.name)
