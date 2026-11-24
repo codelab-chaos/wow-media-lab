@@ -104,10 +104,9 @@ Two files hold the public text, so it lives in the repo with the code:
   the lab does.
 
 In-game smoke test: enable `/console scriptErrors 1`, restart, open `/mlab`.
-Watch the loading card: the icons fill first, then the built-in kinds get a
-check, and Models and Sounds say they load when you open them (it fades when
-done; Browse now hides it early). Open Models and Sounds: the card comes back
-with that library's bar moving, and never a second time. Reload and check the bars show "so far / last
+Watch the loading card count the icons in (it fades when done; Browse now
+hides it early). Open Models and Sounds: the card comes back for just that
+library, and never a second time. Reload and check the bars show "so far / last
 time", and the tabs show last session's counts before they load. Read the
 welcome card and press **Got it**; press **?** on a few tabs. Visit every tab,
 search and filter, Ctrl+scroll the grid and use - / 100% / + (each tab keeps its zoom),
