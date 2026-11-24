@@ -17,7 +17,7 @@ ML.Help = {
         icon = {
             "Search by what an icon shows (sword, potion, wolf) or by color (blue, gold).",
             "Filter by subject or color in the left column.",
-            "Hold Ctrl and scroll over the grid to make the thumbnails bigger or smaller.",
+            "Hold Ctrl and scroll over the grid to scale the thumbnails up or down.",
         },
         texture = {
             "Texture files are whole images the game draws from: frames, backgrounds, borders.",

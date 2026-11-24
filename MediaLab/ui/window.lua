@@ -255,6 +255,7 @@ function UI:Refresh()
     self.zoomControl:SetShown(tab.layout == "grid")
     self.zoomControl.label:SetLabel(math.floor(self:ThumbScale() * 100 + 0.5) .. "%")
     self.copyButton:SetShown(ML.db.developer and true or false)
+    self.scaleHint:SetShown(tab.layout == "grid")
     local current = ML.TabButtonOf(self.tabId)
     for _, button in ipairs(self.tabButtons) do
         local count = 0
@@ -609,6 +610,8 @@ function UI:CreateToolbar(body)
     W.Tip(self.copyButton, "Copy results", "The current results (a list, on the Lists tab) as a Lua table or CSV, first "
         .. ML.Export.CSV_LIMIT .. ".")
     self.toolbarItems[#self.toolbarItems + 1] = self.copyButton
+    self.scaleHint = W.Label(body, "Ctrl+scroll to scale", 11, T.muted)
+    self.toolbarItems[#self.toolbarItems + 1] = self.scaleHint
 end
 
 ---------------------------------------------------------------------------
@@ -658,7 +661,7 @@ function UI:CreateZoomControl(body)
     control.into = W.Button(control, "+", 22, function() self:ZoomBy(1) end, 24)
     control.into:SetPoint("LEFT", control.label, "RIGHT", 4, 0)
     W.Tip(control.out, "Smaller thumbnails", "Or hold Ctrl and scroll down over the grid.")
-    W.Tip(control.label, "Thumbnail zoom", "Click to go back to 100%. Hold Ctrl and scroll over the grid to zoom.")
+    W.Tip(control.label, "Thumbnail scale", "Click to go back to 100%. Hold Ctrl and scroll over the grid to scale.")
     W.Tip(control.into, "Bigger thumbnails", "Or hold Ctrl and scroll up over the grid.")
     self.zoomControl = control
 end
