@@ -27,7 +27,7 @@ Install **WoW Media Lab** from CurseForge, or download the zip from
 [Releases](https://github.com/codelab-chaos/wow-media-lab/releases) and
 extract it into `World of Warcraft/_forever_/Interface/AddOns/`. It brings
 four folders: `MediaLab`, and three data folders (`MediaLab_Icons`,
-`MediaLab_Models`, `MediaLab_Sounds`) that load only when you open those tabs.
+`MediaLab_Models`, `MediaLab_Sounds`) that load only when you open the lab.
 
 Restart the game after installing, and make sure **WoW Media Lab** is
 enabled in the AddOns list.
@@ -159,8 +159,8 @@ copy, building a list for your addon, and what to watch out for.
 
 - **Nothing from Blizzard is bundled.** The pictures and sounds come from
   your own game; the addon only knows their names and numbers.
-- **It stays out of the way.** Nothing loads until you open it, and the big
-  icon and model lists load only when you visit those tabs.
+- **It stays out of the way.** Nothing loads until you open the lab, so it
+  costs nothing while you play.
 - **It saves very little:** your lists, the NPC names you capture, where the
   window sits, and your settings.
 - **Some art may be missing.** The lab lists what the game's interface files

@@ -46,8 +46,8 @@ whole list as a Lua table.
 
 - **Nothing from Blizzard is bundled.** The pictures and sounds come from
   your own game; the addon only knows their names and numbers.
-- **It stays out of the way.** Nothing loads until you open it, and the big
-  icon, model and sound lists load only when you visit those tabs.
+- **It stays out of the way.** Nothing loads until you open the lab, so it
+  costs nothing while you play.
 
 ### Feedback
 
