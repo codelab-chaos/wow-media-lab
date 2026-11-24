@@ -114,7 +114,7 @@ them, and what every button does, are also in [the lab's guide](docs/guide.md).
 ## Ideas or bugs?
 
 We'd love to hear them on the
-[project page](https://github.com/codelab-chaos/wow-media-lab/issues).
+[project page](https://github.com/codelab-chaos/wow-media-lab).
 Screenshots and the tab you were on help a lot.
 
 ## Thanks and license
