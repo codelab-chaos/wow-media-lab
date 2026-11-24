@@ -1,6 +1,7 @@
 local _, ML = ...
 
--- The 3D preview for creature displays: drag (left or right button) to turn,
+-- The 3D preview for creature displays: drag (left or right button) to turn
+-- it on any axis (across spins, up and down tilts, Shift+drag rolls),
 -- middle-drag to pan, wheel to zoom, cycle
 -- animations and the canvas, or load your current target. Registered as
 -- ML.Previews.model; built lazily inside the inspector like the others.
@@ -19,7 +20,7 @@ local function animationById(id)
 end
 
 function Model.New(parent)
-    local self = setmetatable({facing = 0, distance = 1, panX = 0, panY = 0}, Model)
+    local self = setmetatable({facing = 0, pitch = 0, roll = 0, distance = 1, panX = 0, panY = 0}, Model)
     self.frame = P.baseFrame(parent)
     self.stage = P.stageFrame(self.frame, 54)
     self.model = CreateFrame("PlayerModel", nil, self.stage)
@@ -35,7 +36,8 @@ function Model.New(parent)
     end)
     self.model:SetScript("OnMouseDown", function(_, button)
         local x, y = GetCursorPosition()
-        self.drag = {x = x, y = y, facing = self.facing, panX = self.panX, panY = self.panY, pan = button == "MiddleButton"}
+        self.drag = {x = x, y = y, facing = self.facing, pitch = self.pitch, roll = self.roll,
+            panX = self.panX, panY = self.panY, pan = button == "MiddleButton", rolling = IsShiftKeyDown() and true or false}
         self.model:SetScript("OnUpdate", function() self:Drag() end)
     end)
     self.model:SetScript("OnMouseUp", function()
@@ -53,7 +55,7 @@ function Model.New(parent)
     W.Tip(self.animation, "Animation", "Cycle the animations this model has.")
     local reset = W.Button(bar, "Reset", 46, function() self:ResetView(); self:Apply() end, 22)
     reset:SetPoint("LEFT", self.animation, "RIGHT", 4, 0)
-    W.Tip(reset, "Reset view", "Face forward, centered, at the default distance. Drag turns, middle-drag moves, the wheel zooms.")
+    W.Tip(reset, "Reset view", "Face forward, upright, centered, at the default distance. Drag turns, Shift+drag rolls, middle-drag moves, the wheel zooms.")
     self.canvasButton = W.Button(bar, "Dark", 62, function()
         view().canvas = P.nextIn(ML.Canvases, view().canvas or "Dark", "id")
         self:Layout()
@@ -73,7 +75,7 @@ end
 -- Reset faces the model forward at the default distance, and forgets the
 -- remembered distance; a new model only turns to face forward.
 function Model:ResetView()
-    self.facing, self.distance, self.panX, self.panY = 0, 1, 0, 0
+    self.facing, self.pitch, self.roll, self.distance, self.panX, self.panY = 0, 0, 0, 1, 0, 0
     view().modelDistance = nil
 end
 
@@ -90,10 +92,24 @@ function Model:Drag()
         self.panX = drag.panX + (x - drag.x) * units
         self.panY = drag.panY + (y - drag.y) * units
         self:ApplyPan()
+    elseif drag.rolling then
+        self.roll = drag.roll + (x - drag.x) / scale * ML.ModelCamera.turn
+        self:ApplyTilt()
     else
         self.facing = drag.facing + (x - drag.x) / scale * ML.ModelCamera.turn
+        self.pitch = drag.pitch - (y - drag.y) / scale * ML.ModelCamera.turn
         self.model:SetFacing(self.facing)
+        self:ApplyTilt()
     end
+end
+
+-- Pitch and roll, only once the model has been tilted: an upright model is
+-- left to the game's own framing.
+function Model:ApplyTilt()
+    if self.pitch == 0 and self.roll == 0 and not self.tilted then return end
+    self.tilted = self.pitch ~= 0 or self.roll ~= 0
+    self.model:SetPitch(self.pitch)
+    self.model:SetRoll(self.roll)
 end
 
 -- Only once something has been panned: an untouched model keeps the game's
@@ -134,6 +150,7 @@ function Model:Apply()
     end
     self.model:SetCamDistanceScale(self.distance)
     self.model:SetFacing(self.facing)
+    self:ApplyTilt()
     self:ApplyPan()
     self.model:SetAnimation(animation.id)
     self.animation:SetLabel(animation.label)
@@ -141,7 +158,7 @@ end
 
 function Model:Show(entry)
     if not self.entry or self.entry.key ~= entry.key then
-        self.facing, self.panX, self.panY, self.status = 0, 0, 0, nil
+        self.facing, self.pitch, self.roll, self.panX, self.panY, self.status = 0, 0, 0, 0, 0, nil
         self.distance = W.Clamp(tonumber(view().modelDistance) or 1, ML.ModelCamera.min, ML.ModelCamera.max)
     end
     self.entry = entry

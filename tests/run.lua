@@ -1027,14 +1027,24 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     assert(preview.model.facing > 1, "dragging turns the model")
     preview.model.scripts.OnMouseUp(preview.model)
     assert(not preview.model.position, "an untouched model is never moved, so turning and zooming keep working")
-    -- Right-drag turns too; middle-drag moves it, without turning it.
-    Mock.cursorX = 100
+    assert(not preview.model.pitch, "a level drag only spins it")
+    -- Up and down tilts it; Shift+drag rolls it; right-drag turns too.
+    Mock.cursorX, Mock.cursorY = 100, 100
     preview.model.scripts.OnMouseDown(preview.model, "RightButton")
-    Mock.cursorX = 150
+    Mock.cursorX, Mock.cursorY = 150, 140
     preview.model.scripts.OnUpdate(preview.model)
     preview.model.scripts.OnMouseUp(preview.model, "RightButton")
     local facing = preview.model.facing
     assert(facing > 1.5, "right-drag turns")
+    assert(preview.model.pitch < 0, "dragging up tilts it")
+    Mock.shift = true
+    preview.model.scripts.OnMouseDown(preview.model, "LeftButton")
+    Mock.cursorX = 200
+    preview.model.scripts.OnUpdate(preview.model)
+    preview.model.scripts.OnMouseUp(preview.model, "LeftButton")
+    Mock.shift = false
+    assert(preview.model.roll > 0, "Shift+drag rolls it")
+    equal(preview.model.facing, facing, "without spinning")
     assert(not preview.model.position)
     Mock.cursorX, Mock.cursorY = 100, 100
     preview.model.scripts.OnMouseDown(preview.model, "MiddleButton")
@@ -1050,6 +1060,7 @@ test("models index creature displays by family and skin, and preview in 3D", fun
     ML.UI:Select(find(ML, "model", 1694))
     equal(preview.model.facing, 0, "the next model faces forward")
     equal(table.concat(preview.model.position, ","), "0,0,0", "centered again")
+    equal(preview.model.pitch .. "," .. preview.model.roll, "0,0", "and upright")
     equal(preview.model.camDistance, ML.ModelCamera.max, "and keeps the camera distance")
     equal(ML.db.view.modelDistance, ML.ModelCamera.max)
     local reset

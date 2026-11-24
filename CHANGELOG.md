@@ -10,7 +10,12 @@ heading and uses it for the release notes.
 
 - The model preview turns and zooms again. Panning had locked the camera at
   one angle; it now moves the model only once you pan, with the middle
-  button. Drag with the left or right button to turn.
+  button.
+
+### Changed
+
+- Turn a model any way you like: drag across to spin it, up and down to tilt
+  it, and Shift+drag to roll it. Reset stands it upright again.
 
 ## 0.2.0 (2026-11-23)
 
