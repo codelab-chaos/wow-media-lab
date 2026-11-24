@@ -124,6 +124,30 @@ test("fallback data is used and validated when native APIs are missing", functio
     equal(C:Count("font"), 3, "fallback fonts validated against loaded objects")
 end)
 
+test("an active search glows and pulses; a picked filter is named, filled and clearable", function()
+    local ML = open()
+    local T = ML.Widgets.theme
+    local function is(color, want) return color[1] == want[1] and color[2] == want[2] and color[3] == want[3] end
+    assert(not ML.UI.searchGlow.shown and is(ML.UI.search.borderColor, T.border), "quiet without a search")
+    ML.UI:Search("sword")
+    assert(ML.UI.searchGlow.shown and ML.UI.searchGlow.pulse:IsPlaying(), "a search glows and pulses")
+    assert(is(ML.UI.search.borderColor, T.active) and ML.UI.clearButton.active, "and Clear lights up")
+    ML.UI:Search("")
+    assert(not ML.UI.searchGlow.shown and not ML.UI.searchGlow.pulse:IsPlaying(), "Clear stops it")
+    ML.UI:SelectTab("model")
+    equal(ML.UI.facetHeading:GetText(), "FILTER")
+    assert(not ML.UI.facetClear.shown)
+    ML.UI:SetFacet("Family: Murloc")
+    equal(ML.UI.facetHeading:GetText(), "FILTER: MURLOC", "the heading names it")
+    assert(ML.UI.facetClear.shown and is(ML.UI.facetColumn.borderColor, T.active), "x to clear, a bright edge")
+    local filled
+    for _, item in ipairs(ML.UI.facetButtons) do if item.shown and item.fill.shown then filled = item.facet end end
+    equal(filled, "Family: Murloc", "its row is filled")
+    ML.UI.facetClear.scripts.OnClick(ML.UI.facetClear)
+    equal(ML.db.view.facets.model, nil, "x goes back to All")
+    equal(ML.UI.facetHeading:GetText(), "FILTER")
+end)
+
 test("search needs every literal word and never treats input as a pattern", function()
     local ML = open()
     ML.UI:SelectTab("sound")

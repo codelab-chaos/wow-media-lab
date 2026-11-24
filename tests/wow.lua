@@ -95,6 +95,20 @@ function methods:Type(value)
     if self.scripts.OnTextChanged then self.scripts.OnTextChanged(self, true) end
 end
 function methods:GetText() return self.text end
+-- Animation groups: they play on their own, so only whether one is playing
+-- matters here. Animations accept any setter.
+function methods:CreateAnimationGroup()
+    local group = {playing = false}
+    function group:SetLooping(mode) self.looping = mode end
+    function group:CreateAnimation(kind)
+        return setmetatable({kind = kind}, {__index = function() return function() end end})
+    end
+    function group:Play() self.playing = true end
+    function group:Stop() self.playing = false end
+    function group:IsPlaying() return self.playing end
+    return group
+end
+
 -- About 6 units per character at the lab's small sizes.
 function methods:GetStringWidth() return #(self.text or "") * 6 end
 function methods:GetStringHeight()
@@ -148,6 +162,7 @@ function methods:SetRoll(value) self.roll = value end
 function methods:SetAnimation(value) self.animationId = value end
 function methods:HasAnimation(id) return id == 0 or id == 4 or id == 1 end
 function methods:EnableMouse(value) self.mouse = value and true or false end
+function methods:SetBackdropBorderColor(r, g, b) self.borderColor = {r, g, b} end
 
 for _, name in ipairs({
     "SetFont", "SetTextColor", "SetJustifyH", "SetJustifyV", "SetWordWrap", "SetBackdropColor",

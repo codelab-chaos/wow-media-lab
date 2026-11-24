@@ -149,9 +149,10 @@ function UI:FacetButton(index)
     item.count = W.Label(item, "", 10, T.muted)
     item.count:SetPoint("RIGHT", -4, 0)
     item.count:SetJustifyH("RIGHT")
+    item.fill = W.Fill(item, {T.active[1], T.active[2], T.active[3], 0.16}, "BACKGROUND")
     item.marker = item:CreateTexture(nil, "ARTWORK")
-    item.marker:SetColorTexture(unpack(T.accent))
-    item.marker:SetSize(2, 14)
+    item.marker:SetColorTexture(unpack(T.active))
+    item.marker:SetSize(3, FACET_ROW)
     item.marker:SetPoint("LEFT")
     item:SetHighlightTexture(W.WHITE)
     item:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.05)
@@ -184,7 +185,14 @@ function UI:RenderFacets()
     local active = view().facets[self.tabId]
     local onLists = self.tabId == ML.ListsTab
     if onLists and active and not ML.Lists:FromFacet(active) then active = nil; view().facets[self.tabId] = nil end
-    self.facetHeading:SetText(onLists and "LISTS" or "FILTER")
+    -- A picked filter is unmistakable: named in the heading, an x to clear
+    -- it, a bright column edge, and its row filled.
+    local filtered = active ~= nil and not onLists
+    local activeLabel = filtered and C.FacetLabel(active) or nil
+    self.facetHeading:SetText(onLists and "LISTS" or filtered and ("FILTER: " .. activeLabel:upper()) or "FILTER")
+    self.facetHeading:SetTextColor(unpack(filtered and T.active or T.muted))
+    self.facetClear:SetShown(filtered)
+    self.facetColumn:SetBackdropBorderColor(unpack(filtered and T.active or T.border))
     self:RenderListActions(onLists and ML.Lists:FromFacet(active))
     local items = {{name = "All", label = onLists and "All saved" or "All", count = C:TabCount(self.tabId)}}
     local group
@@ -210,9 +218,11 @@ function UI:RenderFacets()
             item:EnableMouse(not data.heading)
             item.name:SetText(data.heading or data.label or data.name)
             item.tip = not data.heading and (data.label or data.name) or nil
-            item.name:SetTextColor(unpack(data.heading and T.muted or selected and T.accent or T.text))
+            item.name:SetTextColor(unpack(data.heading and T.muted or selected and T.active or T.text))
             item.count:SetText(data.heading and "" or tostring(data.count))
+            item.count:SetTextColor(unpack(selected and T.active or T.muted))
             item.marker:SetShown(selected)
+            item.fill:SetShown(selected)
         end
     end
     for index = visible + 1, #self.facetButtons do self.facetButtons[index]:Hide() end
@@ -255,6 +265,11 @@ function UI:Refresh()
         local range = self:SizeFilter()
         self.sizeRange:SetValues(range and range[1], range and range[2])
     end
+    -- An active search glows, so the results never look like everything.
+    local searching = self.query ~= nil and self.query ~= ""
+    self.search:SetBackdropBorderColor(unpack(searching and T.active or T.border))
+    self.searchGlow:SetOn(searching)
+    self.clearButton:SetActive(searching)
     self.zoomControl:SetShown(tab.layout == "grid")
     self.zoomControl.label:SetLabel(math.floor(self:ThumbScale() * 100 + 0.5) .. "%")
     self.copyButton:SetShown(ML.db.developer and true or false)
@@ -689,6 +704,7 @@ function UI:CreateToolbar(body)
             self:Refresh()
         end)
     end)
+    self.searchGlow = W.Glow(self.search)
     self.clearButton = W.Button(body, "Clear", 48, function() self:Search("") end, 24)
     self.clearButton:SetPoint("LEFT", self.search, "RIGHT", 4, 0)
     -- A tab holding several kinds (Textures: Files, Atlases) gets a switch.
@@ -874,6 +890,11 @@ function UI:CreateFacetColumn(body)
     self.facetColumn = column
     self.facetHeading = W.Label(column, "FILTER", 10, T.muted)
     self.facetHeading:SetPoint("TOPLEFT", 8, -8)
+    -- With a filter picked: x goes back to All.
+    self.facetClear = W.Button(column, "x", 16, function() self:SetFacet(nil) end, 14)
+    self.facetClear:SetPoint("TOPRIGHT", -4, -4)
+    W.Tip(self.facetClear, "Clear the filter", "Show everything again (All).")
+    self.facetHeading:SetPoint("RIGHT", self.facetClear, "LEFT", -4, 0)
     -- Find a filter: narrows a long list of filters by name.
     self.facetFind = W.EditBox(column, 20, "Find a filter...")
     self.facetFind:SetPoint("TOPLEFT", 4, -22)

@@ -16,6 +16,9 @@ heading and uses it for the release notes.
 
 - Turn a model any way you like: drag across to spin it, up and down to tilt
   it, and Shift+drag to roll it. Reset stands it upright again.
+- An active search glows and gently pulses, and a picked filter is
+  unmistakable: named at the top of the filter column (with **x** to clear
+  it), its row filled and the column edge lit.
 - The ID column in Models and Sounds is only as wide as the IDs it shows, so
   names have room.
 

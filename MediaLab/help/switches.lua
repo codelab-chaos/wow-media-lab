@@ -10,8 +10,8 @@ ML.Help.switches = {
     everywhere = {
         title = "Everywhere",
         items = {
-            {"Search", "Type a name, a color, a subject or an ID; every word has to match. Clear empties it."},
-            {"Filters", "The left column narrows the tab. Find a filter shortens a long list, and dragging its edge widens it."},
+            {"Search", "Type a name, a color, a subject or an ID; every word has to match. The box glows while a search is on; Clear empties it."},
+            {"Filters", "The left column narrows the tab; the filter in use is named at the top, and x clears it. Find a filter shortens a long list, and dragging its edge widens it."},
             {"Click, Ctrl+click, Shift+click", "Pick one, add or remove one, or pick everything between two clicks."},
             {"Right-click", "Favorite anything or put it in a list, one at a time or the whole selection."},
             {"< and >", "Page through the results, or scroll the mouse wheel."},

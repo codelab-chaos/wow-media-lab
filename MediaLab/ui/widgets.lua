@@ -16,6 +16,7 @@ W.theme = {
     border = {0.22, 0.25, 0.29, 1},
     button = {0.13, 0.15, 0.18, 1},
     selected = {0.62, 0.78, 0.91, 1},
+    active = {0.80, 0.92, 1.00, 1}, -- something in effect: a search, a filter
 }
 local T = W.theme
 
@@ -94,6 +95,31 @@ function W.EditBox(parent, height, placeholder)
         holder.placeholder:SetPoint("LEFT", 8, 0)
     end
     return holder
+end
+
+-- A soft outline just outside a frame that pulses while on: says "this is
+-- in effect". The pulse is an animation group, so it costs no Lua per frame.
+function W.Glow(frame, color)
+    local glow = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    glow:SetPoint("TOPLEFT", -2, 2)
+    glow:SetPoint("BOTTOMRIGHT", 2, -2)
+    glow:SetBackdrop({edgeFile = WHITE, edgeSize = 2})
+    glow:SetBackdropBorderColor(unpack(color or T.active))
+    glow:EnableMouse(false)
+    local pulse = glow:CreateAnimationGroup()
+    pulse:SetLooping("BOUNCE")
+    local fade = pulse:CreateAnimation("Alpha")
+    fade:SetFromAlpha(0.9)
+    fade:SetToAlpha(0.25)
+    fade:SetDuration(0.9)
+    fade:SetSmoothing("IN_OUT")
+    glow.pulse = pulse
+    function glow:SetOn(on)
+        self:SetShown(on)
+        if on and not self.pulse:IsPlaying() then self.pulse:Play() elseif not on then self.pulse:Stop() end
+    end
+    glow:Hide()
+    return glow
 end
 
 -- A read-only, selectable text field. Clicking selects everything so Ctrl+C
